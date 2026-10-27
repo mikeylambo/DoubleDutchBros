@@ -20,6 +20,11 @@ Controls: tap / click, or **F / ←** = B (Blue), **J / →** = A (Red), **1–4
 | `src/game/combat.ts` | Pure damage / timing math |
 | `src/game/enemyScripts.ts` | Enemy attack patterns (hazards + telegraphs) |
 | `src/game/renderer.ts` | Canvas drawing, read-only |
+| `src/game/music.ts` | Streams the soundtrack; the song's beat is the master clock |
+| `src/game/anim.ts` | Sprite clips, manifest loader, animation state selection |
+| `src/game/sprites.ts` | Procedural art: rabbits, enemies, backdrop (fallback for missing sprites) |
 | `src/game/audio.ts` | Web Audio clock + synthesized SFX |
 | `src/game/save.ts` | Persistent meta progression (localStorage) |
 | `src/ui/` | React screens; they read engine snapshots and send commands |
+
+Art and audio asset rules: [`docs/ART_SPEC.md`](docs/ART_SPEC.md).

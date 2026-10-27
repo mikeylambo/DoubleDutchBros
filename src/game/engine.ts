@@ -5,11 +5,12 @@ import {
 } from '../data/config';
 import { audio } from './audio';
 import { impactWindow, judgeJump, perfectThreshold, resolveHit, type JumpJudgment } from './combat';
-import { PATTERN_CALL, buildPattern, pickPattern } from './enemyScripts';
+import { PATTERN_CALL, buildPattern, hazardX, pickPattern } from './enemyScripts';
+import { music, type BeatClock } from './music';
 import { loadMeta, saveMeta, type MetaSave } from './save';
 import { calculateDerived, makeBro } from './stats';
 import {
-  TUTORIAL_IMPACT_SCALE, TUTORIAL_ROPE_SPEED, TUTORIAL_SLIME_HP, tutorialAllows, tutorialHint, type TutorialStep
+  TUTORIAL_IMPACT_SCALE, TUTORIAL_ROPE_RATE, TUTORIAL_SLIME_HP, tutorialAllows, tutorialHint, type TutorialStep
 } from './tutorial';
 import type { Body, Bro, Enemy, FloatingText, GameState, Hazard, LevelChoice, Particle, Phase, Snapshot } from './types';
 
@@ -68,8 +69,13 @@ export class Engine {
     red: { x: HOME_X.red, y: 0, vy: 0, jumping: false, targetX: HOME_X.red },
     blue: { x: HOME_X.blue, y: 0, vy: 0, jumping: false, targetX: HOME_X.blue }
   };
-  ropeAngle = 0;
-  ropeSpeed = 0.07;
+  ropeAngle = Math.PI / 2;
+  /** Rope peaks per beat (1 = every beat, 0.5 = every other beat). */
+  ropeRate = 1;
+  /** Extra strictness of the perfect window for the current target. */
+  tightness = 0;
+  /** The beat the player is hearing right now (fractional). Everything rhythmic reads this. */
+  beat = 0;
   camera = { zoom: 1, shake: 0 };
   floatingTexts: FloatingText[] = [];
   particles: Particle[] = [];
@@ -78,7 +84,6 @@ export class Engine {
   flashColor = '#ffffff';
 
   // --- clock ---
-  private lastStepTime = 0;
   private accumulator = 0;
   private lastFrameTime: number | null = null;
   private clockWasAudio = false;
@@ -89,8 +94,17 @@ export class Engine {
   private dirty = true;
   private snap!: Snapshot;
 
-  constructor(private rng: () => number = Math.random) {
+  constructor(private rng: () => number = Math.random, readonly clock: BeatClock = music) {
     this.snap = this.buildSnapshot();
+    this.applyVolumes();
+  }
+
+  /**
+   * Beat being heard at an audio-clock time: what was scheduled `outputLatency` ago, shifted by
+   * the player's calibration. Used for visuals, judging and attacks alike so they always agree.
+   */
+  heardBeat(t: number) {
+    return this.clock.beatAt(t - audio.outputLatency - this.meta.latencyMs / 1000);
   }
 
   // ================= Public API: React subscribes and sends commands =================
@@ -100,6 +114,7 @@ export class Engine {
 
   /** Advance the sim by real elapsed time using a fixed timestep. Called once per animation frame. */
   frame() {
+    if (this.clock === music) music.sync();
     const usingAudio = audio.running;
     const now = audio.now();
     // Switching clock source (audio unlocked) would create a time jump, so resync instead.
@@ -109,7 +124,6 @@ export class Engine {
     this.lastFrameTime = now;
     while (this.accumulator >= STEP) {
       this.step();
-      this.lastStepTime = now - (this.accumulator - STEP);
       this.accumulator -= STEP;
     }
     this.flush();
@@ -118,6 +132,7 @@ export class Engine {
   startRun() {
     audio.unlock();
     this.tutorial = null;
+    this.startMusic();
     this.meta.runs += 1;
     saveMeta(this.meta);
     this.resetRun();
@@ -127,9 +142,29 @@ export class Engine {
   startTutorial() {
     audio.unlock();
     this.tutorial = 'ATTACK';
+    this.startMusic();
     this.resetRun();
     const slime = this.enemies[0];
     this.enemies = [{ ...slime, type: 'SLIME', name: 'SLIME', hp: TUTORIAL_SLIME_HP, maxHp: TUTORIAL_SLIME_HP, color: ENEMY_TYPES.SLIME.color, patterns: ['WAVE'], scale: 1, float: 0, y: 0, x: 250, targetX: 250, isBoss: false }];
+    this.touch();
+  }
+
+  private startMusic() {
+    if (this.clock !== music) return;
+    music.play();
+    music.duck(false);
+  }
+
+  private applyVolumes() {
+    music.setVolume(this.meta.musicVolume);
+    audio.setVolume(this.meta.sfxVolume);
+  }
+
+  setVolumes(musicVolume: number, sfxVolume: number) {
+    this.meta.musicVolume = Math.max(0, Math.min(1, musicVolume));
+    this.meta.sfxVolume = Math.max(0, Math.min(1, sfxVolume));
+    this.applyVolumes();
+    saveMeta(this.meta);
     this.touch();
   }
 
@@ -142,9 +177,9 @@ export class Engine {
     this.initWave();
   }
 
-  pause() { if (this.gameState === 'BATTLE') { this.gameState = 'PAUSE'; this.touch(); } }
+  pause() { if (this.gameState === 'BATTLE') { this.gameState = 'PAUSE'; music.duck(true); this.touch(); } }
   /** Resuming never re-initializes the wave (old build rerolled enemies on resume). */
-  resume() { if (this.gameState === 'PAUSE') { this.gameState = 'BATTLE'; this.touch(); } }
+  resume() { if (this.gameState === 'PAUSE') { this.gameState = 'BATTLE'; music.duck(false); this.touch(); } }
 
   setLatency(ms: number) { this.meta.latencyMs = Math.max(-150, Math.min(150, Math.round(ms))); saveMeta(this.meta); this.touch(); }
 
@@ -204,13 +239,15 @@ export class Engine {
         const body = this.body[key];
         if (body.jumping) return;
         const stats = calculateDerived(bro);
-        body.vy = stats.jump; body.jumping = true;
+        // Fit the jump to the rope: always land before the next peak, whatever the tempo.
+        const framesPerPeak = (SIM_HZ * 60) / (this.clock.bpm * this.ropeRate);
+        const airtime = Math.min(framesPerPeak * 0.8, (2 * -stats.jump) / GRAVITY);
+        this.jump(body, (-GRAVITY * airtime) / 2);
         body.squash = -0.6;
         const judgment = this.judge(atTime, stats.rhythm);
         if (judgment === 'PERFECT') {
           this.windup++;
           this.touch();
-          this.ropeSpeed += 0.008;
           audio.play('perfect');
           audio.buzz(12);
           this.burst(body.x + 16, GROUND_Y, '#facc15', 10, 4);
@@ -251,7 +288,7 @@ export class Engine {
       }
       case 'ENEMY_TURN': {
         const body = this.body[key];
-        if (!body.jumping && bro.hp > 0) { body.vy = calculateDerived(bro).jump; body.jumping = true; }
+        if (!body.jumping && bro.hp > 0) this.jump(body, calculateDerived(bro).jump);
         return;
       }
     }
@@ -367,10 +404,17 @@ export class Engine {
    * player's calibrated latency. The Rhythm stat widens the perfect window.
    */
   private judge(atTime: number, rhythmStat: number): JumpJudgment {
-    const offset = this.meta.latencyMs / 1000 - audio.outputLatency;
-    const dt = atTime - offset - this.lastStepTime;
-    const angle = this.ropeAngle + this.ropeSpeed * SIM_HZ * dt;
-    return judgeJump(angle, perfectThreshold(rhythmStat));
+    const angle = this.ropeAngleAt(this.heardBeat(atTime));
+    return judgeJump(angle, Math.min(0.95, perfectThreshold(rhythmStat) + this.tightness));
+  }
+
+  /** Rope peaks (|sin| = 1) land exactly on beats, every 1/ropeRate beats. */
+  private ropeAngleAt(beat: number) { return Math.PI * beat * this.ropeRate + Math.PI / 2; }
+
+  private jump(body: Body, vy: number) {
+    body.vy = vy;
+    body.launchVy = vy;
+    body.jumping = true;
   }
 
   private burst(x: number, y: number, color: string, count: number, speed: number) {
@@ -393,7 +437,7 @@ export class Engine {
       const x = isBoss ? 200 : 100 + i * 150;
       const hp = Math.round(d.hp * hpMult);
       return {
-        id: Date.now() + i, type, name: d.name, hp, maxHp: hp, dmg: d.dmg, color: d.color, speed: d.speed,
+        id: Date.now() + i, type, name: d.name, hp, maxHp: hp, dmg: d.dmg, color: d.color, ropeRate: d.ropeRate, tightness: d.tightness,
         patterns: d.patterns, scale: d.scale, float: d.float, isBoss: !!d.isBoss, hurt: 0,
         x, y: d.float, vy: 0, jumping: false, targetX: x
       };
@@ -411,7 +455,7 @@ export class Engine {
   }
 
   private resetTempo() {
-    this.ropeSpeed = 0.07; this.windup = 0; this.actionSuccess = false; this.missLocked = false; this.missTimer = 0; this.tripRecover = 0;
+    this.ropeRate = 1; this.tightness = 0; this.windup = 0; this.actionSuccess = false; this.missLocked = false; this.missTimer = 0; this.tripRecover = 0;
     this.moveType = 'BASIC'; this.activeAttacker = null; this.hazards = []; this.expectedTap = null; this.activeItem = null;
     this.touch();
   }
@@ -426,7 +470,8 @@ export class Engine {
     const enemy = this.enemies[idx];
     const move = MOVE_REGISTRY[this.moveType];
     if (move.rhythm) {
-      this.ropeSpeed = this.tutorial ? TUTORIAL_ROPE_SPEED : enemy.speed;
+      this.ropeRate = this.tutorial ? TUTORIAL_ROPE_RATE : enemy.ropeRate;
+      this.tightness = this.tutorial ? 0 : enemy.tightness;
       this.windup = 0;
       this.setPhase('WINDUP');
     } else {
@@ -440,8 +485,7 @@ export class Engine {
     this.sync = Math.max(0, this.sync - move.cost);
     this.activeAttacker = attacker;
     const body = this.body[keyOf(attacker)];
-    body.vy = vy;
-    body.jumping = true;
+    this.jump(body, vy);
     body.targetX = (this.enemies[this.targetIdx]?.x ?? 200) + xOffset;
     this.launchTimer = 0;
     this.setPhase('LAUNCH');
@@ -493,7 +537,8 @@ export class Engine {
     this.currentEnemyId = id;
     const enemy = this.enemies.find((e) => e.id === id)!;
     const pattern = this.tutorial ? 'WAVE' : pickPattern(enemy.patterns, this.rng);
-    this.hazards = buildPattern(pattern, this.wave);
+    // Attacks start on a whole beat with one beat of breathing room.
+    this.hazards = buildPattern(pattern, Math.ceil(this.beat) + 1);
     this.text(enemy.x + 20, GROUND_Y + enemy.y - 110, PATTERN_CALL[pattern], enemy.color, 1.1);
   }
 
@@ -510,6 +555,7 @@ export class Engine {
     this.meta.legacy += this.wave * 5;
     this.meta.bestWave = Math.max(this.meta.bestWave, this.wave);
     saveMeta(this.meta);
+    music.duck(true);
     this.gameState = 'GAMEOVER';
     this.touch();
   }
@@ -564,7 +610,8 @@ export class Engine {
     });
     if (this.freeze > 0) { this.freeze--; return; }
 
-    this.ropeAngle += this.ropeSpeed;
+    this.beat = this.heardBeat(audio.now());
+    this.ropeAngle = this.ropeAngleAt(this.beat);
     this.scheduleBeat();
 
     const bodies: Body[] = [this.body.red, this.body.blue, ...this.enemies];
@@ -578,6 +625,7 @@ export class Engine {
         o.y = floor; o.vy = 0; o.jumping = false;
       }
       if (o.squash) o.squash *= 0.8;
+      if (o.hurtT) o.hurtT--;
       o.x += (o.targetX - o.x) * 0.2;
     }
     for (const en of this.enemies) if (en.hurt > 0) en.hurt--;
@@ -595,18 +643,22 @@ export class Engine {
   }
 
   /**
-   * Schedule the rope's beat on the audio timeline at the exact moment a rope passes the feet.
-   * A soft pulse always plays so the player can feel the tempo; WINDUP adds a sharp click.
+   * Schedule a click on the audio timeline for the next rope peak while charging a skill, and a
+   * soft pulse on every beat when no music is playing. Scheduled on the beat clock directly, so it
+   * reaches the speakers alongside the music.
    */
   private scheduleBeat() {
-    if (this.phase === 'ENEMY_TURN' || !audio.running) return;
-    const beat = Math.floor(this.ropeAngle / Math.PI + 0.5);
-    if (beat === this.scheduledBeat) return;
-    const peakAngle = (beat + 0.5) * Math.PI;
-    const secondsAway = (peakAngle - this.ropeAngle) / (this.ropeSpeed * SIM_HZ);
-    if (secondsAway > 0 && secondsAway < STEP * 2) {
-      audio.play(this.phase === 'WINDUP' ? 'tick' : 'pulse', audio.now() + secondsAway);
-      this.scheduledBeat = beat;
+    if (!audio.running) return;
+    const windup = this.phase === 'WINDUP';
+    if (!windup && (this.clock.live || this.phase === 'ENEMY_TURN')) return;
+    const rate = windup ? this.ropeRate : 1;
+    const raw = this.clock.beatAt(audio.now());
+    const nextBeat = (Math.floor(raw * rate) + 1) / rate;
+    if (nextBeat === this.scheduledBeat) return;
+    const at = this.clock.timeOfBeat(nextBeat);
+    if (at - audio.now() < STEP * 2) {
+      audio.play(windup ? 'tick' : 'pulse', at);
+      this.scheduledBeat = nextBeat;
     }
   }
 
@@ -669,7 +721,7 @@ export class Engine {
       prev.targetX = HOME_X[keyOf(this.activeAttacker!)];
       const next = other(this.activeAttacker!);
       const body = this.body[keyOf(next)];
-      body.vy = -16; body.jumping = true; body.targetX = target.x + 25;
+      this.jump(body, -16); body.targetX = target.x + 25;
       this.activeAttacker = next;
       this.launchTimer = 0;
       this.actionSuccess = false;
@@ -695,8 +747,7 @@ export class Engine {
     const enemy = this.enemies.find((e) => e.id === this.currentEnemyId);
     let live = false;
     for (const h of this.hazards) {
-      if (h.delay > 0) { h.delay--; live = true; continue; }
-      h.x += h.vx;
+      h.x = hazardX(h, this.beat);
       if (h.x < CANVAS_WIDTH + 100) live = true;
       if (h.fake) continue;
       (['red', 'blue'] as BroKey[]).forEach((k) => {
@@ -711,6 +762,7 @@ export class Engine {
           this.camera.shake = 25;
           this.flash = 0.3; this.flashColor = '#ef4444';
           b.squash = 0.8;
+          b.hurtT = 24;
           this.burst(b.x + 16, GROUND_Y + b.y - 34, '#ef4444', 12, 6);
           audio.play('hurt');
           audio.buzz(80);

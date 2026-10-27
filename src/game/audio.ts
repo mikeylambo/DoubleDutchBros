@@ -22,6 +22,10 @@ class AudioClock {
     if (this.ctx.state === 'suspended') void this.ctx.resume();
   }
 
+  get context() { return this.ctx; }
+
+  setVolume(v: number) { if (this.master && this.ctx) this.master.gain.setTargetAtTime(v * 0.6, this.ctx.currentTime, 0.05); }
+
   get running() { return !!this.ctx && this.ctx.state === 'running'; }
 
   /** Seconds. Audio clock when available, performance clock otherwise. */

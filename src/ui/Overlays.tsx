@@ -80,10 +80,20 @@ export const Pause = () => {
           );
         })}
       </div>
-      <div className="w-full max-w-md mb-10 bg-white/5 p-6 rounded-2xl border border-white/10">
+      <div className="w-full max-w-md mb-10 bg-white/5 p-6 rounded-2xl border border-white/10 space-y-6">
+        {([['Music', 'musicVolume'], ['Sound FX', 'sfxVolume']] as const).map(([label, key]) => (
+          <div key={key}>
+            <div className="flex justify-between text-sm font-black uppercase mb-2"><span>{label}</span><span className="text-cyan-400">{Math.round(engine.meta[key] * 100)}%</span></div>
+            <input type="range" min={0} max={1} step={0.05} value={engine.meta[key]}
+              onChange={(e) => key === 'musicVolume' ? engine.setVolumes(Number(e.target.value), engine.meta.sfxVolume) : engine.setVolumes(engine.meta.musicVolume, Number(e.target.value))}
+              className="w-full accent-cyan-400" />
+          </div>
+        ))}
+        <div>
         <div className="flex justify-between text-sm font-black uppercase mb-2"><span>Input Latency</span><span className="text-cyan-400">{latency > 0 ? '+' : ''}{latency} ms</span></div>
         <input type="range" min={-150} max={150} step={5} value={latency} onChange={(e) => engine.setLatency(Number(e.target.value))} className="w-full accent-cyan-400" />
         <div className="text-[10px] text-white/40 mt-2">Raise this if your PERFECTs feel late, lower it if they feel early (Bluetooth audio usually needs +).</div>
+        </div>
       </div>
       {detail && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-6 z-[110]" onPointerDown={() => setDetail(null)}>

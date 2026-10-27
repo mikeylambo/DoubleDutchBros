@@ -31,7 +31,25 @@ export interface RabbitPose {
   t: number;
   /** Seed so the two rabbits don't blink in unison. */
   seed: number;
+  /** Music beat; idle breathing bobs on it. */
+  beat?: number;
+  /** Lean in radians, positive = forward (toward the enemies). */
+  lean?: number;
+  /** 0..1 knee bend. */
+  crouch?: number;
+  eyes?: 'open' | 'happy' | 'strain';
 }
+
+/** Procedural stand-in pose for each animation clip until sprite art exists. */
+export const CLIP_POSE: Record<string, Pick<RabbitPose, 'lean' | 'crouch' | 'eyes'>> = {
+  windup: { crouch: 0.35 },
+  trip: { lean: 0.55, eyes: 'strain' },
+  launch: { lean: 0.35 },
+  attack: { lean: 0.6, eyes: 'strain' },
+  tag: { lean: 0.45, eyes: 'strain' },
+  hurt: { lean: -0.4, eyes: 'strain' },
+  victory: { eyes: 'happy' }
+};
 
 const ellipse = (ctx: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number, rot = 0) => {
   ctx.beginPath();
@@ -46,8 +64,12 @@ const ellipse = (ctx: CanvasRenderingContext2D, x: number, y: number, rx: number
 export const drawRabbit = (ctx: CanvasRenderingContext2D, look: RabbitLook, pose: RabbitPose) => {
   ctx.save();
   if (pose.down) { ctx.translate(0, -12); ctx.rotate(-Math.PI / 2); ctx.translate(30, 0); }
-  const idle = pose.airborne || pose.down ? 0 : Math.sin(pose.t * 4 + pose.seed) * 0.03;
-  ctx.scale(1 + 0.25 * pose.squash, 1 - 0.25 * pose.squash + idle);
+  // Breathing bob lands on the beat when music is playing.
+  const breath = pose.beat !== undefined ? -Math.pow(1 - (pose.beat - Math.floor(pose.beat)), 3) * 0.05 : Math.sin(pose.t * 4 + pose.seed) * 0.03;
+  const idle = pose.airborne || pose.down ? 0 : breath;
+  ctx.rotate(-(pose.lean ?? 0));
+  const sq = pose.squash + (pose.crouch ?? 0) * 0.5;
+  ctx.scale(1 + 0.25 * sq, 1 - 0.25 * sq + idle);
 
   // Ears trail against motion: rising sweeps them back, falling lifts them.
   const earSwing = pose.down ? 0.9 : Math.max(-0.5, Math.min(0.7, -pose.vy * 0.045));
@@ -114,6 +136,14 @@ export const drawRabbit = (ctx: CanvasRenderingContext2D, look: RabbitLook, pose
     ctx.strokeStyle = '#1e1b4b';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(-10, -67); ctx.lineTo(-4, -61); ctx.moveTo(-4, -67); ctx.lineTo(-10, -61); ctx.stroke();
+  } else if (pose.eyes === 'happy') {
+    ctx.strokeStyle = '#1e1b4b';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(-7, -63, 4, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+  } else if (pose.eyes === 'strain') {
+    ctx.strokeStyle = '#1e1b4b';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-11, -67); ctx.lineTo(-5, -64); ctx.lineTo(-11, -61); ctx.stroke();
   } else if (blink) {
     ctx.strokeStyle = '#1e1b4b';
     ctx.lineWidth = 2;
@@ -142,7 +172,8 @@ export const drawShadow = (ctx: CanvasRenderingContext2D, x: number, height: num
  * Enemy silhouettes. Drawn inside a 40x70 box (origin top-left, feet at y=70) before the
  * caller's scale is applied, so hitboxes and HP bars stay where gameplay expects them.
  */
-export const drawEnemyShape = (ctx: CanvasRenderingContext2D, type: EnemyTypeId, color: string, t: number, hurt: boolean) => {
+export const drawEnemyShape = (ctx: CanvasRenderingContext2D, type: EnemyTypeId, color: string, beat: number, hurt: boolean) => {
+  const pulse = Math.pow(1 - (beat - Math.floor(beat)), 3); // 1 on the beat, decays
   ctx.save();
   ctx.fillStyle = hurt ? '#ffffff' : color;
   ctx.shadowColor = color;
@@ -150,7 +181,7 @@ export const drawEnemyShape = (ctx: CanvasRenderingContext2D, type: EnemyTypeId,
   switch (type) {
     case 'SLIME':
     case 'BOSS': {
-      const wob = Math.sin(t * 5) * 3;
+      const wob = pulse * 5 - 1; // squish on every beat
       ctx.beginPath();
       ctx.moveTo(-2, 70);
       ctx.bezierCurveTo(-4, 30 - wob, 44, 30 - wob, 42, 70);
@@ -170,7 +201,7 @@ export const drawEnemyShape = (ctx: CanvasRenderingContext2D, type: EnemyTypeId,
       break;
     }
     case 'BAT': {
-      const flap = Math.sin(t * 18);
+      const flap = Math.sin(beat * Math.PI * 4); // two flaps per beat
       ctx.beginPath(); // wings
       ctx.moveTo(20, 50);
       ctx.quadraticCurveTo(-10, 30 + flap * 18, -22, 46 + flap * 10);

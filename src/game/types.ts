@@ -22,7 +22,13 @@ export interface Bro {
   perks: PerkId[];
 }
 
-export interface Body { x: number; y: number; vy: number; jumping: boolean; targetX: number; float?: number; squash?: number }
+export interface Body {
+  x: number; y: number; vy: number; jumping: boolean; targetX: number; float?: number; squash?: number;
+  /** Upward speed at the last takeoff, so animation can map airtime to frames. */
+  launchVy?: number;
+  /** Frames of hurt reaction remaining. */
+  hurtT?: number;
+}
 
 export interface Particle { x: number; y: number; vx: number; vy: number; life: number; color: string; size: number }
 
@@ -34,7 +40,8 @@ export interface Enemy extends Body {
   maxHp: number;
   dmg: number;
   color: string;
-  speed: number;
+  ropeRate: number;
+  tightness: number;
   patterns: PatternId[];
   scale: number;
   float: number;
@@ -43,15 +50,21 @@ export interface Enemy extends Body {
   hurt: number;
 }
 
-/** A single hitbox travelling across the arena during an enemy attack. */
+/**
+ * A single hitbox travelling across the arena during an enemy attack. Its position is a pure
+ * function of the beat, so attacks stay locked to the music even if frames drop.
+ */
 export interface Hazard {
   x: number;
   y: number;
   w: number;
   h: number;
-  vx: number;
-  /** Frames before it starts moving (telegraph). */
-  delay: number;
+  /** World units per beat. */
+  speed: number;
+  /** Beat at which the hazard's center crosses Hop's home position. */
+  arrive: number;
+  /** Beat when the lane warning starts. */
+  warn: number;
   /** Fakes render dashed and deal no damage. */
   fake: boolean;
   /** Bros already hit by this hazard. */

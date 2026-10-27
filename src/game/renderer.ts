@@ -2,8 +2,9 @@ import { CANVAS_WIDTH, GROUND_Y, HOME_X, MOVE_REGISTRY, type BroKey } from '../d
 import { perfectThreshold } from './combat';
 import type { Engine } from './engine';
 import { calculateDerived } from './stats';
-import { BACKDROP_RES, RABBITS, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
-import type { Body } from './types';
+import { Animator, CONTACT_FRAME, ENEMY_CLIPS, RABBIT_CLIPS, SPRITE_ID, airProgress, enemySpriteId, frameIndex, rabbitClip, sprites, type EnemyClip } from './anim';
+import { BACKDROP_RES, CLIP_POSE, RABBITS, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
+import type { Enemy } from './types';
 import { applyView, type View } from './view';
 
 /** Draws the current engine state. Read-only: never mutates the sim. */
@@ -21,12 +22,16 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
   const sx = (Math.random() - 0.5) * e.camera.shake * v.scale;
   const sy = (Math.random() - 0.5) * e.camera.shake * v.scale;
   const cy = v.groundY - 120 * v.scale;
+  // A tiny camera push on every bar's downbeat keeps the whole frame breathing with the music.
+  const bar = ((e.beat % 4) + 4) % 4 < 1 ? pulse(e.beat) : 0;
+  const zoom = e.camera.zoom * (1 + 0.012 * bar);
   ctx.translate(v.w / 2 + sx, cy + sy);
-  ctx.scale(e.camera.zoom, e.camera.zoom);
+  ctx.scale(zoom, zoom);
   ctx.translate(-v.w / 2, -cy);
   applyView(ctx, v);
 
   drawStage(ctx);
+  drawBeatWorld(ctx, e);
   drawShadows(ctx, e);
   drawHazards(ctx, e);
   drawPerfectZone(ctx, e);
@@ -67,6 +72,37 @@ const drawStage = (ctx: CanvasRenderingContext2D) => {
   ctx.drawImage(img, -400, -100, img.width / BACKDROP_RES, img.height / BACKDROP_RES);
 };
 
+/** 1 exactly on a beat, decaying to 0 before the next. */
+const pulse = (beat: number) => Math.pow(1 - (beat - Math.floor(beat)), 3);
+
+/** Lights that live on the beat, layered over the static backdrop. */
+const drawBeatWorld = (ctx: CanvasRenderingContext2D, e: Engine) => {
+  const p = pulse(e.beat);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  // Moon halo swells on each beat.
+  const halo = ctx.createRadialGradient(620, 90, 20, 620, 90, 140);
+  halo.addColorStop(0, `rgba(244, 114, 182, ${0.25 * p})`);
+  halo.addColorStop(1, 'rgba(244, 114, 182, 0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(480, -50, 280, 280);
+  // Neon sign flares.
+  ctx.font = 'italic 900 22px system-ui, sans-serif';
+  ctx.fillStyle = `rgba(244, 114, 182, ${0.6 * p})`;
+  ctx.shadowColor = '#f472b6';
+  ctx.shadowBlur = 30 * p;
+  ctx.fillText('HOP & SKIP', 70, GROUND_Y - 120);
+  // A light pulse runs along the court line.
+  ctx.shadowBlur = 0;
+  const line = ctx.createLinearGradient(-400, 0, 1200, 0);
+  line.addColorStop(0, 'rgba(0, 210, 255, 0)');
+  line.addColorStop(0.5, `rgba(0, 210, 255, ${0.7 * p})`);
+  line.addColorStop(1, 'rgba(0, 210, 255, 0)');
+  ctx.fillStyle = line;
+  ctx.fillRect(-400, GROUND_Y - 2, 1600, 4);
+  ctx.restore();
+};
+
 const drawShadows = (ctx: CanvasRenderingContext2D, e: Engine) => {
   (['red', 'blue'] as BroKey[]).forEach((k) => drawShadow(ctx, e.body[k].x + 16, -e.body[k].y, 18));
   e.enemies.forEach((en) => { if (en.hp > 0) drawShadow(ctx, en.x + 20 * en.scale, -en.y, 20 * en.scale); });
@@ -75,10 +111,11 @@ const drawShadows = (ctx: CanvasRenderingContext2D, e: Engine) => {
 const drawHazards = (ctx: CanvasRenderingContext2D, e: Engine) => {
   if (e.phase !== 'ENEMY_TURN') return;
   for (const h of e.hazards) {
+    if (e.beat < h.warn) continue;
     ctx.save();
-    if (h.delay > 0) {
-      // Telegraph: a pulsing lane marker showing where the hit will travel.
-      ctx.globalAlpha = 0.15 + 0.15 * Math.sin(h.delay * 0.4);
+    if (h.x + h.w < 0) {
+      // Telegraph: the lane flashes on every beat until the hit comes into view.
+      ctx.globalAlpha = 0.08 + 0.3 * pulse(e.beat);
       ctx.fillStyle = h.fake ? '#f59e0b' : '#ef4444';
       ctx.fillRect(0, h.y, CANVAS_WIDTH, h.h);
       ctx.restore();
@@ -140,7 +177,7 @@ const drawRopes = (ctx: CanvasRenderingContext2D, e: Engine, layer: 'back' | 'fr
 const drawPerfectZone = (ctx: CanvasRenderingContext2D, e: Engine) => {
   if (e.phase !== 'WINDUP') return;
   const k: BroKey = e.turn === 'RED' ? 'red' : 'blue';
-  const threshold = perfectThreshold(calculateDerived(e.bros[k]).rhythm);
+  const threshold = Math.min(0.95, perfectThreshold(calculateDerived(e.bros[k]).rhythm) + e.tightness);
   const s = Math.abs(Math.sin(e.ropeAngle));
   if (s <= threshold) return;
   const b = e.body[k];
@@ -158,7 +195,7 @@ const drawWindupPips = (ctx: CanvasRenderingContext2D, e: Engine) => {
   if (e.phase !== 'WINDUP') return;
   const k: BroKey = e.turn === 'RED' ? 'red' : 'blue';
   const b = e.body[k];
-  const threshold = perfectThreshold(calculateDerived(e.bros[k]).rhythm);
+  const threshold = Math.min(0.95, perfectThreshold(calculateDerived(e.bros[k]).rhythm) + e.tightness);
   const limit = MOVE_REGISTRY[e.moveType].limit?.(e.turn) ?? 3;
   ctx.save();
   ctx.fillStyle = '#fff';
@@ -180,15 +217,55 @@ const drawWindupPips = (ctx: CanvasRenderingContext2D, e: Engine) => {
   ctx.restore();
 };
 
+const enemyAnimators = new Map<number, Animator>();
+const rabbitAnimators: Record<BroKey, Animator> = { red: new Animator(), blue: new Animator() };
+
+const enemyClip = (e: Engine, en: Enemy): EnemyClip => {
+  if (en.hp <= 0) return 'defeat';
+  if (en.hurt > 0) return 'hurt';
+  if (e.phase === 'ENEMY_TURN' && e.currentEnemyId === en.id) {
+    return e.hazards.some((h) => h.x + h.w >= 0) ? 'attack' : 'telegraph';
+  }
+  return 'idle';
+};
+
+/**
+ * Draws a sprite frame with its pivot at the current origin (feet center). Returns false when the
+ * clip has no art yet, so the caller can fall back to procedural drawing.
+ */
+const drawSprite = (ctx: CanvasRenderingContext2D, char: string, clip: string, spec: typeof RABBIT_CLIPS[keyof typeof RABBIT_CLIPS], anim: Animator, now: number, beat: number, air: number) => {
+  const s = sprites.get(char, clip);
+  if (!s) return false;
+  const f = frameIndex(spec, s.frames, s.fps, anim.elapsed(now), { now, beat, airProgress: air });
+  const [cw, ch] = s.cell;
+  ctx.drawImage(s.img, f * cw, 0, cw, ch, -s.pivot[0] / s.scale, -s.pivot[1] / s.scale, cw / s.scale, ch / s.scale);
+  return true;
+};
+
 const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine) => {
-  const t = performance.now() / 1000;
+  const now = performance.now() / 1000;
+  const live = new Set<number>();
   e.enemies.forEach((en, i) => {
+    live.add(en.id);
     if (en.hp <= 0 && e.phase !== 'IMPACT' && e.phase !== 'LAUNCH') return;
+    let anim = enemyAnimators.get(en.id);
+    if (!anim) { anim = new Animator(); enemyAnimators.set(en.id, anim); }
+    const clip = enemyClip(e, en);
+    anim.set(clip, now);
+    // Ground enemies hop on the beat; flyers bob.
+    const bob = en.hp > 0 ? -pulse(e.beat + i * 0.25) * (en.float < 0 ? 6 : 3) : 0;
     ctx.save();
-    ctx.translate(en.x, GROUND_Y + en.y - 70 * en.scale);
-    ctx.scale(en.scale, en.scale);
+    ctx.translate(en.x + 20 * en.scale, GROUND_Y + en.y + bob);
     ctx.globalAlpha = en.hp > 0 ? 1 : 0.3;
-    drawEnemyShape(ctx, en.type, en.color, t + i, en.hurt > 0);
+    ctx.scale(en.scale, en.scale);
+    if (!drawSprite(ctx, enemySpriteId(en.type), clip, ENEMY_CLIPS[clip], anim, now, e.beat, 0)) {
+      ctx.save();
+      ctx.translate(-20, -70);
+      drawEnemyShape(ctx, en.type, en.color, e.beat + i * 0.25, en.hurt > 0);
+      ctx.restore();
+    }
+    ctx.translate(-20, -70);
+    ctx.globalAlpha = 1;
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 12, 40, 5);
     ctx.fillStyle = '#ef4444';
@@ -205,16 +282,25 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine) => {
     }
     ctx.restore();
   });
+  for (const id of enemyAnimators.keys()) if (!live.has(id)) enemyAnimators.delete(id);
 };
 
 const drawBro = (ctx: CanvasRenderingContext2D, e: Engine, k: BroKey) => {
-  const b: Body = e.body[k];
+  const b = e.body[k];
+  const now = performance.now() / 1000;
+  const anim = rabbitAnimators[k];
+  const clip = rabbitClip(e, k, anim.clip);
+  const strike = clip === 'attack' || clip === 'tag';
+  anim.set(clip, now, strike ? CONTACT_FRAME / (sprites.get(SPRITE_ID[k], clip)?.fps ?? 24) : 0);
   ctx.save();
   ctx.translate(b.x + 16, GROUND_Y + b.y);
-  drawRabbit(ctx, RABBITS[k], {
-    vy: b.vy, squash: b.squash ?? 0, airborne: b.jumping, down: e.bros[k].hp <= 0,
-    t: performance.now() / 1000, seed: k === 'red' ? 0 : 1.7
-  });
+  const air = b.jumping ? airProgress(b.vy, b.launchVy) : 0;
+  if (!drawSprite(ctx, SPRITE_ID[k], clip, RABBIT_CLIPS[clip], anim, now, e.beat, air)) {
+    drawRabbit(ctx, RABBITS[k], {
+      vy: b.vy, squash: b.squash ?? 0, airborne: b.jumping, down: e.bros[k].hp <= 0,
+      t: now, seed: k === 'red' ? 0 : 1.7, beat: e.beat, ...CLIP_POSE[clip]
+    });
+  }
   ctx.restore();
 };
 

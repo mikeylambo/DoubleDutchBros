@@ -2,17 +2,30 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MOVE_REGISTRY } from '../data/config';
 import { judgeJump, resolveHit } from './combat';
 import { Engine } from './engine';
+import { HOP_CENTER, buildPattern, hazardX } from './enemyScripts';
+import type { BeatClock } from './music';
 import { calculateDerived, makeBro } from './stats';
 
 // Node has no localStorage/AudioContext; the engine must cope with both missing.
 beforeEach(() => { vi.stubGlobal('localStorage', undefined); });
 
-const run = (e: Engine, steps: number) => { for (let i = 0; i < steps; i++) e.step(); };
+/** Beat clock the test drives by hand: each sim step advances one 60 Hz frame of music. */
+class TestClock implements BeatClock {
+  readonly live = true;
+  readonly bpm = 90;
+  b = 0;
+  beatAt() { return this.b; }
+  timeOfBeat(beat: number) { return (beat * 60) / this.bpm; }
+}
+const clocks = new WeakMap<Engine, TestClock>();
+const tick = (e: Engine) => { clocks.get(e)!.b += 90 / 3600; e.step(); };
+const run = (e: Engine, steps: number) => { for (let i = 0; i < steps; i++) tick(e); };
 const runUntil = (e: Engine, pred: () => boolean, max = 5000) => {
-  for (let i = 0; i < max && !pred(); i++) e.step();
+  for (let i = 0; i < max && !pred(); i++) tick(e);
   expect(pred()).toBe(true);
 };
-const newRun = () => { const e = new Engine(() => 0.99); e.startRun(); return e; };
+const makeEngine = () => { const c = new TestClock(); const e = new Engine(() => 0.99, c); clocks.set(e, c); return e; };
+const newRun = () => { const e = makeEngine(); e.startRun(); return e; };
 
 describe('combat math', () => {
   const stats = calculateDerived(makeBro('red'));
@@ -116,10 +129,38 @@ describe('engine', () => {
   it('fake hazards never deal damage', () => {
     const e = newRun();
     const hp = e.bros.red.hp;
-    e.hazards = [{ x: 500, y: 300, w: 400, h: 200, vx: 0.01, delay: 0, fake: true, hit: [] }];
+    e.hazards = [{ x: 0, y: 300, w: 400, h: 200, speed: 1, arrive: 1, warn: 0, fake: true, hit: [] }];
     e.phase = 'ENEMY_TURN';
     run(e, 5);
     expect(e.bros.red.hp).toBe(hp);
+  });
+
+  it('attacks are on the beat: jump on the beat to clear, stand still to get hit', () => {
+    const e = newRun();
+    const clock = clocks.get(e)!;
+    const hp = { red: e.bros.red.hp, blue: e.bros.blue.hp };
+    e.phase = 'ENEMY_TURN';
+    e.hazards = buildPattern('WAVE', Math.ceil(clock.b) + 1);
+    const h = e.hazards[0];
+    // Hop's beat: the wave crosses Hop's center on the "and".
+    expect(hazardX(h, h.arrive) + h.w / 2).toBeCloseTo(HOP_CENTER);
+    runUntil(e, () => clock.b >= h.arrive - 0.5);
+    e.input('RED');      // Hop jumps on the beat...
+    run(e, 120);         // ...Skip stays put
+    expect(e.bros.red.hp).toBe(hp.red);
+    expect(e.bros.blue.hp).toBeLessThan(hp.blue);
+  });
+
+  it('rope peaks land on beats; off-beat jumps trip', () => {
+    const e = newRun();
+    const clock = clocks.get(e)!;
+    e.sync = 100;
+    e.action('TECH3'); e.input('RED');
+    expect(e.phase).toBe('WINDUP');
+    clock.b = Math.round(clock.b / 2) * 2 + 1; // Shell → rope every 2 beats; odd beats are off
+    e.input('RED');
+    expect(e.windup).toBe(0);
+    expect(e.missLocked).toBe(true);
   });
 
   it('retry starts a clean run without reloading', () => {
@@ -134,7 +175,8 @@ describe('engine', () => {
 
 describe('tutorial', () => {
   it('walks attack → tag → dodge → skill → finish without real damage', () => {
-    const e = new Engine(() => 0.99);
+    const e = makeEngine();
+    const clock = clocks.get(e)!;
     e.startTutorial();
     expect(e.tutorial).toBe('ATTACK');
     const hp = { red: e.bros.red.hp, blue: e.bros.blue.hp };
@@ -159,15 +201,14 @@ describe('tutorial', () => {
     e.input(e.turn);
     expect(e.phase).toBe('WINDUP');
 
-    // A trip costs nothing and doesn't end the turn.
-    e.ropeAngle = 0;
-    e.ropeSpeed = 0;
+    // A trip costs nothing and doesn't end the turn. Tutorial rope peaks every other beat.
+    clock.b = Math.round(clock.b / 2) * 2 + 1;
     e.input(e.turn);
     runUntil(e, () => !e.missLocked && !e.body[e.turn === 'RED' ? 'red' : 'blue'].jumping);
     expect(e.phase).toBe('WINDUP');
 
     for (let i = 0; i < 3; i++) {
-      e.ropeAngle = Math.PI / 2; e.ropeSpeed = 0; // each perfect speeds the rope up; pin it for the test
+      clock.b = Math.ceil(clock.b / 2) * 2; // next rope peak
       e.input(e.turn);
       if (e.phase === 'WINDUP') runUntil(e, () => !e.body[e.turn === 'RED' ? 'red' : 'blue'].jumping);
     }

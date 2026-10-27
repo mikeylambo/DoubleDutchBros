@@ -6,7 +6,8 @@ import type { Phase } from './types';
 
 export type TutorialStep = 'ATTACK' | 'TAG' | 'DODGE' | 'SKILL' | 'FINISH';
 
-export const TUTORIAL_ROPE_SPEED = 0.045;
+/** Rope sweeps every other beat in the tutorial. */
+export const TUTORIAL_ROPE_RATE = 0.5;
 export const TUTORIAL_IMPACT_SCALE = 1.8;
 export const TUTORIAL_SLIME_HP = 90;
 

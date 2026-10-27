@@ -48,8 +48,10 @@ export interface EnemyDef {
   hp: number;
   dmg: number;
   color: string;
-  /** Rope speed while targeting this enemy (rad / frame). */
-  speed: number;
+  /** Rope sweeps per beat while charging a skill on this enemy (0.5 = every other beat). */
+  ropeRate: number;
+  /** Narrows the perfect window (0 = normal). Fast enemies demand cleaner timing. */
+  tightness: number;
   patterns: PatternId[];
   xp: number;
   scale: number;
@@ -58,10 +60,10 @@ export interface EnemyDef {
 }
 
 export const ENEMY_TYPES: Record<EnemyTypeId, EnemyDef> = {
-  SLIME: { name: 'SLIME', hp: 60, dmg: 18, color: '#4ade80', speed: 0.06, patterns: ['WAVE', 'DOUBLE_WAVE'], xp: 50, scale: 1, float: 0 },
-  BAT: { name: 'TURBO BAT', hp: 55, dmg: 14, color: '#f87171', speed: 0.12, patterns: ['DIVE', 'FEINT_DIVE'], xp: 60, scale: 0.9, float: -130 },
-  SHELL: { name: 'STONE SHELL', hp: 180, dmg: 30, color: '#94a3b8', speed: 0.04, patterns: ['CHARGE', 'BURST'], xp: 120, scale: 1.3, float: 0 },
-  BOSS: { name: 'GIGA SLIME', hp: 1500, dmg: 55, color: '#facc15', speed: 0.08, patterns: ['WAVE', 'DIVE', 'CHARGE'], xp: 2000, scale: 3.2, isBoss: true, float: 0 }
+  SLIME: { name: 'SLIME', hp: 60, dmg: 18, color: '#4ade80', ropeRate: 1, tightness: 0, patterns: ['WAVE', 'DOUBLE_WAVE'], xp: 50, scale: 1, float: 0 },
+  BAT: { name: 'TURBO BAT', hp: 55, dmg: 14, color: '#f87171', ropeRate: 1, tightness: 0.06, patterns: ['DIVE', 'FEINT_DIVE'], xp: 60, scale: 0.9, float: -130 },
+  SHELL: { name: 'STONE SHELL', hp: 180, dmg: 30, color: '#94a3b8', ropeRate: 0.5, tightness: 0, patterns: ['CHARGE', 'BURST'], xp: 120, scale: 1.3, float: 0 },
+  BOSS: { name: 'GIGA SLIME', hp: 1500, dmg: 55, color: '#facc15', ropeRate: 1, tightness: 0.03, patterns: ['WAVE', 'DIVE', 'CHARGE'], xp: 2000, scale: 3.2, isBoss: true, float: 0 }
 };
 
 export const ITEM_DATA: Record<ItemId, { name: string; icon: string; cost: number; desc: string }> = {
