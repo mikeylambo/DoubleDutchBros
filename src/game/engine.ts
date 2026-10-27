@@ -134,6 +134,8 @@ export class Engine {
     red: { x: HOME_X.red, y: 0, vy: 0, jumping: false, targetX: HOME_X.red },
     blue: { x: HOME_X.blue, y: 0, vy: 0, jumping: false, targetX: HOME_X.blue }
   };
+  /** Where each rabbit stands. Glitch bosses can swap them. */
+  homes: Record<BroKey, number> = { ...HOME_X };
   ropeAngle = Math.PI / 2;
   /** Rope peaks per beat (1 = every beat, 0.5 = every other beat). */
   ropeRate = 1;
@@ -542,12 +544,29 @@ export class Engine {
   }
 
   /** The boss for a boss wave. */
-  protected bossFor(_wave: number): EnemyTypeId { return 'BOSS'; }
+  /** Boss ladder (docs/DESIGN.md §7): 5 Giga Slime, 10 Bouncer King, 15 Glitch Pigeon, 20 Giga Remix, 50 Giga Glitch, then rotation. */
+  bossFor(wave: number): EnemyTypeId {
+    const fixed: Record<number, EnemyTypeId> = { 5: 'BOSS', 10: 'KING', 15: 'GLITCH', 20: 'BOSS', 50: 'GIGA_GLITCH' };
+    if (fixed[wave]) return fixed[wave];
+    const rotation: EnemyTypeId[] = wave > 50 ? ['BOSS', 'KING', 'GLITCH', 'GIGA_GLITCH'] : ['BOSS', 'KING', 'GLITCH'];
+    return rotation[(wave / 5) % rotation.length];
+  }
+
+  /** Swap Hop and Skip's spots on the court (Glitch bosses). Buttons stay the same. */
+  private swapHomes() {
+    this.homes = { red: this.homes.blue, blue: this.homes.red };
+    this.body.red.targetX = this.homes.red;
+    this.body.blue.targetX = this.homes.blue;
+    this.text(600, GROUND_Y - 170, 'SWAPPED!', '#5eead4', 1.4);
+  }
 
   private initWave() {
     const tier = Math.floor(this.wave / 5);
     const hpMult = 1 + tier * 0.4;
     const spawns = composeWave(this.wave, this.rng.waves, this.bossFor(this.wave));
+    this.homes = { ...HOME_X };
+    this.body.red.targetX = this.homes.red;
+    this.body.blue.targetX = this.homes.blue;
     const spacing = spawns.length > 3 ? 115 : 150;
     this.enemies = spawns.map((spawn, i) => {
       const d = ENEMY_TYPES[spawn.type];
@@ -677,13 +696,15 @@ export class Engine {
     const crowBuff = enemy.type !== 'CROW' && this.enemies.some((e) => e.type === 'CROW' && e.hp > 0);
     // Attacks start on a whole beat with one beat of breathing room (none if Hasty).
     const start = Math.ceil(this.beat) + (enemy.affix === 'HASTY' ? 0 : 1);
-    this.hazards = buildPattern(pattern, start, { mirror: enemy.affix === 'MIRRORED', echo: enemy.affix === 'ECHO', extra: crowBuff });
+    // Remixed and late bosses echo their attacks a bar later.
+    const echo = enemy.affix === 'ECHO' || (enemy.isBoss && enemy.phase >= 2 && (this.wave >= 20 || enemy.type === 'GIGA_GLITCH'));
+    this.hazards = buildPattern(pattern, start, { mirror: enemy.affix === 'MIRRORED', echo, extra: crowBuff });
     const silence = SILENCE[pattern];
     this.silence = silence ? [start + silence[0], start + silence[1]] : null;
     this.text(enemy.x + 20, GROUND_Y + enemy.y - 110, PATTERN_CALL[pattern], enemy.color, 1.1);
   }
 
-  /** Bosses change their move set as they lose HP (phase 2 below 60%, panic below 30%). */
+  /** Bosses change their move set as they lose HP. Each boss has its own phases (docs/DESIGN.md §7). */
   private patternsFor(enemy: Enemy): PatternId[] {
     if (!enemy.isBoss) return enemy.patterns;
     const ratio = enemy.hp / enemy.maxHp;
@@ -691,13 +712,30 @@ export class Engine {
     if (phase > enemy.phase) {
       enemy.phase = phase;
       // Phase changes land like a drop: muffle the music for a bar, flash, shake.
-      this.text(enemy.x + 60, GROUND_Y + enemy.y - 200, phase === 3 ? 'PANIC!' : 'ENRAGED!', enemy.color, 1.6);
+      const call: Record<string, string[]> = {
+        BOSS: ['ENRAGED!', 'PANIC!'], KING: ['DOUBLE TIME!', 'LAST CALL!'], GLITCH: ['GLITCHING!', 'SWAP!'], GIGA_GLITCH: ['GLITCHING!', 'FULL GLITCH!']
+      };
+      this.text(enemy.x + 60, GROUND_Y + enemy.y - 200, call[enemy.type]?.[phase - 2] ?? 'ENRAGED!', enemy.color, 1.6);
       this.flash = 0.5; this.flashColor = enemy.color;
       this.camera.shake = 30;
       music.duck(true);
       setTimeout(() => { if (this.gameState === 'BATTLE') music.duck(false); }, (4 * 60_000) / this.clock.bpm);
+      if (enemy.type === 'KING' && phase === 2) enemy.ropeRate = 2;          // the rope doubles too
+      if ((enemy.type === 'GLITCH' || enemy.type === 'GIGA_GLITCH') && phase === 3) this.swapHomes();
     }
-    return phase === 3 ? ['PANIC', 'CROSSFIRE'] : phase === 2 ? ['CROSSFIRE', 'DOUBLE_WAVE', 'CHARGE'] : enemy.patterns;
+    const remix = this.wave >= 20;
+    switch (enemy.type) {
+      case 'KING':
+        return phase === 1 ? ['BOUNCE', 'CHARGE', 'STOMP'] : ['DOUBLE_TIME', 'BOUNCE', 'STOMP'];
+      case 'GLITCH':
+        return phase === 1 ? ['SPLIT', 'PECK_PAIR'] : ['GLITCH_FEINT', 'SPLIT', 'PECK_PAIR'];
+      case 'GIGA_GLITCH':
+        return phase === 1 ? ['CROSSFIRE', 'STOMP', 'DELAYED'] : phase === 2 ? ['GLITCH_FEINT', 'STOMP', 'DOUBLE_TIME'] : ['PANIC', 'GLITCH_FEINT', 'CROSSFIRE'];
+      default:
+        if (phase === 3) return ['PANIC', 'CROSSFIRE'];
+        if (phase === 2) return remix ? ['CROSSFIRE', 'DELAYED', 'STOMP'] : ['CROSSFIRE', 'DOUBLE_WAVE', 'CHARGE'];
+        return remix ? ['DELAYED', 'CROSSFIRE', 'CHARGE'] : enemy.patterns;
+    }
   }
 
   private endEnemyTurn() {
@@ -901,7 +939,7 @@ export class Engine {
     if (this.impactTimer > 0 && target?.hp > 0) return;
     if (this.expectedTap && !this.actionSuccess && target?.hp > 0) this.runStats.tagsMissed++;
     this.expectedTap = null;
-    if (this.actionSuccess && target?.hp > 0 && target.type === 'BOUNCER' && this.comboCount >= 2) {
+    if (this.actionSuccess && target?.hp > 0 && (target.type === 'BOUNCER' || target.type === 'KING') && this.comboCount >= 2) {
       // Greed check: the Bouncer counters a fourth hit in a row.
       const next = other(this.activeAttacker!);
       this.damageBro(keyOf(next), Math.round(target.dmg * 0.8));
@@ -918,7 +956,7 @@ export class Engine {
       this.runStats.maxCombo = Math.max(this.runStats.maxCombo, this.comboCount + 1);
       const prev = this.body[keyOf(this.activeAttacker!)];
       prev.vy = -12;
-      prev.targetX = HOME_X[keyOf(this.activeAttacker!)];
+      prev.targetX = this.homes[keyOf(this.activeAttacker!)];
       const next = other(this.activeAttacker!);
       const body = this.body[keyOf(next)];
       this.jump(body, -16); body.targetX = target.x + 25;
@@ -932,9 +970,9 @@ export class Engine {
   }
 
   private stepReturn() {
-    this.body.red.targetX = HOME_X.red;
-    this.body.blue.targetX = HOME_X.blue;
-    const home = Math.abs(this.body.red.x - HOME_X.red) < 5 && Math.abs(this.body.blue.x - HOME_X.blue) < 5;
+    this.body.red.targetX = this.homes.red;
+    this.body.blue.targetX = this.homes.blue;
+    const home = Math.abs(this.body.red.x - this.homes.red) < 5 && Math.abs(this.body.blue.x - this.homes.blue) < 5;
     if (!home) return;
     this.enemies = this.enemies.filter((e) => e.hp > 0);
     this.targetIdx = 0;
@@ -948,6 +986,7 @@ export class Engine {
     let live = false;
     for (const h of this.hazards) {
       h.x = hazardX(h, this.beat);
+      if (h.flipAt !== undefined && this.beat >= h.flipAt && h.fake) { h.fake = false; this.flash = Math.max(this.flash, 0.15); }
       if (!hazardDone(h, this.beat)) live = true;
       if (h.fake) continue;
       if (h.kind === 'shock' && Math.abs(this.beat - h.arrive) < 0.05 && !h.cleared.length && !h.hit.length) {
@@ -983,7 +1022,7 @@ export class Engine {
           this.waveHurt = true;
           this.emit({ type: 'bro.hurt' });
           this.damageBro(k, enemy?.dmg ?? 15);
-          if (enemy?.affix === 'SYNC_THIEF') { this.sync = Math.max(0, this.sync - 15); this.text(b.x, GROUND_Y - 110, '-15 SYNC', '#c084fc', 0.9); }
+          if (enemy?.affix === 'SYNC_THIEF' || enemy?.type === 'GIGA_GLITCH') { this.sync = Math.max(0, this.sync - 15); this.text(b.x, GROUND_Y - 110, '-15 SYNC', '#c084fc', 0.9); }
           this.camera.shake = 25;
           this.flash = 0.3; this.flashColor = '#ef4444';
           b.squash = 0.8;

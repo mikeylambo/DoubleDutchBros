@@ -172,7 +172,32 @@ export const drawShadow = (ctx: CanvasRenderingContext2D, x: number, height: num
  * Enemy silhouettes. Drawn inside a 40x70 box (origin top-left, feet at y=70) before the
  * caller's scale is applied, so hitboxes and HP bars stay where gameplay expects them.
  */
-export const drawEnemyShape = (ctx: CanvasRenderingContext2D, type: EnemyTypeId, color: string, beat: number, hurt: boolean) => {
+export const drawEnemyShape = (ctx: CanvasRenderingContext2D, type: EnemyTypeId, color: string, beat: number, hurt: boolean): void => {
+  // Bosses built from other silhouettes.
+  if (type === 'KING') {
+    drawEnemyShape(ctx, 'BOUNCER', color, beat, hurt);
+    drawCrown(ctx, 20, 12, '#fde047');
+    return;
+  }
+  if (type === 'GLITCH' || type === 'GIGA_GLITCH') {
+    // Chromatic split that jumps on the beat: the "glitch" read.
+    const base: EnemyTypeId = type === 'GLITCH' ? 'PIGEON' : 'BOSS';
+    const j = Math.pow(1 - (beat - Math.floor(beat)), 4) * 4 + 1;
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.save(); ctx.translate(-j, 0); drawEnemyShape(ctx, base, '#22d3ee', beat, hurt); ctx.restore();
+    ctx.save(); ctx.translate(j, 0); drawEnemyShape(ctx, base, '#f472b6', beat, hurt); ctx.restore();
+    ctx.restore();
+    drawEnemyShape(ctx, base, color, beat, hurt);
+    // Scanline tears.
+    ctx.save();
+    ctx.fillStyle = 'rgba(2,2,8,0.55)';
+    const tear = Math.floor(beat * 2) % 3;
+    for (let y = 30 + tear * 9; y < 70; y += 17) ctx.fillRect(-6 + j, y, 52, 2);
+    ctx.restore();
+    return;
+  }
   const pulse = Math.pow(1 - (beat - Math.floor(beat)), 3); // 1 on the beat, decays
   ctx.save();
   ctx.fillStyle = hurt ? '#ffffff' : color;
@@ -394,6 +419,16 @@ export const drawAffix = (ctx: CanvasRenderingContext2D, affix: string, color: s
       for (const x of [6, 20, 34]) { ctx.beginPath(); ctx.moveTo(x, 72); ctx.quadraticCurveTo(x + 3, 78 + p * 4, x, 82 + p * 4); ctx.quadraticCurveTo(x - 3, 78 + p * 4, x, 72); ctx.fill(); }
       break;
   }
+  ctx.restore();
+};
+
+const drawCrown = (ctx: CanvasRenderingContext2D, cx: number, y: number, color: string) => {
+  ctx.save();
+  ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.moveTo(cx - 12, y); ctx.lineTo(cx - 10, y - 12); ctx.lineTo(cx - 4, y - 5); ctx.lineTo(cx, y - 14);
+  ctx.lineTo(cx + 4, y - 5); ctx.lineTo(cx + 10, y - 12); ctx.lineTo(cx + 12, y); ctx.closePath();
+  ctx.fill();
   ctx.restore();
 };
 

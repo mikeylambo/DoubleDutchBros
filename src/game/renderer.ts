@@ -1,4 +1,4 @@
-import { CANVAS_WIDTH, GROUND_Y, HOME_X, type BroKey } from '../data/config';
+import { CANVAS_WIDTH, GROUND_Y, type BroKey } from '../data/config';
 import type { Engine } from './engine';
 import { Animator, CONTACT_FRAME, ENEMY_CLIPS, RABBIT_CLIPS, SPRITE_ID, airProgress, enemySpriteId, frameIndex, rabbitClip, sprites, type EnemyClip } from './anim';
 import { BACKDROP_RES, CLIP_POSE, RABBITS, drawAffix, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
@@ -203,7 +203,7 @@ const drawRopes = (ctx: CanvasRenderingContext2D, e: Engine, layer: 'back' | 'fr
   (['red', 'blue'] as BroKey[]).forEach((k) => {
     if (e.bros[k].hp <= 0) return;
     // Anchored at home: the rope is held by the turners, the bro leaps out of it to attack.
-    const b = { x: HOME_X[k] };
+    const b = { x: e.homes[k] };
     [s, -s].forEach((phase, i) => {
       const mid = ROPE_CENTER + ROPE_AMP * phase;
       if ((mid > ROPE_CENTER) !== (layer === 'front')) return;

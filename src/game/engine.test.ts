@@ -368,3 +368,24 @@ describe('encounters', () => {
     expect(e.enemies.length).toBe(0);
   });
 });
+
+describe('boss ladder', () => {
+  it('follows the ladder and phases', () => {
+    const e = newRun();
+    expect([5, 10, 15, 20, 50].map((w) => e.bossFor(w))).toEqual(['BOSS', 'KING', 'GLITCH', 'BOSS', 'GIGA_GLITCH']);
+    const patternsFor = (en: unknown) => (e as unknown as { patternsFor: (x: unknown) => string[] }).patternsFor(en);
+    const king = { ...e.enemies[0], type: 'KING', isBoss: true, hp: 500, maxHp: 1000, phase: 1, ropeRate: 0.5 };
+    expect(patternsFor(king)).toContain('DOUBLE_TIME');
+    expect(king.ropeRate).toBe(2);
+    const glitch = { ...e.enemies[0], type: 'GLITCH', isBoss: true, hp: 100, maxHp: 1000, phase: 1 };
+    const before = { ...e.homes };
+    patternsFor(glitch);
+    expect(e.homes).toEqual({ red: before.blue, blue: before.red });
+  });
+
+  it('glitch warnings start fake and turn real one beat before landing', () => {
+    const [h] = buildPattern('GLITCH_FEINT', 10);
+    expect(h.fake).toBe(true);
+    expect(h.flipAt).toBe(h.arrive - 1);
+  });
+});

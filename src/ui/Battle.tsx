@@ -123,7 +123,7 @@ export const ActionBar = () => {
     const btn = 'flex-1 px-2 py-4 [@media(max-height:540px)]:py-2.5 font-black italic text-xs md:text-lg rounded-full active:scale-90 transition-all uppercase leading-none';
     return (
       <div className="flex flex-col items-center w-full max-w-2xl">
-        <div className="text-[10px] font-black text-cyan-400 mb-3 tracking-[0.8em] uppercase [@media(max-height:540px)]:hidden">[{snap.bros[turn === 'RED' ? 'red' : 'blue'].name} ready]</div>
+        <div className="text-[10px] font-black text-cyan-400 mb-3 tracking-[0.8em] uppercase [@media(max-height:700px)]:hidden">[{snap.bros[turn === 'RED' ? 'red' : 'blue'].name} ready]</div>
         <div className="bg-black/90 p-2 md:p-3 rounded-[2rem] border border-white/10 flex gap-2 md:gap-4 w-full">
           <button data-nav onPointerDown={() => engine.action('BASIC')} className={`${btn} bg-white text-black`}>Attack</button>
           <button data-nav onPointerDown={() => engine.action('TECH')} className={`${btn} bg-purple-600 ${sync < 20 ? 'opacity-40 grayscale' : ''}`}>Skill</button>

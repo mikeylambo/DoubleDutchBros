@@ -76,6 +76,8 @@ export interface Hazard {
   warn: number;
   /** Fakes render dashed and deal no damage. */
   fake: boolean;
+  /** Glitch hazards: beat at which a fake turns real. */
+  flipAt?: number;
   /** 1 = travels left→right (reaches Hop first), -1 = from the right (reaches Skip first). */
   dir: 1 | -1;
   /** 'lane' travels across; 'shock' is a ground shockwave on `arrive` that hits anyone airborne. */

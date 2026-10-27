@@ -39,6 +39,8 @@ interface Hit {
   speed?: number;
   fake?: boolean;
   fromRight?: boolean;
+  /** Looks fake (dashed) until one beat before it lands, then turns real. */
+  flip?: boolean;
 }
 
 const PATTERNS: Record<PatternId, Hit[]> = {
@@ -69,7 +71,11 @@ const PATTERNS: Record<PatternId, Hit[]> = {
   // Bouncer.
   BOUNCE: [{ lane: 'wall', beats: 4 }, { lane: 'low', beats: 5 }],
   // Vending Mimic never attacks.
-  NONE: []
+  NONE: [],
+  // Bouncer King, phase 2: the beat doubles. Hits arrive every half beat at double speed.
+  DOUBLE_TIME: [{ lane: 'low', beats: 3, speed: 2 }, { lane: 'low', beats: 4, at: 0, speed: 2 }, { lane: 'low', beats: 4, speed: 2 }, { lane: 'wall', beats: 6, at: 0 }],
+  // Glitch bosses: warnings that look fake until the last beat.
+  GLITCH_FEINT: [{ lane: 'high', beats: 4, flip: true }, { lane: 'low', beats: 4, flip: true, fromRight: true }, { lane: 'low', beats: 6 }]
 };
 
 /** Patterns that cut the music: [from, to) in beats after the attack start. */
@@ -96,7 +102,8 @@ export const buildPattern = (pattern: PatternId, start: number, mods: PatternMod
       speed: BASE_SPEED * (hit.speed ?? 1),
       arrive: start + hit.beats + (hit.at ?? 0.5),
       warn: start,
-      fake: !!hit.fake,
+      fake: !!hit.fake || !!hit.flip,
+      flipAt: hit.flip ? start + hit.beats + (hit.at ?? 0.5) - 1 : undefined,
       dir: hit.fromRight ? -1 : 1,
       kind: hit.lane === 'shock' ? 'shock' : 'lane',
       hit: [],
@@ -126,7 +133,7 @@ export const PATTERN_CALL: Record<PatternId, string> = {
   WAVE: 'JUMP!', DOUBLE_WAVE: 'DOUBLE!', DELAYED: 'OFFBEAT!', DIVE: 'STAY LOW!', FEINT_DIVE: 'FEINT?', AIR_SLASH: 'BEHIND!',
   CHARGE: 'BIG JUMP!', BURST: 'QUICK!', STOMP: 'STAY DOWN!', CROSSFIRE: 'CROSSFIRE!', PANIC: 'RAPID!',
   FLUTTER: 'OFFBEAT!', SPIRAL: 'SPIRAL!', PECK_PAIR: 'BOTH SIDES!', SPLIT: 'SPLIT!', NIBBLE: 'QUICK!', DROP: 'DROP!',
-  BASS: 'BIG JUMP!', PECK: 'QUICK!', BOUNCE: 'BOUNCE!', NONE: '...'
+  BASS: 'BIG JUMP!', PECK: 'QUICK!', BOUNCE: 'BOUNCE!', NONE: '...', DOUBLE_TIME: 'DOUBLE TIME!', GLITCH_FEINT: 'GLITCH?'
 };
 
 export const pickPattern = (patterns: PatternId[], rng: () => number) => patterns[Math.floor(rng() * patterns.length)];

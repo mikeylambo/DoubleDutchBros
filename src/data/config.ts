@@ -17,8 +17,8 @@ export type GearSlot = 'rope' | 'shoes' | 'hat' | 'accessory';
 export type ItemId = 'coffee' | 'soda';
 export type PerkId = 'rp_boost' | 'crit_heal' | 'trip_shield' | 'sync_plus';
 export type PatternId = 'WAVE' | 'DOUBLE_WAVE' | 'DELAYED' | 'DIVE' | 'FEINT_DIVE' | 'AIR_SLASH' | 'CHARGE' | 'BURST' | 'STOMP'
-  | 'CROSSFIRE' | 'PANIC' | 'FLUTTER' | 'SPIRAL' | 'PECK_PAIR' | 'SPLIT' | 'NIBBLE' | 'DROP' | 'BASS' | 'PECK' | 'BOUNCE' | 'NONE';
-export type EnemyTypeId = 'SLIME' | 'BAT' | 'SHELL' | 'MOTH' | 'PIGEON' | 'RAT' | 'CRAB' | 'CROW' | 'MIMIC' | 'BOUNCER' | 'BOSS';
+  | 'CROSSFIRE' | 'PANIC' | 'DOUBLE_TIME' | 'GLITCH_FEINT' | 'FLUTTER' | 'SPIRAL' | 'PECK_PAIR' | 'SPLIT' | 'NIBBLE' | 'DROP' | 'BASS' | 'PECK' | 'BOUNCE' | 'NONE';
+export type EnemyTypeId = 'SLIME' | 'BAT' | 'SHELL' | 'MOTH' | 'PIGEON' | 'RAT' | 'CRAB' | 'CROW' | 'MIMIC' | 'BOUNCER' | 'BOSS' | 'KING' | 'GLITCH' | 'GIGA_GLITCH';
 
 export interface MoveDef {
   name: string;
@@ -71,7 +71,10 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyDef> = {
   CROW: { name: 'HYPE CROW', hp: 75, dmg: 12, color: '#fbbf24', ropeRate: 1, tightness: 0.04, patterns: ['PECK'], xp: 90, scale: 0.9, float: -120 },
   MIMIC: { name: 'VENDING MIMIC', hp: 120, dmg: 0, color: '#22d3ee', ropeRate: 1, tightness: 0, patterns: ['NONE'], xp: 150, scale: 1.2, float: 0 },
   BOUNCER: { name: 'BOUNCER', hp: 420, dmg: 34, color: '#a78bfa', ropeRate: 0.5, tightness: 0, patterns: ['BOUNCE', 'CHARGE'], xp: 400, scale: 1.5, float: 0 },
-  BOSS: { name: 'GIGA SLIME', hp: 1500, dmg: 55, color: '#facc15', ropeRate: 1, tightness: 0.03, patterns: ['WAVE', 'DIVE', 'CHARGE'], xp: 2000, scale: 3.2, isBoss: true, float: 0 }
+  BOSS: { name: 'GIGA SLIME', hp: 1500, dmg: 55, color: '#facc15', ropeRate: 1, tightness: 0.03, patterns: ['WAVE', 'DIVE', 'CHARGE'], xp: 2000, scale: 3.2, isBoss: true, float: 0 },
+  KING: { name: 'BOUNCER KING', hp: 1300, dmg: 60, color: '#c4b5fd', ropeRate: 0.5, tightness: 0.03, patterns: ['BOUNCE', 'CHARGE', 'STOMP'], xp: 3000, scale: 2.2, isBoss: true, float: 0 },
+  GLITCH: { name: 'GLITCH PIGEON', hp: 1200, dmg: 58, color: '#5eead4', ropeRate: 1, tightness: 0.05, patterns: ['SPLIT', 'PECK_PAIR'], xp: 3500, scale: 2.4, isBoss: true, float: -40 },
+  GIGA_GLITCH: { name: 'GIGA GLITCH', hp: 1800, dmg: 70, color: '#f472b6', ropeRate: 1, tightness: 0.06, patterns: ['CROSSFIRE', 'STOMP', 'DELAYED'], xp: 8000, scale: 3.4, isBoss: true, float: 0 }
 };
 
 export const ITEM_DATA: Record<ItemId, { name: string; icon: string; cost: number; desc: string }> = {

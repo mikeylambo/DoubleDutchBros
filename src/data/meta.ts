@@ -26,5 +26,8 @@ export const BESTIARY: CodexEntry[] = [
   { id: 'CROW', category: 'enemy', title: 'Hype Crow', body: 'Hypes the crew: every other enemy attacks one extra time while it lives.' },
   { id: 'MIMIC', category: 'enemy', title: 'Vending Mimic', body: 'Never fights. Runs after three turns. Break it for RP and a free item.' },
   { id: 'BOUNCER', category: 'enemy', title: 'Bouncer', body: 'Counters a fourth hit in a row. Know when to stop the combo.' },
-  { id: 'BOSS', category: 'enemy', title: 'Giga Slime', body: 'Mixes every pattern. Anti-air does nothing here; save Sync for heavy hits.' }
+  { id: 'BOSS', category: 'enemy', title: 'Giga Slime', body: 'Mixes every pattern. Anti-air does nothing here; save Sync for heavy hits.' },
+  { id: 'KING', category: 'enemy', title: 'Bouncer King', body: 'Counters long combos. Below 60% the beat doubles: rope and attacks twice as fast.' },
+  { id: 'GLITCH', category: 'enemy', title: 'Glitch Pigeon', body: 'Dashed warnings turn real on the last beat. Below 30% it swaps Hop and Skip.' },
+  { id: 'GIGA_GLITCH', category: 'enemy', title: 'Giga Glitch', body: 'Everything at once, and its hits steal Sync. Stay calm, keep counting.' }
 ];
