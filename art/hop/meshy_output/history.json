@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "folder": "20261027_193029_hop_01a17ed7",
+      "prompt": "hop",
+      "task_type": "text-to-image",
+      "root_task_id": "01a17ed7-a771-712f-84de-1329bb45a37d",
+      "created_at": "2026-10-27T19:30:29.772Z",
+      "updated_at": "2026-10-27T19:31:15.457Z",
+      "task_count": 1
+    }
+  ]
+}

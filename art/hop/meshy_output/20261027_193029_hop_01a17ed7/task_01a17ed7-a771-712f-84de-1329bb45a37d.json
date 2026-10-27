@@ -1,0 +1,17 @@
+{
+  "id": "01a17ed7-a771-712f-84de-1329bb45a37d",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character turnaround of HOP, an anthropomorphic rabbit street athlete for a stylish rhythm brawler video game. Chibi-athletic proportions: big head, compact body about 1.3 heads tall, oversized rabbit feet, short arms. Warm cream fur (#F6E7D4) with tan shading, pink inner ears, small pink nose, big expressive dark eyes, confident grin. Long rabbit ears; the LEFT ear flops over at the tip, the right ear stands upright. Wears a red hoodie (#EF4444) with a front pocket and drawstrings, a BLUE sports headband (#3B82F6) tied with two short tails at the back, white chunky sneakers. Slightly stocky, powerful build, a fluffy round tail. Toon-shaded, clean cel shading with 2-3 tone bands, crisp dark outline, simple readable silhouette, premium modern stylized 3D game character look. Neutral plain light grey background, full body, no props, A-pose.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793129425361,
+  "started_at": 1793129425411,
+  "finished_at": 1793129448099,
+  "expires_at": 1793388648099,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17ed8-006c-7323-9d34-84fba4c6c78f_part_0.png?Expires=1793388648&Signature=Ddn9P3Rzqyu9uqTLFWeIJ7oXnOUjP2d1zwI7pgb~xGGfEYUQnJTb56nsyad-aSyhEfDYUWGC3AJHue-qOqO1pTdGugCdRGj6vEvp8D69zAK~ZTuZRwzGhM66sEQ987oNi-5ouj4WSf~WCFKV8fEwR2H50GSUAgn6KJAAYI-4hdPL5JTY7pOlOPgHh5yCeATohu3uMlY3v2woqacy4xdhpXfmpr2k3LwMWOaYa9P9-TLLO2vzOl8NF1o7050L0OuPgag8dwz6bMyDhfbWis7CwZXB7LF2a3FXJetLcbkuCGrfO0nxaljt8QGEey1pyfaSa0D~jZkbyTWZqKigGu-btA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17ed8-006c-7323-9d34-84fba4c6c78f_part_1.png?Expires=1793388648&Signature=WBZVe8nCbXD8Dbedzo6osKAhT2fiH7by9ABeC-UxO2RwSG7KsUbU9dGcAEGuOpoeIXA77G~ML3J3oqL-wCCMVY~siMNUeq3uhAFrwRya4UB2TJxnjpqPzPIN72D4Q72w~RJ05aG2z3-7LT~6BpYk5WxGozuzP357q~yHd9kk15Tp0gnQu6yqMXZ9aT9NBcP3mdkXBEL8FHCw3-MIGpHAWOouhF-WecGAm~5f2gfH1DWKVdXZFMbI8vA17f2qdoD378pI7nQMBiJJBcrmY6lKPeHp3NMtc1BDW7jOi~5lfPBU5tsQWjUUwqViYytYeKJy6aYQhDegst-XKbuGUMcClQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}
