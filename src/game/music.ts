@@ -49,6 +49,9 @@ class MusicPlayer implements BeatClock {
   private loops = 0;
   private fallback = new FreeClock(TRACKS.neonStriker.bpm);
   volume = 0.8;
+  /** The game asked for music; keep retrying playback on each user activation until it plays. */
+  private wanted = false;
+  private hooked = false;
 
   get bpm() { return this.track.bpm; }
   get live() { return this.anchored && !!this.el && !this.el.paused; }
@@ -60,6 +63,8 @@ class MusicPlayer implements BeatClock {
   /** Call from a user gesture. Safe to call repeatedly. */
   play(track: Track = this.track) {
     if (typeof window === 'undefined') return;
+    this.wanted = true;
+    if (!this.hooked) { this.hooked = true; audio.onGesture(() => this.retry()); }
     audio.unlock();
     const ctx = audio.context;
     if (!ctx) return;
@@ -79,7 +84,12 @@ class MusicPlayer implements BeatClock {
       src.connect(this.filter).connect(this.gain).connect(ctx.destination);
       this.anchored = false; this.loops = 0; this.lastCt = -1;
     }
-    if (this.el.paused) void this.el.play().catch(() => { /* blocked until a gesture; retried on next play() */ });
+    if (this.el.paused) void this.el.play().catch(() => { /* blocked until a real user activation; retried then */ });
+  }
+
+  /** Start playback if it was requested but blocked (no user activation yet, or iOS paused it). */
+  private retry() {
+    if (this.wanted && (!this.el || this.el.paused)) this.play(this.track);
   }
 
   /** Muffle the music (pause menus, game over) without losing the beat. */

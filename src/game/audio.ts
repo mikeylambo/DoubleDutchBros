@@ -9,24 +9,58 @@ class AudioClock {
   muted = false;
   /** Player setting; off silences all vibration. */
   hapticsEnabled = true;
+  /** SFX volume 0..1, kept so it applies even if set before the context exists. */
+  private volume = 0.8;
+  private gestureHooks = new Set<() => void>();
+  private listening = false;
 
-  /** Must be called from a user gesture (browsers block audio until then). */
+  /**
+   * Create/resume the audio context. Browsers only allow this inside a user activation, and on
+   * phones a finger landing (pointerdown) is NOT one: only the release (touchend/pointerup/click)
+   * is. So besides calling this from game input, we listen for real activations app-wide.
+   */
   unlock() {
+    if (typeof window === 'undefined') return;
+    this.listenForGestures();
     if (!this.ctx) {
-      if (typeof window === 'undefined') return;
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return;
+      // iOS: treat the page as media playback so the ring/silent switch doesn't mute it (Safari 16.4+).
+      const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+      if (session) { try { session.type = 'playback'; } catch { /* unsupported */ } }
       this.ctx = new Ctor({ latencyHint: 'interactive' });
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.5;
+      this.master.gain.value = this.volume * 0.6;
       this.master.connect(this.ctx.destination);
     }
-    if (this.ctx.state === 'suspended') void this.ctx.resume();
+    // 'interrupted' happens on iOS after calls/backgrounding.
+    if (this.ctx.state !== 'running') {
+      void this.ctx.resume().catch(() => {});
+      // Older iOS also needs a sound started inside the gesture: one silent sample.
+      const buf = this.ctx.createBuffer(1, 1, 22050);
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf; src.connect(this.ctx.destination); src.start(0);
+    }
+  }
+
+  /** Run `fn` on every real user activation (e.g. to retry music playback). */
+  onGesture(fn: () => void) { this.gestureHooks.add(fn); this.listenForGestures(); }
+
+  private listenForGestures() {
+    if (this.listening || typeof window === 'undefined') return;
+    this.listening = true;
+    const handler = () => { this.unlock(); this.gestureHooks.forEach((fn) => fn()); };
+    for (const type of ['pointerup', 'touchend', 'click', 'keydown'] as const) {
+      window.addEventListener(type, handler, { capture: true, passive: true });
+    }
   }
 
   get context() { return this.ctx; }
 
-  setVolume(v: number) { if (this.master && this.ctx) this.master.gain.setTargetAtTime(v * 0.6, this.ctx.currentTime, 0.05); }
+  setVolume(v: number) {
+    this.volume = v;
+    if (this.master && this.ctx) this.master.gain.setTargetAtTime(v * 0.6, this.ctx.currentTime, 0.05);
+  }
 
   get running() { return !!this.ctx && this.ctx.state === 'running'; }
 
