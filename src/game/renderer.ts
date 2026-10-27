@@ -1,7 +1,7 @@
 import { CANVAS_WIDTH, GROUND_Y, type BroKey } from '../data/config';
 import type { Engine } from './engine';
 import { Animator, CONTACT_FRAME, ENEMY_CLIPS, RABBIT_CLIPS, SPRITE_ID, airProgress, enemySpriteId, frameIndex, rabbitClip, sprites, type EnemyClip } from './anim';
-import { BACKDROP_RES, CLIP_POSE, RABBITS, drawAffix, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
+import { BACKDROP_RES, CLIP_POSE, DISPLAY_FONT, RABBITS, SIGN, drawAffix, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
 import type { Enemy } from './types';
 import { AFFIXES } from './encounters';
 import { applyView, type View } from './view';
@@ -34,6 +34,8 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
 
   drawStage(ctx);
   drawBeatWorld(ctx, e);
+  drawReflections(ctx, e);
+  drawRimLights(ctx, e);
   drawShadows(ctx, e);
   drawHazards(ctx, e);
   drawPerfectZone(ctx, e);
@@ -48,6 +50,86 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
   drawTexts(ctx, e);
   ctx.restore();
   drawFlash(ctx, e, v);
+  drawPost(ctx, e, v);
+};
+
+/** The wet court mirrors the fighters, faintly. */
+const drawReflections = (ctx: CanvasRenderingContext2D, e: Engine) => {
+  ctx.save();
+  ctx.beginPath(); ctx.rect(-400, GROUND_Y, CANVAS_WIDTH + 800, 200); ctx.clip();
+  ctx.translate(0, GROUND_Y * 2);
+  ctx.scale(1, -1);
+  ctx.globalAlpha = 0.16;
+  drawEnemies(ctx, e, true);
+  drawBro(ctx, e, 'blue');
+  drawBro(ctx, e, 'red');
+  ctx.restore();
+};
+
+/** Each bro carries a pool of their own color: the rim light the art spec asks for. */
+const drawRimLights = (ctx: CanvasRenderingContext2D, e: Engine) => {
+  const p = pulse(e.beat);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  (['red', 'blue'] as BroKey[]).forEach((k) => {
+    if (e.bros[k].hp <= 0) return;
+    const b = e.body[k];
+    const x = b.x + 16, y = GROUND_Y + b.y - 50;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 90);
+    const rgb = k === 'red' ? '239, 68, 68' : '59, 130, 246';
+    g.addColorStop(0, `rgba(${rgb}, ${0.2 + 0.08 * p})`);
+    g.addColorStop(1, `rgba(${rgb}, 0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(x - 90, y - 90, 180, 180);
+    // Light spill on the floor.
+    const f = ctx.createRadialGradient(x, GROUND_Y, 0, x, GROUND_Y, 70);
+    f.addColorStop(0, `rgba(${rgb}, ${0.22 + 0.1 * p})`);
+    f.addColorStop(1, `rgba(${rgb}, 0)`);
+    ctx.save(); ctx.translate(x, GROUND_Y); ctx.scale(1, 0.18); ctx.translate(-x, -GROUND_Y);
+    ctx.fillStyle = f; ctx.fillRect(x - 70, GROUND_Y - 70, 140, 140);
+    ctx.restore();
+  });
+  ctx.restore();
+};
+
+// Post: vignette (cached per screen size) and film grain (a pre-made noise tile, shifted per frame).
+let vignette: { w: number; h: number; c: HTMLCanvasElement } | null = null;
+let grain: CanvasPattern | null = null;
+const drawPost = (ctx: CanvasRenderingContext2D, e: Engine, v: View) => {
+  if (!vignette || vignette.w !== v.w || vignette.h !== v.h) {
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(v.w / 2)); c.height = Math.max(1, Math.round(v.h / 2));
+    const g = c.getContext('2d')!;
+    const r = Math.hypot(c.width, c.height) / 2;
+    const grad = g.createRadialGradient(c.width / 2, c.height * 0.55, r * 0.35, c.width / 2, c.height * 0.55, r * 1.05);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(2,1,10,0.75)');
+    g.fillStyle = grad; g.fillRect(0, 0, c.width, c.height);
+    vignette = { w: v.w, h: v.h, c };
+  }
+  ctx.drawImage(vignette.c, 0, 0, v.w, v.h);
+  if (!grain) {
+    const n = document.createElement('canvas');
+    n.width = n.height = 128;
+    const g = n.getContext('2d')!;
+    const img = g.createImageData(128, 128);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const val = Math.random() * 255;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = val;
+      img.data[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    grain = ctx.createPattern(n, 'repeat');
+  }
+  if (!grain) return;
+  ctx.save();
+  ctx.globalAlpha = 0.045;
+  ctx.globalCompositeOperation = 'overlay';
+  const still = e.settings.reducedMotion;
+  ctx.translate(still ? 0 : Math.floor(Math.random() * 128), still ? 0 : Math.floor(Math.random() * 128));
+  ctx.fillStyle = grain;
+  ctx.fillRect(-128, -128, v.w + 256, v.h + 256);
+  ctx.restore();
 };
 
 /** Twinkling stars in the open sky above the skyline (most visible on tall portrait screens). */
@@ -90,11 +172,11 @@ const drawBeatWorld = (ctx: CanvasRenderingContext2D, e: Engine) => {
   ctx.fillStyle = halo;
   ctx.fillRect(480, -50, 280, 280);
   // Neon sign flares.
-  ctx.font = 'italic 900 22px system-ui, sans-serif';
+  ctx.font = `italic 900 22px ${DISPLAY_FONT}`;
   ctx.fillStyle = `rgba(244, 114, 182, ${0.6 * p})`;
   ctx.shadowColor = '#f472b6';
   ctx.shadowBlur = 30 * p;
-  ctx.fillText('HOP & SKIP', 70, GROUND_Y - 120);
+  ctx.fillText(SIGN.text, SIGN.x, SIGN.y);
   // A light pulse runs along the court line.
   ctx.shadowBlur = 0;
   const line = ctx.createLinearGradient(-400, 0, 1200, 0);
@@ -217,10 +299,18 @@ const drawRopes = (ctx: CanvasRenderingContext2D, e: Engine, layer: 'back' | 'fr
       ctx.strokeStyle = color;
       ctx.shadowColor = color;
       ctx.shadowBlur = 14;
-      ctx.beginPath();
-      ctx.moveTo(b.x - 28, HAND_Y);
-      ctx.quadraticCurveTo(b.x + 16, 2 * mid - HAND_Y, b.x + 60, HAND_Y);
-      ctx.stroke();
+      const path = () => {
+        ctx.beginPath();
+        ctx.moveTo(b.x - 28, HAND_Y);
+        ctx.quadraticCurveTo(b.x + 16, 2 * mid - HAND_Y, b.x + 60, HAND_Y);
+        ctx.stroke();
+      };
+      path();
+      // Hot core makes the rope read as a lit tube.
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+      path();
       ctx.restore();
     });
   });
@@ -301,7 +391,7 @@ const drawSprite = (ctx: CanvasRenderingContext2D, char: string, clip: string, s
   return true;
 };
 
-const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine) => {
+const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine, reflection = false) => {
   const now = performance.now() / 1000;
   const live = new Set<number>();
   e.enemies.forEach((en, i) => {
@@ -315,7 +405,7 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine) => {
     const bob = en.hp > 0 ? -pulse(e.beat + i * 0.25) * (en.float < 0 ? 6 : 3) : 0;
     ctx.save();
     ctx.translate(en.x + 20 * en.scale, GROUND_Y + en.y + bob);
-    ctx.globalAlpha = en.hp > 0 ? 1 : 0.3;
+    ctx.globalAlpha *= en.hp > 0 ? 1 : 0.3;
     ctx.scale(en.scale, en.scale);
     if (!drawSprite(ctx, enemySpriteId(en.type), clip, ENEMY_CLIPS[clip], anim, now, e.beat, 0)) {
       ctx.save();
@@ -323,13 +413,11 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine) => {
       drawEnemyShape(ctx, en.type, en.color, e.beat + i * 0.25, en.hurt > 0);
       ctx.restore();
     }
+    if (reflection) { ctx.restore(); return; }
     ctx.translate(-20, -70);
     ctx.globalAlpha = 1;
     if (en.affix && en.hp > 0) drawAffix(ctx, en.affix, AFFIXES[en.affix].color, e.beat, en.shield);
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 12, 40, 5);
-    ctx.fillStyle = '#ef4444';
-    ctx.fillRect(0, 12, (en.hp / en.maxHp) * 40, 5);
+    if (en.hp > 0) drawEnemyHp(ctx, en.hp / en.maxHp, en.scale);
     if (e.phase === 'TARGET' && i === e.targetIdx && en.hp > 0) {
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2 / en.scale;
@@ -342,7 +430,21 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine) => {
     }
     ctx.restore();
   });
-  for (const id of enemyAnimators.keys()) if (!live.has(id)) enemyAnimators.delete(id);
+  if (!reflection) for (const id of enemyAnimators.keys()) if (!live.has(id)) enemyAnimators.delete(id);
+};
+
+/** Slim pill bar on a dark plate, sized in screen terms so big bosses don't get chunky bars. */
+const drawEnemyHp = (ctx: CanvasRenderingContext2D, frac: number, scale: number) => {
+  const h = 4 / scale, y = 12;
+  ctx.save();
+  ctx.fillStyle = 'rgba(5, 3, 15, 0.8)';
+  ctx.beginPath(); ctx.roundRect(-1.5 / scale, y - 1.5 / scale, 40 + 3 / scale, h + 3 / scale, h); ctx.fill();
+  const g = ctx.createLinearGradient(0, 0, 40, 0);
+  g.addColorStop(0, '#f43f5e'); g.addColorStop(1, '#fb7185');
+  ctx.fillStyle = g;
+  ctx.shadowColor = '#f43f5e'; ctx.shadowBlur = 6;
+  ctx.beginPath(); ctx.roundRect(0, y, Math.max(h, 40 * frac), h, h / 2); ctx.fill();
+  ctx.restore();
 };
 
 const drawBro = (ctx: CanvasRenderingContext2D, e: Engine, k: BroKey) => {
@@ -390,11 +492,16 @@ const drawTexts = (ctx: CanvasRenderingContext2D, e: Engine) => {
     const pop = 1 + Math.max(0, t.life - 0.9) * 5;
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, t.life * 1.5));
+    ctx.font = `italic 900 ${30 * t.scale * pop}px ${DISPLAY_FONT}`;
+    ctx.fontStretch = 'expanded';
+    ctx.textAlign = 'center';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(5, 3, 15, 0.85)';
+    ctx.strokeText(t.text, t.x, t.y);
     ctx.fillStyle = t.color;
     ctx.shadowColor = t.color;
-    ctx.shadowBlur = 15;
-    ctx.font = `900 ${30 * t.scale * pop}px system-ui, sans-serif`;
-    ctx.textAlign = 'center';
+    ctx.shadowBlur = 18;
     ctx.fillText(t.text, t.x, t.y);
     ctx.restore();
   }

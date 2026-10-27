@@ -15,12 +15,14 @@ export interface View { w: number; h: number; scale: number; groundY: number }
 /**
  * The court below the ground line always keeps room for the floating action bar, so the menu
  * never covers the fight; the world scales down to fit what's left. Spare height becomes sky.
+ * `top` and `bottom` are screen bands covered by overlaid HUD and pads: the scene still paints
+ * under them, but the action stays clear of them.
  */
-export const computeView = (w: number, h: number): View => {
-  const reserve = Math.min(180, Math.max(120, h * 0.3));
-  const scale = Math.max(0.1, Math.min(w / VIEW_W, (h - reserve) / VIEW_ABOVE));
+export const computeView = (w: number, h: number, top = 0, bottom = 0): View => {
+  const reserve = Math.min(180, Math.max(120, (h - top - bottom) * 0.3));
+  const scale = Math.max(0.1, Math.min(w / VIEW_W, (h - top - bottom - reserve) / VIEW_ABOVE));
   const floor = Math.max(reserve, VIEW_BELOW * scale);
-  return { w, h, scale, groundY: h - floor };
+  return { w, h, scale, groundY: h - bottom - floor };
 };
 
 /** Screen (CSS px) → world transform, applied before drawing world-space content. */

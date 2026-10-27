@@ -4,7 +4,7 @@ import { GEAR_DATA, GEAR_SLOTS, ITEM_DATA, PERKS_DATA, type BroKey, type GearSlo
 import { calculateDerived } from '../game/stats';
 import { MUTATORS } from '../game/runmods';
 import { LEGACY_BRANCHES, LEGACY_TREE, ROPE_STYLES } from '../data/legacy';
-import { TitleRabbits } from './TitleRabbits';
+import { TitleBackdrop, TitleRabbits } from './TitleRabbits';
 import { useEngine } from './useEngine';
 import { usePlatform, useRunResult } from './usePlatform';
 import type { GameSettings } from '../game/save';
@@ -12,12 +12,12 @@ import type { GameSettings } from '../game/save';
 const Screen = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div data-layer="overlay" className={`fixed inset-0 z-[100] flex flex-col items-center p-6 md:p-10 overflow-y-auto ${className}`}>{children}</div>
 );
-const BigButton = ({ onPress, children, className = 'bg-white text-black' }: { onPress: () => void; children: React.ReactNode; className?: string }) => (
-  <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }} className={`font-black py-5 px-16 md:px-28 rounded-full text-2xl md:text-3xl active:scale-95 uppercase tracking-tighter shadow-2xl ${className}`}>{children}</button>
+const BigButton = ({ onPress, children, className = 'bg-gradient-to-b from-white to-slate-200 text-[#0b0720] shadow-[0_10px_40px_rgba(255,255,255,0.18),inset_0_-3px_0_rgba(0,0,0,0.12)]' }: { onPress: () => void; children: React.ReactNode; className?: string }) => (
+  <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }} className={`font-display font-black italic py-4 md:py-5 px-16 md:px-24 rounded-full text-xl md:text-2xl active:scale-95 transition-transform uppercase tracking-wide ${className}`}>{children}</button>
 );
 
 const SmallButton = ({ onPress, children }: { onPress: () => void; children: React.ReactNode }) => (
-  <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }} className="px-5 py-3 rounded-full bg-white/10 border border-white/15 text-xs font-black uppercase tracking-widest active:scale-95">{children}</button>
+  <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }} className="glass px-5 py-2.5 rounded-full text-[10px] font-semibold text-white/85 uppercase tracking-[0.25em] active:scale-95 transition-transform">{children}</button>
 );
 
 export const Title = () => {
@@ -28,15 +28,20 @@ export const Title = () => {
   if (screen === 'legacy') return <Legacy onClose={() => setScreen('title')} />;
   const has = (id: string) => snap.unlocks.includes(id);
   return (
-    <Screen className="bg-[#020205] justify-center text-center">
-      <div className="text-6xl md:text-8xl font-black italic uppercase tracking-tighter leading-none">
-        <span className="text-red-500 drop-shadow-[0_0_30px_#ef4444]">Double</span>{' '}
-        <span className="text-blue-500 drop-shadow-[0_0_30px_#3b82f6]">Dutch</span>
-        <div className="text-white">Bros</div>
+    <Screen className="justify-center text-center isolate">
+      <TitleBackdrop />
+      <div className="font-display font-black italic uppercase leading-[0.85] text-5xl sm:text-7xl md:text-8xl">
+        <div>
+          <span className="bg-gradient-to-b from-rose-300 to-red-500 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(239,68,68,0.45)]">Double</span>{' '}
+          <span className="bg-gradient-to-b from-sky-300 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(59,130,246,0.45)]">Dutch</span>
+        </div>
+        <div className="mt-1 bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent text-[1.35em] drop-shadow-[0_4px_30px_rgba(255,255,255,0.15)]">Bros</div>
       </div>
-      <div className="mt-2 text-sm font-black italic uppercase tracking-widest text-pink-400 drop-shadow-[0_0_12px_#f472b6]">starring Hop &amp; Skip</div>
+      <div className="mt-4 flex items-center justify-center gap-3 text-[10px] font-semibold uppercase tracking-[0.5em] text-pink-200/80">
+        <span className="h-px w-8 bg-gradient-to-r from-transparent to-pink-300/60" />Starring Hop &amp; Skip<span className="h-px w-8 bg-gradient-to-l from-transparent to-pink-300/60" />
+      </div>
       <TitleRabbits />
-      {snap.bestWave > 0 && <div className="mt-2 text-xs font-bold text-white/50 uppercase tracking-widest">Best Wave {snap.bestWave} • {snap.legacy} Legacy</div>}
+      {snap.bestWave > 0 && <div className="mt-2 text-[10px] font-semibold text-white/50 uppercase tracking-[0.3em] tabular-nums">Best Wave {snap.bestWave} · {snap.legacy} Legacy</div>}
       <div className="mt-8 flex flex-col items-center gap-4">
         {snap.tutorialDone
           ? <BigButton onPress={() => engine.startRun()}>Start Run</BigButton>
@@ -51,7 +56,7 @@ export const Title = () => {
           {platform.pwa.canInstall && <SmallButton onPress={() => void platform.pwa.promptInstall()}>Install</SmallButton>}
         </div>
       </div>
-      <div className="mt-8 text-[11px] text-white/40 max-w-sm leading-relaxed">
+      <div className="mt-8 text-[10px] tracking-wider text-white/35 max-w-sm leading-relaxed">
         J / → = A (Hop) · F / ← = B (Skip) · Esc = pause · Gamepad supported
       </div>
     </Screen>

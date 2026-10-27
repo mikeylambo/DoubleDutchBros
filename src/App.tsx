@@ -26,18 +26,20 @@ const Game = () => {
   const handheld = useHandheldLandscape();
   if (snap.gameState === 'TITLE') return <Title />;
   return (
-    <div className="fixed inset-0 bg-[#020205] text-white font-sans flex flex-col h-[100dvh] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden">
-      <Hud compact={handheld} />
+    <div className={`fixed inset-0 bg-[#020205] text-white font-sans flex flex-col h-[100dvh] overflow-hidden ${handheld ? 'pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]' : ''}`}>
+      {handheld && <Hud compact />}
       {handheld ? (
         <div className="relative flex-1 min-h-0 flex items-center pl-[max(env(safe-area-inset-left),12px)] pr-[max(env(safe-area-inset-right),12px)] gap-3">
-          <SyncBar />
+          <SyncBar bar />
           <PadButton id="BLUE" size="w-24 h-24 text-4xl" />
           <div className="relative flex-1 h-full min-w-0 flex flex-col"><Playfield /></div>
           <PadButton id="RED" size="w-24 h-24 text-4xl" />
         </div>
       ) : (
         <>
-          <Playfield />
+          {/* Full bleed: the scene runs under the HUD and pads. */}
+          <Playfield overlay />
+          <div className="absolute top-0 inset-x-0 z-10 pt-[env(safe-area-inset-top)]"><Hud /></div>
           <Controller />
         </>
       )}

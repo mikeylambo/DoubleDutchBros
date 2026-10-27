@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { RABBITS, drawRabbit, drawShadow } from '../game/sprites';
+import { RABBITS, drawRabbit, drawShadow, getBackdrop } from '../game/sprites';
 
 const W = 260, H = 150, FLOOR = 135;
 
@@ -37,4 +37,36 @@ export const TitleRabbits = () => {
     return () => cancelAnimationFrame(raf);
   }, []);
   return <canvas ref={ref} style={{ width: W, height: H }} className="mt-4 mx-auto" aria-label="Hop and Skip" />;
+};
+
+/** The game's own city behind the title, drifting slowly so the menu feels alive. */
+export const TitleBackdrop = () => {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let raf = 0;
+    const loop = () => {
+      const { width, height } = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (canvas.width !== Math.round(width * dpr)) { canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr); }
+      const img = getBackdrop();
+      // Cover-fit, anchored a little above the court so the skyline fills the frame.
+      const scale = Math.max(canvas.width / img.width, canvas.height / (img.height * 0.82)) * 1.06;
+      const drift = still ? 0 : Math.sin(performance.now() / 9000) * 0.02 * canvas.width;
+      const w = img.width * scale, h = img.height * scale;
+      ctx.drawImage(img, (canvas.width - w) / 2 + drift, canvas.height - h * 0.9, w, h);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return (
+    <div className="fixed inset-0 -z-10" aria-hidden>
+      <canvas ref={ref} className="w-full h-full block" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,rgba(5,3,15,0.35)_0%,rgba(5,3,15,0.8)_70%,#05030f_100%)]" />
+    </div>
+  );
 };

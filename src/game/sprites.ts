@@ -184,7 +184,7 @@ export const drawEnemyShape = (ctx: CanvasRenderingContext2D, type: EnemyTypeId,
     const base: EnemyTypeId = type === 'GLITCH' ? 'PIGEON' : 'BOSS';
     const j = Math.pow(1 - (beat - Math.floor(beat)), 4) * 4 + 1;
     ctx.save();
-    ctx.globalAlpha = 0.6;
+    ctx.globalAlpha *= 0.6;
     ctx.globalCompositeOperation = 'lighter';
     ctx.save(); ctx.translate(-j, 0); drawEnemyShape(ctx, base, '#22d3ee', beat, hurt); ctx.restore();
     ctx.save(); ctx.translate(j, 0); drawEnemyShape(ctx, base, '#f472b6', beat, hurt); ctx.restore();
@@ -273,13 +273,14 @@ export const drawEnemyShape = (ctx: CanvasRenderingContext2D, type: EnemyTypeId,
       // Wings glow brightest on the off-beat: its tell.
       const off = Math.pow(1 - ((beat + 0.25) - Math.floor(beat + 0.25)), 3);
       const flap = Math.sin(beat * Math.PI * 4) * 0.5;
-      ctx.globalAlpha = 0.55 + 0.45 * off;
+      const alpha = ctx.globalAlpha;
+      ctx.globalAlpha = alpha * (0.55 + 0.45 * off);
       for (const side of [-1, 1]) {
         ctx.save(); ctx.translate(20, 50); ctx.scale(side, 1); ctx.rotate(-0.3 + flap * 0.4);
         ellipse(ctx, 14, -6, 15, 10, -0.5); ellipse(ctx, 10, 8, 9, 7, 0.4);
         ctx.restore();
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = alpha;
       ctx.shadowBlur = 0;
       ctx.fillStyle = '#4a044e';
       ellipse(ctx, 20, 52, 5, 13);
@@ -446,85 +447,284 @@ export const BACKDROP_RES = 2;
 
 const rand = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 
-/** Night alley: moon, two layers of skyline with lit windows, a neon sign, and the court floor. */
+/** Where the baked neon sign sits; the renderer flares the same text on the beat. */
+export const SIGN = { x: 70, y: GROUND_Y - 132, text: 'HOP & SKIP' };
+export const DISPLAY_FONT = "'Archivo Variable', system-ui, sans-serif";
+// The sign is baked into the backdrop: rebuild once the display font has arrived.
+if (typeof document !== 'undefined') void document.fonts?.load(`900 22px ${DISPLAY_FONT}`).then(() => { backdrop = null; });
+
+const LEFT = -400, SPAN = CANVAS_WIDTH + 800, TOP = -100;
+
+/** Fades distant layers into the horizon glow: the cheapest way to sell depth. */
+const haze = (ctx: CanvasRenderingContext2D, from: number, alpha: number) => {
+  const g = ctx.createLinearGradient(0, from, 0, GROUND_Y);
+  g.addColorStop(0, 'rgba(76, 29, 110, 0)');
+  g.addColorStop(1, `rgba(76, 29, 110, ${alpha})`);
+  ctx.fillStyle = g;
+  ctx.fillRect(LEFT, from, SPAN, GROUND_Y - from);
+};
+
+/**
+ * One skyline layer. Each building picks its own window palette and occupancy, so lit floors
+ * cluster the way real towers do instead of reading as noise.
+ */
+const skyline = (ctx: CanvasRenderingContext2D, r: () => number, o: {
+  body: string; edge: string; minH: number; maxH: number; minW: number; maxW: number;
+  windows: number; props: boolean; skip?: (x: number) => boolean;
+}) => {
+  let x = LEFT - r() * 40;
+  while (x < LEFT + SPAN) {
+    const w = o.minW + r() * (o.maxW - o.minW);
+    const h = o.minH + r() * (o.maxH - o.minH);
+    if (o.skip?.(x + w / 2)) { x += w; continue; }
+    const top = GROUND_Y - h;
+    ctx.fillStyle = o.body;
+    ctx.fillRect(x, top, w - 3, h);
+    // Rim of moonlight on the roof edge and the left face.
+    ctx.fillStyle = o.edge;
+    ctx.fillRect(x, top, w - 3, 1.5);
+    ctx.fillRect(x, top, 1.5, h);
+    // Stepped crown on some towers.
+    if (r() < 0.3) {
+      ctx.fillStyle = o.body;
+      ctx.fillRect(x + w * 0.2, top - 14, w * 0.55, 14);
+      ctx.fillStyle = o.edge;
+      ctx.fillRect(x + w * 0.2, top - 14, w * 0.55, 1.5);
+    }
+    if (o.props) {
+      const roll = r();
+      ctx.fillStyle = o.body;
+      if (roll < 0.25) {
+        // Water tower.
+        const tx = x + 8 + r() * (w - 30);
+        ctx.fillRect(tx + 2, top - 10, 2, 10); ctx.fillRect(tx + 14, top - 10, 2, 10);
+        ctx.beginPath(); ctx.moveTo(tx, top - 10); ctx.lineTo(tx + 18, top - 10); ctx.lineTo(tx + 18, top - 26);
+        ctx.quadraticCurveTo(tx + 9, top - 34, tx, top - 26); ctx.fill();
+      } else if (roll < 0.5) {
+        // Antenna with an aircraft-warning light.
+        const ax = x + w * (0.3 + r() * 0.4);
+        const ah = 20 + r() * 30;
+        ctx.fillRect(ax, top - ah, 1.5, ah);
+        const g = ctx.createRadialGradient(ax + 1, top - ah, 0, ax + 1, top - ah, 7);
+        g.addColorStop(0, 'rgba(255, 90, 90, 0.95)');
+        g.addColorStop(1, 'rgba(255, 60, 60, 0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(ax - 7, top - ah - 7, 16, 14);
+      } else if (roll < 0.7) {
+        ctx.fillRect(x + 6, top - 6, 12, 6);
+        ctx.fillRect(x + w - 24, top - 8, 14, 8);
+      }
+    }
+    const warm = r() < 0.6;
+    const occupancy = o.windows * (0.4 + r() * 0.9);
+    const cols = Math.max(1, Math.floor((w - 14) / 10));
+    for (let wy = top + 10; wy < GROUND_Y - 24; wy += 13) {
+      const floorLit = r() < 0.12; // a whole floor with the lights on
+      for (let c = 0; c < cols; c++) {
+        if (!floorLit && r() > occupancy) continue;
+        const a = 0.35 + r() * 0.55;
+        ctx.fillStyle = warm
+          ? (r() < 0.85 ? `rgba(255, 196, 120, ${a})` : `rgba(255, 240, 210, ${a})`)
+          : (r() < 0.85 ? `rgba(120, 220, 255, ${a})` : `rgba(200, 160, 255, ${a})`);
+        ctx.fillRect(x + 7 + c * 10, wy, 4, 6);
+      }
+    }
+    x += w;
+  }
+};
+
+/** A neon tube: a soft wide glow, the colored tube, then a hot near-white core. */
+const neon = (ctx: CanvasRenderingContext2D, color: string, draw: (stroke: boolean) => void) => {
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 24;
+  ctx.strokeStyle = color; ctx.fillStyle = color;
+  draw(false);
+  ctx.shadowBlur = 8;
+  draw(false);
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 0.85;
+  ctx.strokeStyle = '#fff5fb'; ctx.fillStyle = '#fff5fb';
+  draw(true);
+  ctx.restore();
+};
+
+/**
+ * Night alley, built for depth: sky and moon, three skyline layers fading into the horizon,
+ * flanking towers with neon, street lamps, and a rain-wet court that mirrors the city.
+ */
 export const getBackdrop = () => {
   if (backdrop) return backdrop;
   const c = document.createElement('canvas');
   // Extends 400 world units past each side so wide screens still see skyline.
   // Rendered at 2x so it stays crisp on high-density phone screens.
-  c.width = (CANVAS_WIDTH + 800) * BACKDROP_RES;
+  c.width = SPAN * BACKDROP_RES;
   c.height = (CANVAS_HEIGHT + 200) * BACKDROP_RES;
   const ctx = c.getContext('2d')!;
   ctx.scale(BACKDROP_RES, BACKDROP_RES);
   ctx.translate(400, 100);
   const r = rand(7);
 
-  const sky = ctx.createLinearGradient(0, -100, 0, GROUND_Y);
+  const sky = ctx.createLinearGradient(0, TOP, 0, GROUND_Y);
   sky.addColorStop(0, '#05030f');
-  sky.addColorStop(0.6, '#140b2e');
-  sky.addColorStop(1, '#2a0f3a');
+  sky.addColorStop(0.45, '#120a2c');
+  sky.addColorStop(0.8, '#2a0f3a');
+  sky.addColorStop(1, '#4a1450');
   ctx.fillStyle = sky;
-  ctx.fillRect(-400, -100, CANVAS_WIDTH + 800, GROUND_Y + 100);
+  ctx.fillRect(LEFT, TOP, SPAN, GROUND_Y - TOP);
 
-  // Moon.
-  const moon = ctx.createRadialGradient(620, 90, 0, 620, 90, 120);
-  moon.addColorStop(0, 'rgba(255, 214, 236, 0.9)');
-  moon.addColorStop(0.25, 'rgba(244, 114, 182, 0.35)');
-  moon.addColorStop(1, 'rgba(244, 114, 182, 0)');
-  ctx.fillStyle = moon;
-  ctx.fillRect(480, -50, 280, 280);
-  ctx.fillStyle = '#ffe4f1';
+  // Moon: wide halo, soft disc, faint maria.
+  const halo = ctx.createRadialGradient(620, 90, 0, 620, 90, 220);
+  halo.addColorStop(0, 'rgba(255, 200, 230, 0.35)');
+  halo.addColorStop(0.2, 'rgba(244, 114, 182, 0.18)');
+  halo.addColorStop(1, 'rgba(244, 114, 182, 0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(400, -130, 440, 440);
+  const disc = ctx.createRadialGradient(612, 82, 4, 620, 90, 32);
+  disc.addColorStop(0, '#fff6fb');
+  disc.addColorStop(1, '#f9c6e0');
+  ctx.fillStyle = disc;
   ellipse(ctx, 620, 90, 30, 30);
+  ctx.fillStyle = 'rgba(214, 140, 190, 0.25)';
+  ellipse(ctx, 610, 82, 8, 6); ellipse(ctx, 628, 100, 6, 5); ellipse(ctx, 630, 78, 4, 3);
 
-  // Skyline, far then near.
-  const skyline = (base: string, minH: number, maxH: number, windowAlpha: number) => {
-    let x = -400;
-    while (x < CANVAS_WIDTH + 400) {
-      const w = 40 + r() * 70;
-      const h = minH + r() * (maxH - minH);
-      ctx.fillStyle = base;
-      ctx.fillRect(x, GROUND_Y - h, w - 4, h);
-      for (let wy = GROUND_Y - h + 10; wy < GROUND_Y - 30; wy += 16) {
-        for (let wx = x + 6; wx < x + w - 12; wx += 12) {
-          if (r() < 0.28) {
-            ctx.fillStyle = r() < 0.5 ? `rgba(250, 204, 21, ${windowAlpha})` : `rgba(103, 232, 249, ${windowAlpha})`;
-            ctx.fillRect(wx, wy, 5, 7);
-          }
-        }
-      }
-      x += w;
-    }
+  // Thin cloud bands catching the moonlight.
+  for (let i = 0; i < 5; i++) {
+    const y = 40 + i * 34 + r() * 20, x = LEFT + r() * SPAN;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 260);
+    g.addColorStop(0, 'rgba(160, 90, 200, 0.10)');
+    g.addColorStop(1, 'rgba(160, 90, 200, 0)');
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.12); ctx.translate(-x, -y);
+    ctx.fillStyle = g; ctx.fillRect(x - 260, y - 260, 520, 520);
+    ctx.restore();
+  }
+
+  // Horizon glow from the city.
+  const glow = ctx.createLinearGradient(0, GROUND_Y - 200, 0, GROUND_Y);
+  glow.addColorStop(0, 'rgba(236, 72, 153, 0)');
+  glow.addColorStop(1, 'rgba(236, 72, 153, 0.22)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(LEFT, GROUND_Y - 200, SPAN, 200);
+
+  skyline(ctx, r, { body: '#241645', edge: 'rgba(190, 160, 255, 0.12)', minH: 170, maxH: 290, minW: 30, maxW: 70, windows: 0.12, props: true });
+  haze(ctx, GROUND_Y - 300, 0.55);
+  skyline(ctx, r, { body: '#160d33', edge: 'rgba(200, 170, 255, 0.16)', minH: 110, maxH: 220, minW: 45, maxW: 95, windows: 0.2, props: true });
+  haze(ctx, GROUND_Y - 220, 0.4);
+  // The near layer leaves the court's middle open so the fight reads against the bright haze.
+  skyline(ctx, r, {
+    body: '#0a0620', edge: 'rgba(255, 170, 220, 0.18)', minH: 60, maxH: 130, minW: 60, maxW: 120, windows: 0.28, props: false,
+    skip: (cx) => cx > 180 && cx < 640
+  });
+
+  // Flanking towers frame the court on wide screens.
+  const tower = (x: number, w: number, h: number) => {
+    const g = ctx.createLinearGradient(x, 0, x + w, 0);
+    g.addColorStop(0, '#07041a'); g.addColorStop(1, '#0c0726');
+    ctx.fillStyle = g;
+    ctx.fillRect(x, GROUND_Y - h, w, h);
+    ctx.fillStyle = 'rgba(255, 160, 220, 0.14)';
+    ctx.fillRect(x + w - 1.5, GROUND_Y - h, 1.5, h);
   };
-  skyline('#0d0820', 120, 260, 0.35);
-  skyline('#07051a', 60, 160, 0.6);
+  tower(-400, 230, 420);
+  tower(1000, 200, 440);
 
-  // Neon sign on the near wall.
+  // Neon: the crew's sign on the left wall, a vertical blade sign on the right tower.
   ctx.save();
-  ctx.font = 'italic 900 22px system-ui, sans-serif';
-  ctx.fillStyle = '#f472b6';
-  ctx.shadowColor = '#f472b6';
-  ctx.shadowBlur = 18;
-  ctx.fillText('HOP & SKIP', 70, GROUND_Y - 120);
+  ctx.lineWidth = 2;
+  neon(ctx, '#f472b6', (core) => {
+    ctx.lineWidth = core ? 1 : 2.5;
+    ctx.beginPath(); ctx.roundRect(SIGN.x - 12, SIGN.y - 26, 158, 38, 8); ctx.stroke();
+  });
+  ctx.font = `italic 900 22px ${DISPLAY_FONT}`;
+  neon(ctx, '#f472b6', () => ctx.fillText(SIGN.text, SIGN.x, SIGN.y));
+  ctx.font = `900 18px ${DISPLAY_FONT}`;
+  ctx.textAlign = 'center';
+  neon(ctx, '#22d3ee', () => {
+    [...'DUTCH'].forEach((ch, i) => ctx.fillText(ch, 1040, GROUND_Y - 330 + i * 24));
+  });
+  neon(ctx, '#22d3ee', (core) => {
+    ctx.lineWidth = core ? 1 : 2.5;
+    ctx.beginPath(); ctx.roundRect(1024, GROUND_Y - 356, 32, 130, 6); ctx.stroke();
+  });
   ctx.restore();
 
-  // Court floor with lane lines.
-  const floor = ctx.createLinearGradient(0, GROUND_Y, 0, CANVAS_HEIGHT + 100);
-  floor.addColorStop(0, '#120a26');
-  floor.addColorStop(1, '#020206');
-  ctx.fillStyle = floor;
-  ctx.fillRect(-400, GROUND_Y, CANVAS_WIDTH + 800, 300);
-  ctx.strokeStyle = 'rgba(167, 139, 250, 0.18)';
+  // Street lamps throw cones of light onto the court.
+  const lamp = (x: number) => {
+    ctx.fillStyle = '#05030f';
+    ctx.fillRect(x - 1.5, GROUND_Y - 150, 3, 150);
+    ctx.fillRect(x - 1.5, GROUND_Y - 150, 22, 3);
+    const bulb = ctx.createRadialGradient(x + 18, GROUND_Y - 146, 0, x + 18, GROUND_Y - 146, 18);
+    bulb.addColorStop(0, 'rgba(255, 236, 200, 1)');
+    bulb.addColorStop(1, 'rgba(255, 200, 140, 0)');
+    ctx.fillStyle = bulb;
+    ctx.fillRect(x, GROUND_Y - 164, 36, 36);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const cone = ctx.createLinearGradient(0, GROUND_Y - 146, 0, GROUND_Y + 20);
+    cone.addColorStop(0, 'rgba(255, 210, 160, 0.16)');
+    cone.addColorStop(1, 'rgba(255, 210, 160, 0.02)');
+    ctx.fillStyle = cone;
+    ctx.beginPath(); ctx.moveTo(x + 14, GROUND_Y - 146); ctx.lineTo(x + 22, GROUND_Y - 146);
+    ctx.lineTo(x + 80, GROUND_Y + 20); ctx.lineTo(x - 44, GROUND_Y + 20); ctx.fill();
+    ctx.restore();
+  };
+  lamp(-60);
+  lamp(880);
+
+  // Wet court: mirror everything above the ground line, then darken with distance.
+  const groundPx = (GROUND_Y + 100) * BACKDROP_RES;
+  const depth = c.height - groundPx;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#07041a';
+  ctx.fillRect(0, groundPx, c.width, depth);
+  ctx.translate(0, groundPx * 2);
+  ctx.scale(1, -1);
+  // Stacked, slightly offset copies smear the reflection like rain on asphalt.
+  for (let i = 0; i < 4; i++) {
+    ctx.globalAlpha = 0.16 - i * 0.03;
+    ctx.drawImage(c, 0, groundPx - depth, c.width, depth, 0, groundPx - depth - i * 3 * BACKDROP_RES, c.width, depth);
+  }
+  ctx.restore();
+  const fade = ctx.createLinearGradient(0, GROUND_Y, 0, CANVAS_HEIGHT + 100);
+  fade.addColorStop(0, 'rgba(7, 4, 26, 0.15)');
+  fade.addColorStop(0.5, 'rgba(5, 3, 18, 0.7)');
+  fade.addColorStop(1, 'rgba(2, 2, 8, 0.97)');
+  ctx.fillStyle = fade;
+  ctx.fillRect(LEFT, GROUND_Y, SPAN, CANVAS_HEIGHT + 100 - GROUND_Y);
+
+  // Court markings in perspective: depth lines converge on a vanishing point above the court.
+  ctx.save();
+  ctx.beginPath(); ctx.rect(LEFT, GROUND_Y, SPAN, 300); ctx.clip();
   ctx.lineWidth = 1;
   for (let i = 1; i < 12; i++) {
     const y = GROUND_Y + i * i * 2.2;
-    ctx.beginPath(); ctx.moveTo(-400, y); ctx.lineTo(CANVAS_WIDTH + 400, y); ctx.stroke();
+    ctx.strokeStyle = `rgba(167, 139, 250, ${0.14 - i * 0.008})`;
+    ctx.beginPath(); ctx.moveTo(LEFT, y); ctx.lineTo(LEFT + SPAN, y); ctx.stroke();
   }
+  const vx = 400; // vanishing point sits 260 units above the court line
+  for (let i = -14; i <= 14; i++) {
+    const bx = vx + i * 120;
+    ctx.strokeStyle = `rgba(167, 139, 250, ${0.1 - Math.abs(i) * 0.005})`;
+    ctx.beginPath();
+    ctx.moveTo(vx + (bx - vx) * (260 / 560), GROUND_Y);
+    ctx.lineTo(bx, GROUND_Y + 300);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Court line: glow, tube, hot core.
   ctx.save();
-  ctx.strokeStyle = '#00d2ff';
-  ctx.lineWidth = 2;
-  ctx.shadowColor = '#00d2ff';
-  ctx.shadowBlur = 10;
-  ctx.beginPath(); ctx.moveTo(-400, GROUND_Y); ctx.lineTo(CANVAS_WIDTH + 400, GROUND_Y); ctx.stroke();
+  const lineGlow = ctx.createLinearGradient(0, GROUND_Y - 12, 0, GROUND_Y + 12);
+  lineGlow.addColorStop(0, 'rgba(0, 210, 255, 0)');
+  lineGlow.addColorStop(0.5, 'rgba(0, 210, 255, 0.28)');
+  lineGlow.addColorStop(1, 'rgba(0, 210, 255, 0)');
+  ctx.fillStyle = lineGlow;
+  ctx.fillRect(LEFT, GROUND_Y - 12, SPAN, 24);
+  ctx.fillStyle = '#00d2ff';
+  ctx.fillRect(LEFT, GROUND_Y - 1, SPAN, 2);
+  ctx.fillStyle = 'rgba(220, 250, 255, 0.9)';
+  ctx.fillRect(LEFT, GROUND_Y - 0.4, SPAN, 0.8);
   ctx.restore();
 
   backdrop = c;

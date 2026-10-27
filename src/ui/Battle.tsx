@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ITEM_DATA, MOVE_REGISTRY, type BroId, type ItemId, type MoveId } from '../data/config';
 import { audio } from '../game/audio';
 import { MUTATORS } from '../game/runmods';
@@ -9,49 +9,74 @@ import { useEngine } from './useEngine';
 
 const SWAG_COLOR: Record<string, string> = { D: '#94a3b8', C: '#cbd5e1', B: '#60a5fa', A: '#4ade80', S: '#facc15', SS: '#f0abfc' };
 
+/** Base and highlight for each bro's meters. */
+const TONE: Record<'red' | 'blue', [string, string]> = { red: ['#ef4444', '#fb7185'], blue: ['#3b82f6', '#7dd3fc'] };
+
+/** Screen bands the overlaid HUD and pads cover. CSS and the canvas view both use these. */
+export const hudBand = (h: number) => Math.min(96, Math.max(60, h * 0.1));
+export const padBand = (h: number) => Math.min(220, Math.max(140, h * 0.22));
+
+/** A meter with a trailing "damage ghost": the white tail lingers, then catches up. */
+const Meter = ({ value, tone, thin = false }: { value: number; tone: [string, string]; thin?: boolean }) => {
+  const pct = `${Math.max(0, Math.min(1, value)) * 100}%`;
+  return (
+    <div className={`relative w-full ${thin ? 'h-1' : 'h-1.5'} rounded-full bg-white/[0.07] overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)]`}>
+      <div className="absolute inset-y-0 left-0 rounded-full bg-white/50 transition-[width] duration-700 delay-300 ease-out" style={{ width: pct }} />
+      <div className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-200 ease-out"
+        style={{ width: pct, background: `linear-gradient(90deg, ${tone[0]}, ${tone[1]})`, boxShadow: `0 0 10px ${tone[0]}` }} />
+    </div>
+  );
+};
+
 /** Live style rank: clean play raises it and multiplies style points. */
 const SwagMeter = ({ compact }: { compact: boolean }) => {
   const { snap } = useEngine();
   const color = SWAG_COLOR[snap.swagTier] ?? '#fff';
   return (
-    <div className="flex items-center gap-2" aria-label={`Style ${snap.swagTier}`}>
-      <div className={`font-black italic leading-none ${compact ? 'text-xl' : 'text-3xl'}`} style={{ color, textShadow: `0 0 16px ${color}` }}>{snap.swagTier}</div>
-      <div className={`${compact ? 'w-10' : 'w-14'} h-1.5 rounded-full bg-white/10 overflow-hidden`}>
-        <div className="h-full transition-all duration-300" style={{ width: `${snap.swag}%`, backgroundColor: color }} />
+    <div className="flex items-center gap-2.5" aria-label={`Style ${snap.swagTier}`}>
+      <div className="hidden sm:flex flex-col items-end gap-1">
+        <span className="text-[8px] font-semibold tracking-[0.35em] text-white/40 uppercase">Style</span>
+        <div className={compact ? 'w-10' : 'w-16'}><Meter value={snap.swag / 100} tone={[color, '#ffffff']} thin /></div>
       </div>
+      <div className={`font-display font-black italic leading-none ${compact ? 'text-2xl' : 'text-4xl'}`} style={{ color, textShadow: `0 0 18px ${color}88` }}>{snap.swagTier}</div>
     </div>
   );
 };
 
+const PauseIcon = () => (
+  <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" aria-hidden><rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor" /><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor" /></svg>
+);
+
 export const Hud = ({ compact = false }: { compact?: boolean }) => {
   const { engine, snap } = useEngine();
   return (
-    <div className={`shrink-0 flex justify-between items-center z-10 border-b border-white/5 bg-black/80 backdrop-blur-md ${compact ? 'h-11 px-4 pl-[max(env(safe-area-inset-left),16px)] pr-[max(env(safe-area-inset-right),16px)]' : 'h-[10vh] min-h-[60px] p-4'}`}>
-      <div className="flex gap-4 md:gap-12 w-full max-w-2xl">
+    <div className={`shrink-0 flex justify-between items-center gap-4 z-10 bg-gradient-to-b from-[#05030f]/90 via-[#05030f]/50 to-transparent ${compact ? 'h-11 px-4 pl-[max(env(safe-area-inset-left),16px)] pr-[max(env(safe-area-inset-right),16px)]' : 'h-[clamp(60px,10vh,96px)] px-4 md:px-8'}`}>
+      <div className="flex gap-4 md:gap-8 w-full max-w-2xl">
         {(['red', 'blue'] as const).map((k) => {
           const b = snap.bros[k];
           const max = calculateDerived(b).maxHp;
           return (
-            <div key={k} className={`flex flex-col w-1/2 ${b.hp <= 0 ? 'opacity-30 grayscale' : ''}`}>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[11px] font-black italic uppercase tracking-widest" style={{ color: b.color }}>{b.name} L{b.lvl}</span>
-                <span className="text-[9px] font-bold opacity-90">{b.hp}/{max} HP</span>
+            <div key={k} className={`flex flex-col w-1/2 transition-opacity ${b.hp <= 0 ? 'opacity-30 grayscale' : ''}`}>
+              <div className="flex justify-between items-baseline mb-1.5 gap-2">
+                <span className="flex items-baseline gap-2 min-w-0">
+                  <span className="font-display font-black italic uppercase text-sm md:text-base leading-none tracking-wide" style={{ color: TONE[k][1] }}>{b.name}</span>
+                  <span className="text-[9px] font-semibold text-white/45 tracking-widest whitespace-nowrap">LV {b.lvl}</span>
+                </span>
+                <span className="text-[10px] font-semibold tabular-nums text-white/70 whitespace-nowrap">{b.hp}<span className="hidden md:inline text-white/30"> / {max}</span></span>
               </div>
-              <div className="w-full h-2 bg-slate-900 rounded-full border border-white/5 overflow-hidden">
-                <div className="h-full transition-all duration-700" style={{ backgroundColor: b.color, width: `${(b.hp / max) * 100}%` }} />
-              </div>
+              <Meter value={b.hp / max} tone={TONE[k]} />
             </div>
           );
         })}
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4 md:gap-6">
         <SwagMeter compact={compact} />
         <div className="text-right hidden sm:block leading-none whitespace-nowrap">
-          <div className="text-[10px] font-black text-cyan-400 uppercase italic">Wave {snap.wave}</div>
-          <div className={`font-black italic mt-1 ${compact ? 'text-sm' : 'text-xl'}`}>{snap.rp} RP</div>
+          <div className="text-[9px] font-semibold tracking-[0.3em] text-cyan-300/80 uppercase">Wave {snap.wave}</div>
+          <div className={`font-display font-black italic mt-1 tabular-nums ${compact ? 'text-sm' : 'text-xl'}`}>{snap.rp}<span className="text-[10px] text-white/40 not-italic font-semibold ml-1">RP</span></div>
           {snap.mutators.length > 0 && <div className="text-xs mt-1 tracking-tight" title="Active mutators">{snap.mutators.map((m) => MUTATORS[m].icon).join('')}</div>}
         </div>
-        <button aria-label="Pause" onPointerDown={(e) => { e.preventDefault(); engine.pause(); }} className={`ml-4 ${compact ? 'w-8 h-8' : 'w-10 h-10 md:w-12 md:h-12'} bg-white/10 rounded-xl flex items-center justify-center active:scale-95 border border-white/20`}>⏸</button>
+        <button aria-label="Pause" onPointerDown={(e) => { e.preventDefault(); engine.pause(); }} className={`glass ${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-full flex items-center justify-center text-white/80 active:scale-95 transition-transform`}><PauseIcon /></button>
       </div>
     </div>
   );
@@ -63,10 +88,12 @@ const PHASE_HINT: Partial<Record<string, string>> = {
   WINDUP: 'JUMP ON THE BEAT'
 };
 
-export const Playfield = () => {
+/** `overlay`: the HUD and pads float over this canvas, so the scene paints under them. */
+export const Playfield = ({ overlay = false }: { overlay?: boolean }) => {
   const { engine, snap } = useEngine();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewRef = useRef<View>(computeView(1, 1));
+  const [bands, setBands] = useState({ top: 0, bottom: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -78,7 +105,10 @@ export const Playfield = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
-      viewRef.current = computeView(width, height);
+      const vh = window.innerHeight;
+      const next = overlay ? { top: hudBand(vh), bottom: padBand(vh) } : { top: 0, bottom: 0 };
+      viewRef.current = computeView(width, height, next.top, next.bottom);
+      setBands((b) => (b.top === next.top && b.bottom === next.bottom ? b : next));
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -91,7 +121,7 @@ export const Playfield = () => {
     };
     raf = requestAnimationFrame(loop);
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
-  }, [engine]);
+  }, [engine, overlay]);
 
   const onTap = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -100,54 +130,66 @@ export const Playfield = () => {
 
   const hint = snap.tutorialHint ? null : PHASE_HINT[snap.phase];
   return (
-    <div className="relative flex-1 min-h-0 w-full touch-none overflow-hidden">
+    <div className={`${overlay ? 'absolute inset-0' : 'relative flex-1 min-h-0'} w-full touch-none overflow-hidden`}>
       <div className="absolute inset-0" onPointerDown={onTap}>
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
       </div>
       {snap.combo >= 2 && (
-        <div className="absolute top-4 left-6 z-20 pointer-events-none">
-          <div className="text-5xl font-black italic drop-shadow-[0_0_20px_white] leading-none">{snap.combo}</div>
-          <div className="text-[10px] font-black text-cyan-400 tracking-widest uppercase mt-1">Combo</div>
+        <div className="absolute left-6 z-20 pointer-events-none" style={{ top: bands.top + 16 }}>
+          <div className="font-display text-6xl font-black italic leading-none tabular-nums drop-shadow-[0_0_24px_rgba(255,255,255,0.45)]">{snap.combo}</div>
+          <div className="text-[9px] font-semibold text-cyan-300 tracking-[0.5em] uppercase mt-1.5">Combo</div>
         </div>
       )}
       {snap.tutorialHint && (
-        <div className="absolute inset-x-0 top-3 flex justify-center pointer-events-none z-30 px-4">
-          <div className="max-w-xl px-5 py-3 rounded-2xl bg-black/80 border border-cyan-400/60 shadow-[0_0_30px_rgba(34,211,238,0.35)] text-center">
-            <div className="text-[9px] font-black tracking-[0.5em] text-cyan-400 uppercase mb-1">Tutorial</div>
-            <div className="text-sm md:text-lg font-black leading-snug">{snap.tutorialHint}</div>
+        <div className="absolute inset-x-0 flex justify-center pointer-events-none z-30 px-4" style={{ top: bands.top + 12 }}>
+          <div className="glass max-w-xl px-6 py-3.5 rounded-2xl text-center border-cyan-300/30">
+            <div className="text-[9px] font-semibold tracking-[0.5em] text-cyan-300 uppercase mb-1">Tutorial</div>
+            <div className="text-sm md:text-lg font-semibold leading-snug">{snap.tutorialHint}</div>
           </div>
         </div>
       )}
       {hint && (
-        <div className="absolute inset-x-0 top-3 flex justify-center pointer-events-none z-30">
-          <div className="px-4 py-1 rounded-full bg-black/60 text-sm md:text-xl font-black italic uppercase tracking-tight animate-pulse">{hint}</div>
+        <div className="absolute inset-x-0 flex justify-center pointer-events-none z-30" style={{ top: bands.top + 12 }}>
+          <div className="glass px-5 py-1.5 rounded-full font-display text-sm md:text-lg font-black italic uppercase tracking-wide animate-pulse">{hint}</div>
         </div>
       )}
       {/* Menu floats on the court, below the action. */}
-      <div className="absolute inset-x-0 bottom-0 z-20 flex justify-center p-3 md:p-5 pointer-events-none [&>*]:pointer-events-auto">
+      <div className="absolute inset-x-0 z-20 flex justify-center p-3 md:p-5 pointer-events-none [&>*]:pointer-events-auto" style={{ bottom: bands.bottom }}>
         <ActionBar />
       </div>
     </div>
   );
 };
 
-const SyncCost = ({ cost }: { cost: number }) => <div className="text-[8px] text-white/40 uppercase mt-1">{cost} Sync</div>;
+const SyncCost = ({ cost }: { cost: number }) => <div className="text-[8px] font-semibold tracking-widest text-white/40 uppercase mt-1.5">{cost} Sync</div>;
+
+const DOCK = 'glass rounded-[28px] p-2 md:p-2.5';
+const CARD = 'flex-1 p-3 md:p-4 rounded-[20px] bg-white/[0.04] border border-white/[0.06] flex flex-col items-center active:scale-95 transition-transform text-center leading-none';
 
 export const ActionBar = () => {
   const { engine, snap } = useEngine();
   const { phase, sync, turn } = snap;
-  const back = <button data-nav onPointerDown={() => engine.action('BACK')} className="px-6 bg-red-600/20 text-red-500 rounded-2xl font-black uppercase text-xs active:scale-95">Back</button>;
+  const back = <button data-nav onPointerDown={() => engine.action('BACK')} className="glass px-6 py-3 rounded-[20px] text-rose-300 font-display font-black italic uppercase text-xs tracking-wide active:scale-95">Back</button>;
 
   if (phase === 'MENU') {
-    const btn = 'flex-1 px-2 py-4 [@media(max-height:540px)]:py-2.5 font-black italic text-xs md:text-lg rounded-full active:scale-90 transition-all uppercase leading-none';
+    const k = turn === 'RED' ? 'red' : 'blue';
+    const btn = 'relative flex-1 px-2 h-14 [@media(max-height:540px)]:h-11 md:h-16 font-display font-black italic text-xs sm:text-sm md:text-xl rounded-[20px] active:scale-95 transition-all uppercase leading-none sm:tracking-wide overflow-hidden';
+    const ready = sync >= 100;
     return (
       <div className="flex flex-col items-center w-full max-w-2xl">
-        <div className="text-[10px] font-black text-cyan-400 mb-3 tracking-[0.8em] uppercase [@media(max-height:700px)]:hidden">[{snap.bros[turn === 'RED' ? 'red' : 'blue'].name} ready]</div>
-        <div className="bg-black/90 p-2 md:p-3 rounded-[2rem] border border-white/10 flex gap-2 md:gap-4 w-full">
-          <button data-nav onPointerDown={(e) => engine.action('BASIC', audio.fromEventTime(e.timeStamp))} className={`${btn} bg-white text-black`}>Attack</button>
-          <button data-nav onPointerDown={(e) => engine.action('TECH', audio.fromEventTime(e.timeStamp))} className={`${btn} bg-purple-600 ${sync < 20 ? 'opacity-40 grayscale' : ''}`}>Skill</button>
-          <button data-nav onPointerDown={() => engine.action('ITEMS')} className={`${btn} bg-slate-800`}>Items</button>
-          <button data-nav onPointerDown={(e) => engine.action('ULT', audio.fromEventTime(e.timeStamp))} className={`${btn} ${sync >= 100 ? 'bg-yellow-400 text-black shadow-[0_0_30px_gold]' : 'bg-white/5 text-white/20'}`}>Ult</button>
+        <div className="mb-3 flex items-center gap-2 text-[10px] font-semibold tracking-[0.45em] uppercase text-white/70 [@media(max-height:700px)]:hidden">
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: TONE[k][1], boxShadow: `0 0 8px ${TONE[k][0]}` }} />
+          {snap.bros[k].name}'s turn
+        </div>
+        <div className={`${DOCK} flex gap-2 w-full`}>
+          <button data-nav onPointerDown={(e) => engine.action('BASIC', audio.fromEventTime(e.timeStamp))}
+            className={`${btn} text-[#0b0720] bg-gradient-to-b from-white to-slate-200 shadow-[0_6px_24px_rgba(255,255,255,0.18),inset_0_-2px_0_rgba(0,0,0,0.12)]`}>Attack</button>
+          <button data-nav onPointerDown={(e) => engine.action('TECH', audio.fromEventTime(e.timeStamp))}
+            className={`${btn} bg-gradient-to-b from-violet-500 to-fuchsia-700 shadow-[0_6px_24px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] ${sync < 20 ? 'opacity-35 saturate-50' : ''}`}>Skill</button>
+          <button data-nav onPointerDown={() => engine.action('ITEMS')}
+            className={`${btn} bg-white/[0.06] border border-white/10 text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]`}>Items</button>
+          <button data-nav onPointerDown={(e) => engine.action('ULT', audio.fromEventTime(e.timeStamp))}
+            className={`${btn} ${ready ? 'text-[#2a1600] bg-gradient-to-b from-amber-200 via-yellow-400 to-amber-600 shadow-[0_0_32px_rgba(250,204,21,0.55),inset_0_1px_0_rgba(255,255,255,0.6)] shimmer' : 'bg-white/[0.03] border border-white/5 text-white/25'}`}>Ult</button>
         </div>
       </div>
     );
@@ -155,13 +197,13 @@ export const ActionBar = () => {
   if (phase === 'TECH_SELECT') {
     const techs = (['TECH1', 'TECH2', 'TECH3', 'TECH4', 'TECH5', 'TECH6'] as MoveId[]).filter((id) => (!MOVE_REGISTRY[id].owner || MOVE_REGISTRY[id].owner === turn) && engine.hasMove(id));
     return (
-      <div className="bg-black/90 p-3 rounded-[2rem] border border-white/10 grid grid-cols-2 sm:flex gap-2 w-full max-w-2xl">
+      <div className={`${DOCK} grid grid-cols-2 sm:flex gap-2 w-full max-w-2xl`}>
         {techs.map((id) => {
           const m = MOVE_REGISTRY[id];
           return (
-            <button data-nav key={id} onPointerDown={(e) => engine.action(id as 'TECH1', audio.fromEventTime(e.timeStamp))} className={`flex-1 p-4 bg-white/5 rounded-2xl flex flex-col items-center active:scale-95 text-center leading-none ${sync < m.cost ? 'opacity-40' : ''}`}>
-              <span className="text-xl">{m.icon}</span>
-              <div className="text-[10px] font-black uppercase text-yellow-400">{m.name}</div>
+            <button data-nav key={id} onPointerDown={(e) => engine.action(id as 'TECH1', audio.fromEventTime(e.timeStamp))} className={`${CARD} ${sync < m.cost ? 'opacity-35' : ''}`}>
+              <span className="text-xl mb-1.5">{m.icon}</span>
+              <div className="font-display text-[11px] font-black italic uppercase tracking-wide text-amber-200">{m.name}</div>
               <SyncCost cost={m.cost} />
             </button>
           );
@@ -172,11 +214,11 @@ export const ActionBar = () => {
   }
   if (phase === 'ITEMS') {
     return (
-      <div className="bg-black/90 p-3 rounded-[2rem] border border-white/10 flex gap-2 w-full max-w-2xl">
+      <div className={`${DOCK} flex gap-2 w-full max-w-2xl`}>
         {(Object.keys(ITEM_DATA) as ItemId[]).map((id) => (
-          <button data-nav key={id} onPointerDown={() => engine.selectItem(id)} className={`flex-1 p-3 bg-white/5 rounded-2xl flex flex-col items-center active:scale-95 text-center leading-none ${snap.inventory[id] <= 0 ? 'opacity-40' : ''}`}>
+          <button data-nav key={id} onPointerDown={() => engine.selectItem(id)} className={`${CARD} ${snap.inventory[id] <= 0 ? 'opacity-35' : ''}`}>
             <span className="text-xl">{ITEM_DATA[id].icon}</span>
-            <span className="text-[9px] font-black mt-1 uppercase">{ITEM_DATA[id].name} ({snap.inventory[id]})</span>
+            <span className="text-[9px] font-semibold tracking-wider mt-1.5 uppercase">{ITEM_DATA[id].name} <span className="text-white/40 tabular-nums">×{snap.inventory[id]}</span></span>
           </button>
         ))}
         {back}
@@ -187,43 +229,57 @@ export const ActionBar = () => {
   return null;
 };
 
-const PAD_STYLE: Record<BroId, string> = {
-  BLUE: 'bg-blue-600 border-blue-400 shadow-[0_0_30px_blue]',
-  RED: 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 shadow-[0_0_40px_rgba(239,68,68,0.6)]'
+/** Each pad is a lit disc: a highlight up top-left, the bro's color, a deep rim. */
+const PAD_LIT: Record<BroId, React.CSSProperties> = {
+  RED: { background: 'radial-gradient(circle at 35% 28%, #fda4af 0%, #ef4444 38%, #7f1d1d 100%)', borderColor: 'rgba(253, 164, 175, 0.7)', boxShadow: '0 0 48px rgba(239, 68, 68, 0.55), inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -6px 18px rgba(0,0,0,0.35)' },
+  BLUE: { background: 'radial-gradient(circle at 35% 28%, #bae6fd 0%, #3b82f6 38%, #1e3a8a 100%)', borderColor: 'rgba(186, 230, 253, 0.7)', boxShadow: '0 0 48px rgba(59, 130, 246, 0.55), inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -6px 18px rgba(0,0,0,0.35)' }
 };
+const PAD_CUE: React.CSSProperties = { background: 'radial-gradient(circle at 35% 28%, #fffbeb 0%, #facc15 40%, #a16207 100%)', borderColor: '#fff', boxShadow: '0 0 80px rgba(250, 204, 21, 0.75), inset 0 2px 0 rgba(255,255,255,0.6)' };
+const PAD_IDLE: React.CSSProperties = { background: 'radial-gradient(circle at 35% 28%, rgba(255,255,255,0.12), rgba(255,255,255,0.03) 60%)', borderColor: 'rgba(255,255,255,0.12)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 30px rgba(0,0,0,0.4)' };
 
 /** One face button. A = Hop (red), B = Skip (blue). Glows for the acting bro; flashes "!" for a tag. */
-export const PadButton = ({ id, size = 'w-28 h-28 md:w-36 md:h-36 text-5xl md:text-6xl' }: { id: BroId; size?: string }) => {
+export const PadButton = ({ id, size = 'w-28 h-28 md:w-32 md:h-32 text-5xl md:text-6xl' }: { id: BroId; size?: string }) => {
   const { engine, snap } = useEngine();
   const { expectedTap, turn, phase } = snap;
   const lit = phase === 'ITEMS_TARGETING' || (turn === id && ['MENU', 'TECH_SELECT', 'ITEMS', 'TARGET', 'WINDUP'].includes(phase));
-  const cls = expectedTap === id
-    ? 'bg-yellow-400 border-white shadow-[0_0_80px_#facc15] scale-110 neon-text text-black'
-    : lit ? PAD_STYLE[id] : 'bg-white/5 border-white/10 opacity-90';
+  const cue = expectedTap === id;
+  const style = cue ? PAD_CUE : lit ? PAD_LIT[id] : PAD_IDLE;
   return (
     <button
       onPointerDown={(e) => { e.preventDefault(); engine.input(id, audio.fromEventTime(e.timeStamp)); }}
-      className={`${size} shrink-0 rounded-full flex items-center justify-center transition-all duration-75 active:scale-90 border-4 font-black touch-none ${cls}`}
+      style={style}
+      className={`${size} shrink-0 rounded-full flex items-center justify-center transition-all duration-75 active:scale-90 border-2 backdrop-blur-md touch-none font-display font-black italic ${cue ? 'scale-110 text-[#2a1600]' : lit ? 'text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]' : 'text-white/40'}`}
     >
-      {expectedTap === id ? '!' : id === 'RED' ? 'A' : 'B'}
+      {cue ? '!' : id === 'RED' ? 'A' : 'B'}
     </button>
   );
 };
 
-export const SyncBar = () => {
+/** `bar`: a hairline across the top (handheld). Otherwise a labeled meter centered over the pads. */
+export const SyncBar = ({ bar = false }: { bar?: boolean }) => {
   const { snap } = useEngine();
+  const full = snap.sync >= 100;
+  const fill = (
+    <div className="h-full rounded-full transition-[width] duration-300 ease-out"
+      style={{ width: `${snap.sync}%`, background: full ? 'linear-gradient(90deg,#fde68a,#facc15)' : 'linear-gradient(90deg,#22d3ee,#a78bfa)', boxShadow: full ? '0 0 14px #facc15' : '0 0 12px rgba(34,211,238,0.7)' }} />
+  );
+  if (bar) return <div className="absolute top-0 left-0 w-full h-1 bg-black/50 z-20">{fill}</div>;
   return (
-    <div className="absolute top-0 left-0 w-full h-1.5 bg-black/60 z-20">
-      <div className="h-full bg-cyan-400 shadow-[0_0_15px_cyan] transition-all duration-300" style={{ width: `${snap.sync}%` }} />
+    <div className="w-24 md:w-40 shrink-0 flex flex-col items-center gap-2">
+      <div className="flex w-full justify-between items-baseline">
+        <span className="text-[9px] font-semibold tracking-[0.4em] text-cyan-200/70 uppercase">Sync</span>
+        <span className={`text-[10px] font-semibold tabular-nums ${full ? 'text-yellow-300' : 'text-white/50'}`}>{Math.round(snap.sync)}%</span>
+      </div>
+      <div className="w-full h-1 rounded-full bg-white/[0.08] overflow-hidden">{fill}</div>
     </div>
   );
 };
 
-/** Portrait / desktop: buttons in a band under the arena. */
+/** Portrait / desktop: pads float over the bottom of the court. */
 export const Controller = () => (
-  <div className="shrink-0 h-[22vh] min-h-[140px] max-h-[220px] w-full bg-gradient-to-t from-black/80 to-black/40 border-t border-cyan-500/30 flex items-center justify-center gap-16 md:gap-40 relative z-10 touch-none">
-    <SyncBar />
+  <div className="absolute inset-x-0 bottom-0 h-[clamp(140px,22vh,220px)] pb-[env(safe-area-inset-bottom)] w-full bg-gradient-to-t from-[#03020a]/90 via-[#03020a]/50 to-transparent flex items-center justify-center gap-5 md:gap-12 z-10 touch-none">
     <PadButton id="BLUE" />
+    <SyncBar />
     <PadButton id="RED" />
   </div>
 );
