@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "Double Dutch Bros",
+  "short_name": "DD Bros",
+  "description": "Rhythm tag-team brawler starring Hop & Skip.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#020205",
+  "theme_color": "#020205",
+  "categories": ["games", "music"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
