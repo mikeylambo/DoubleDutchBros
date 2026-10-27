@@ -172,7 +172,12 @@ rabbits in one strip, bigger cell), `rope_swap`, `getup`, `title_loop`, `shop_tr
 Enemy cell: 256 × 256, pivot (128, 248), drawn at the enemy's `scale` (Shell 1.3, Giga Slime 3.2).
 
 ### Budget
-About 11 clips × 2 rabbits + 5 clips × 4 enemies ≈ **42 clips / ~800 frames** for the launch set.
+About 11 clips × 2 rabbits + 5 clips × 14 enemy rigs (9 regulars, Bouncer, 4 bosses) ≈ **92 clips /
+~1,700 frames** for the full roster. The Giga Slime Remix reuses the Giga Slime rig.
+
+**Production order:** Hop and Skip → Slime, Turbo Bat, Stone Shell (waves 1–5 look finished) →
+Giga Slime → the rest of the regulars → Bouncer and the remaining bosses. Any clip can ship alone:
+missing clips fall back to procedural art.
 
 ---
 

@@ -18,10 +18,10 @@ export const Toasts = () => {
   return (
     <div className="fixed top-[max(env(safe-area-inset-top),12px)] inset-x-0 z-[200] flex flex-col items-center gap-2 pointer-events-none px-4">
       {items.map((n) => (
-        <div key={n.id} className="toast-in flex items-center gap-3 px-5 py-3 rounded-2xl bg-black/85 border border-yellow-400/50 shadow-[0_0_30px_rgba(250,204,21,0.25)]">
-          <span className="text-xl">{n.kind === 'achievement' ? '🏆' : '📖'}</span>
+        <div key={n.id} className="toast-in glass flex items-center gap-3 pl-3 pr-5 py-2.5 rounded-2xl !border-amber-300/30">
+          <span className="w-9 h-9 rounded-xl bg-amber-300/10 flex items-center justify-center text-lg">{n.kind === 'achievement' ? '🏆' : '📖'}</span>
           <div>
-            <div className="text-sm font-black uppercase tracking-tight text-yellow-300">{n.title}</div>
+            <div className="font-display text-sm font-black italic uppercase tracking-wide text-amber-200">{n.title}</div>
             {n.body && <div className="text-[11px] text-white/60">{n.body}</div>}
           </div>
         </div>

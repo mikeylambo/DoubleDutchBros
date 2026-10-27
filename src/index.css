@@ -25,6 +25,18 @@ body { font-family: 'Inter Variable', system-ui, sans-serif; -webkit-font-smooth
   animation: shimmer 2.2s ease-in-out infinite;
 }
 
+/* In-run overlays: frost the live game behind them instead of blacking it out. */
+.scrim {
+  background: radial-gradient(ellipse at 50% 0%, rgba(76, 29, 110, 0.35), transparent 60%), rgba(5, 3, 15, 0.78);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
+}
+
+/* Range sliders: slim gradient track, white thumb. --fill is set inline. */
+.range { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 999px; background: linear-gradient(90deg, #22d3ee, #a78bfa var(--fill), rgba(255,255,255,0.1) var(--fill)); }
+.range::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(34,211,238,0.2), 0 2px 8px rgba(0,0,0,0.5); }
+.range::-moz-range-thumb { width: 18px; height: 18px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(34,211,238,0.2); }
+
 html, body, #root { height: 100%; overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 
 @keyframes neon-pulse {

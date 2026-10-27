@@ -9,8 +9,37 @@ import { useEngine } from './useEngine';
 import { usePlatform, useRunResult } from './usePlatform';
 import type { GameSettings } from '../game/save';
 
-const Screen = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div data-layer="overlay" className={`fixed inset-0 z-[100] flex flex-col items-center p-6 md:p-10 overflow-y-auto ${className}`}>{children}</div>
+/**
+ * `scrim`: in-run screens frost over the live game. `city`: out-of-run screens sit over the skyline.
+ */
+const Screen = ({ children, className = '', tone = 'scrim' }: { children: React.ReactNode; className?: string; tone?: 'scrim' | 'city' }) => (
+  <div data-layer="overlay" className={`fixed inset-0 z-[100] flex flex-col items-center p-6 md:p-10 overflow-y-auto isolate ${tone === 'scrim' ? 'scrim' : ''} ${className}`}>
+    {tone === 'city' && <TitleBackdrop />}
+    {children}
+  </div>
+);
+
+/** Eyebrow + display title: the one heading style every screen uses. */
+const Heading = ({ eyebrow, children, color, className = 'mb-8' }: { eyebrow?: React.ReactNode; children: React.ReactNode; color?: string; className?: string }) => (
+  <div className={`text-center ${className}`}>
+    {eyebrow && <div className="text-[10px] font-semibold tracking-[0.5em] uppercase text-white/50 mb-3">{eyebrow}</div>}
+    <div className="font-display font-black italic uppercase leading-[0.9] text-4xl md:text-6xl" style={color ? { color, textShadow: `0 0 40px ${color}66` } : undefined}>{children}</div>
+  </div>
+);
+
+/** Gold RP price tag. */
+const Price = ({ cost, afford = true }: { cost: number; afford?: boolean }) => (
+  <span className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold tabular-nums border ${afford ? 'text-amber-200 border-amber-300/30 bg-amber-300/10' : 'text-white/35 border-white/10 bg-white/[0.03]'}`}>{cost} <span className="opacity-60">RP</span></span>
+);
+
+/** Glass choice card for picks (level-ups, mutators): lifts on hover, accent rim on top. */
+const ChoiceCard = ({ onPress, accent, children }: { onPress: () => void; accent: string; children: React.ReactNode }) => (
+  <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }}
+    className="glass relative overflow-hidden p-6 md:p-7 rounded-3xl flex flex-col items-center text-center active:scale-95 transition-all duration-200 hover:-translate-y-1 hover:bg-white/[0.08]">
+    <span className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
+    <span className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-32 rounded-full blur-3xl opacity-30" style={{ background: accent }} />
+    {children}
+  </button>
 );
 const BigButton = ({ onPress, children, className = 'bg-gradient-to-b from-white to-slate-200 text-[#0b0720] shadow-[0_10px_40px_rgba(255,255,255,0.18),inset_0_-3px_0_rgba(0,0,0,0.12)]' }: { onPress: () => void; children: React.ReactNode; className?: string }) => (
   <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }} className={`font-display font-black italic py-4 md:py-5 px-16 md:px-24 rounded-full text-xl md:text-2xl active:scale-95 transition-transform uppercase tracking-wide ${className}`}>{children}</button>
@@ -28,8 +57,7 @@ export const Title = () => {
   if (screen === 'legacy') return <Legacy onClose={() => setScreen('title')} />;
   const has = (id: string) => snap.unlocks.includes(id);
   return (
-    <Screen className="justify-center text-center isolate">
-      <TitleBackdrop />
+    <Screen tone="city" className="justify-center text-center">
       <div className="font-display font-black italic uppercase leading-[0.85] text-5xl sm:text-7xl md:text-8xl">
         <div>
           <span className="bg-gradient-to-b from-rose-300 to-red-500 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(239,68,68,0.45)]">Double</span>{' '}
@@ -68,13 +96,13 @@ export const Legacy = ({ onClose }: { onClose: () => void }) => {
   const { engine, snap } = useEngine();
   const owned = (id: string) => snap.unlocks.includes(id);
   return (
-    <Screen className="bg-[#05030f]">
-      <div className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter">Legacy</div>
-      <div className="text-sm font-black text-yellow-300 mt-2 mb-8 tracking-widest">{snap.legacy} LP</div>
+    <Screen tone="city">
+      <Heading eyebrow="Between runs" className="mb-3">Legacy</Heading>
+      <div className="mb-10 px-4 py-1.5 rounded-full text-xs font-semibold tabular-nums text-amber-200 border border-amber-300/30 bg-amber-300/10">{snap.legacy} LP available</div>
       <div className="w-full max-w-4xl space-y-6 mb-10">
         {LEGACY_BRANCHES.map((branch) => (
           <div key={branch}>
-            <div className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-2 ml-1">{branch}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.4em] text-white/45 mb-3 ml-1">{branch}</div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {LEGACY_TREE.filter((n) => n.branch === branch).map((n) => {
                 const have = owned(n.id);
@@ -85,12 +113,12 @@ export const Legacy = ({ onClose }: { onClose: () => void }) => {
                 return (
                   <button data-nav key={n.id}
                     onPointerDown={(e) => { e.preventDefault(); if (!have) engine.buyLegacy(n.id); else if (style) engine.setRopeStyle(equipped ? null : n.id); }}
-                    className={`p-4 rounded-2xl border text-left flex gap-3 items-start active:scale-95 ${have ? 'bg-white/10 border-emerald-400/50' : locked || !afford ? 'bg-black/40 border-white/5 opacity-50' : 'bg-white/5 border-yellow-300/40'}`}>
+                    className={`glass p-4 rounded-2xl text-left flex gap-3 items-start active:scale-95 transition-all ${have ? '!border-emerald-300/40' : locked || !afford ? 'opacity-45' : '!border-amber-300/35 hover:bg-white/[0.08]'}`}>
                     <div className="text-3xl">{n.icon}</div>
                     <div className="flex-1">
-                      <div className="font-black uppercase text-sm">{n.name}</div>
+                      <div className="font-display font-black italic uppercase text-sm tracking-wide">{n.name}</div>
                       <div className="text-[11px] text-white/60 mt-0.5">{n.desc}</div>
-                      <div className="text-[11px] font-black mt-1">
+                      <div className="text-[11px] font-semibold mt-2">
                         {have ? <span className="text-emerald-300">{style ? (equipped ? 'Equipped' : 'Tap to equip') : 'Unlocked'}</span>
                           : locked ? <span className="text-white/40">Needs {n.requires!.map((r) => LEGACY_TREE.find((x) => x.id === r)?.name).join(' + ')}</span>
                           : <span className="text-yellow-300">{n.cost} LP</span>}
@@ -113,15 +141,20 @@ export const Bestiary = ({ onClose }: { onClose: () => void }) => {
   const { shell } = usePlatform();
   const codex = shell.production.codex;
   return (
-    <Screen className="bg-[#05030f]">
-      <div className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter mb-8">Bestiary</div>
+    <Screen tone="city">
+      <Heading eyebrow="Field notes">Bestiary</Heading>
+      {codex.list('enemy').length === 0 && (
+        <div className="glass max-w-sm px-6 py-5 rounded-2xl text-center text-sm text-white/60 leading-relaxed mb-10">
+          No entries yet. Every enemy you face in a run gets a page here, with how to beat it.
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl mb-10">
         {codex.list('enemy').map((entry) => {
           const known = codex.isUnlocked(entry.id);
           return (
-            <div key={entry.id} className="p-5 rounded-2xl bg-white/5 border border-white/10">
-              <div className={`text-xl font-black uppercase ${known ? '' : 'text-white/25'}`}>{known ? entry.title : '???'}</div>
-              <div className="text-sm text-white/60 mt-1">{known ? entry.body : ''}</div>
+            <div key={entry.id} className={`glass p-5 rounded-2xl ${known ? '' : 'opacity-50'}`}>
+              <div className={`font-display text-lg font-black italic uppercase tracking-wide ${known ? '' : 'text-white/30'}`}>{known ? entry.title : '???'}</div>
+              <div className="text-sm text-white/60 mt-1.5 leading-relaxed">{known ? entry.body : 'Not met yet.'}</div>
             </div>
           );
         })}
@@ -133,16 +166,17 @@ export const Bestiary = ({ onClose }: { onClose: () => void }) => {
 
 const Slider = ({ label, value, min, max, step, format, onChange }: { label: string; value: number; min: number; max: number; step: number; format: (v: number) => string; onChange: (v: number) => void }) => (
   <label className="block">
-    <div className="flex justify-between text-sm font-black uppercase mb-2"><span>{label}</span><span className="text-cyan-400">{format(value)}</span></div>
-    <input data-nav type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-cyan-400" />
+    <div className="flex justify-between text-[11px] font-semibold uppercase tracking-[0.2em] mb-2.5"><span className="text-white/75">{label}</span><span className="text-cyan-300 tabular-nums">{format(value)}</span></div>
+    <input data-nav type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="range w-full"
+      style={{ '--fill': `${((value - min) / (max - min)) * 100}%` } as React.CSSProperties} />
   </label>
 );
 
 const Toggle = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
-  <button data-nav onPointerDown={(e) => { e.preventDefault(); onChange(!value); }} className="w-full flex justify-between items-center text-sm font-black uppercase py-1">
+  <button data-nav onPointerDown={(e) => { e.preventDefault(); onChange(!value); }} className="w-full flex justify-between items-center text-[11px] font-semibold uppercase tracking-[0.2em] text-white/75 py-1">
     <span>{label}</span>
-    <span className={`w-12 h-7 rounded-full p-1 transition-colors ${value ? 'bg-cyan-500' : 'bg-white/15'}`}>
-      <span className={`block w-5 h-5 rounded-full bg-white transition-transform ${value ? 'translate-x-5' : ''}`} />
+    <span className={`w-11 h-6 rounded-full p-0.5 transition-colors ${value ? 'bg-gradient-to-r from-cyan-400 to-violet-400 shadow-[0_0_14px_rgba(34,211,238,0.5)]' : 'bg-white/10'}`}>
+      <span className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${value ? 'translate-x-5' : ''}`} />
     </span>
   </button>
 );
@@ -155,12 +189,13 @@ const SettingsPanel = () => {
   const s = engine.settings;
   const set = (patch: Partial<GameSettings>) => engine.updateSettings(patch);
   return (
-    <div className="w-full max-w-md bg-white/5 p-6 rounded-2xl border border-white/10 space-y-5">
+    <div className="glass w-full max-w-md p-6 rounded-3xl space-y-5">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.4em] text-white/45">Settings</div>
       <Slider label="Music" value={s.musicVolume} min={0} max={1} step={0.05} format={pct} onChange={(v) => set({ musicVolume: v })} />
       <Slider label="Sound FX" value={s.sfxVolume} min={0} max={1} step={0.05} format={pct} onChange={(v) => set({ sfxVolume: v })} />
       <div>
         <Slider label="Input Latency" value={s.latencyMs} min={-150} max={150} step={5} format={(v) => `${v > 0 ? '+' : ''}${v} ms`} onChange={(v) => set({ latencyMs: v })} />
-        <div className="text-[10px] text-white/40 mt-2">Raise if PERFECTs feel late, lower if early. Bluetooth audio usually needs +.</div>
+        <div className="text-[10px] text-white/40 mt-2 leading-relaxed">Raise if PERFECTs feel late, lower if early. Bluetooth audio usually needs +.</div>
       </div>
       <Slider label="Screen Shake" value={s.screenShake} min={0} max={1} step={0.1} format={pct} onChange={(v) => set({ screenShake: v })} />
       <Slider label="Flashes" value={s.flashes} min={0} max={1} step={0.1} format={pct} onChange={(v) => set({ flashes: v })} />
@@ -175,36 +210,39 @@ export const Pause = () => {
   const [detail, setDetail] = useState<{ name: string; desc: string; icon: string } | null>(null);
   const platform = usePlatform();
   return (
-    <Screen className="bg-black/95">
-      <div className="text-5xl md:text-7xl font-black italic mb-10 uppercase tracking-tighter text-center">Paused</div>
+    <Screen>
+      <Heading eyebrow={`Wave ${snap.wave}`} className="mb-10">Paused</Heading>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl mb-10">
         {(['red', 'blue'] as BroKey[]).map((k) => {
           const b = snap.bros[k];
           const d = calculateDerived(b);
           return (
-            <div key={k} className="bg-white/5 p-8 rounded-[2rem] border border-white/10">
-              <div className="text-2xl font-black mb-6 uppercase" style={{ color: b.color }}>{b.name}</div>
+            <div key={k} className="glass relative overflow-hidden p-6 md:p-8 rounded-3xl">
+              <span className="absolute -top-20 -left-10 w-56 h-40 rounded-full blur-3xl opacity-25" style={{ background: b.color }} />
+              <div className="relative flex items-baseline justify-between mb-6">
+                <div className="font-display text-3xl font-black italic uppercase" style={{ color: b.color }}>{b.name}</div>
+                <div className="text-[10px] font-semibold tracking-[0.3em] text-white/45">LV {b.lvl}</div>
+              </div>
               <div className="grid grid-cols-2 gap-2 mb-6">
                 {GEAR_SLOTS.map((slot) => {
                   const item = GEAR_DATA[slot].find((i) => i.id === b.gear[slot]);
                   return (
-                    <button data-nav key={slot} onPointerDown={() => setDetail({ name: item?.name ?? 'Standard', desc: item?.desc ?? 'Basic reliable equipment.', icon: item?.icon ?? '📦' })} className="p-3 bg-white/5 border border-white/10 rounded-xl text-left active:scale-95">
-                      <div className="text-[8px] font-black text-white/40 uppercase">{slot}</div>
-                      <div className="text-xs font-bold truncate">{item?.name ?? 'Standard'}</div>
+                    <button data-nav key={slot} onPointerDown={() => setDetail({ name: item?.name ?? 'Standard', desc: item?.desc ?? 'Basic reliable equipment.', icon: item?.icon ?? '📦' })} className="p-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-left active:scale-95 hover:bg-white/[0.08] transition-colors">
+                      <div className="text-[8px] font-semibold tracking-[0.25em] text-white/40 uppercase">{slot}</div>
+                      <div className="text-xs font-semibold truncate mt-0.5">{item?.icon} {item?.name ?? 'Standard'}</div>
                     </button>
                   );
                 })}
               </div>
               <div className="space-y-2 mb-6 border-t border-white/5 pt-4">
-                <div className="text-[10px] font-black text-white/40 uppercase">Passive Perks</div>
+                <div className="text-[10px] font-semibold tracking-[0.3em] text-white/40 uppercase">Passive Perks</div>
                 {b.perks.length === 0 && <div className="text-[11px] text-white/30">None yet — every 5th level.</div>}
-                {b.perks.map((pid) => <div key={pid} className="text-[11px] font-bold text-yellow-400">⚡ {PERKS_DATA.find((p) => p.id === pid)?.name}</div>)}
+                {b.perks.map((pid) => <div key={pid} className="text-[11px] font-semibold text-amber-200">⚡ {PERKS_DATA.find((p) => p.id === pid)?.name}</div>)}
               </div>
-              <div className="space-y-3 border-t border-white/5 pt-4 text-xl font-bold">
-                <div className="flex justify-between"><span>Max HP</span><span className="text-green-400">{d.maxHp}</span></div>
-                <div className="flex justify-between"><span>Base DMG</span><span className="text-red-400">{Math.round(d.pwr)}</span></div>
-                <div className="flex justify-between"><span>Crit %</span><span className="text-purple-400">{Math.round(d.crit * 100)}%</span></div>
-                <div className="flex justify-between"><span>Teamwork</span><span className="text-yellow-400">x{d.teamwork.toFixed(1)}</span></div>
+              <div className="grid grid-cols-4 gap-2 border-t border-white/5 pt-4 text-center">
+                {([['HP', d.maxHp, 'text-emerald-300'], ['DMG', Math.round(d.pwr), 'text-rose-300'], ['Crit', `${Math.round(d.crit * 100)}%`, 'text-violet-300'], ['Team', `×${d.teamwork.toFixed(1)}`, 'text-amber-200']] as const).map(([l, v, c]) => (
+                  <div key={l}><div className={`font-display text-xl md:text-2xl font-black italic tabular-nums ${c}`}>{v}</div><div className="text-[9px] font-semibold tracking-[0.25em] text-white/40 uppercase mt-1">{l}</div></div>
+                ))}
               </div>
             </div>
           );
@@ -213,12 +251,12 @@ export const Pause = () => {
       <SettingsPanel />
       <div className="mt-4 mb-10"><SmallButton onPress={() => platform.exportPlaytest()}>Export playtest</SmallButton></div>
       {detail && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-6 z-[110]" onPointerDown={() => setDetail(null)}>
-          <div className="bg-[#0a0a1a] border border-white/20 p-8 rounded-[2.5rem] max-w-lg w-full text-center" onPointerDown={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 scrim flex items-center justify-center p-6 z-[110]" onPointerDown={() => setDetail(null)}>
+          <div className="glass p-8 rounded-3xl max-w-md w-full text-center" onPointerDown={(e) => e.stopPropagation()}>
             <div className="text-6xl mb-4">{detail.icon}</div>
-            <div className="text-3xl font-black mb-2">{detail.name}</div>
-            <div className="text-sm text-white/60 mb-8">{detail.desc}</div>
-            <button data-nav onPointerDown={() => setDetail(null)} className="w-full py-4 bg-white text-black font-black uppercase rounded-2xl active:scale-95">Close</button>
+            <div className="font-display text-2xl font-black italic uppercase mb-2">{detail.name}</div>
+            <div className="text-sm text-white/60 mb-8 leading-relaxed">{detail.desc}</div>
+            <button data-nav onPointerDown={() => setDetail(null)} className="w-full py-3.5 bg-gradient-to-b from-white to-slate-200 text-[#0b0720] font-display font-black italic uppercase rounded-full active:scale-95">Close</button>
           </div>
         </div>
       )}
@@ -231,16 +269,16 @@ export const Shop = () => {
   const { engine, snap } = useEngine();
   const [tab, setTab] = useState<'supplies' | BroKey>('supplies');
   return (
-    <div data-layer="overlay" className="fixed inset-0 bg-[#050508] z-[100] flex flex-col">
-      <div className="shrink-0 pt-8 pb-4 flex flex-col items-center">
-        <div className="text-3xl font-black italic mb-2 uppercase tracking-tighter">Shop</div>
-        <div className="text-xs font-bold text-yellow-400 mb-4 tracking-widest uppercase">{snap.rp} RP</div>
+    <div data-layer="overlay" className="fixed inset-0 scrim z-[100] flex flex-col">
+      <div className="shrink-0 pt-[max(env(safe-area-inset-top),28px)] pb-4 flex flex-col items-center">
+        <Heading eyebrow={`Before wave ${snap.wave + 1}`} className="mb-3">Shop</Heading>
+        <div className="mb-5 px-4 py-1.5 rounded-full text-xs font-semibold tabular-nums text-amber-200 border border-amber-300/30 bg-amber-300/10">{snap.rp} RP</div>
         {snap.rigAlert && (
-          <div className="mb-5 mx-4 max-w-xl px-4 py-2 rounded-xl border border-amber-400/50 bg-amber-400/10 text-amber-200 text-xs font-bold text-center">⚠ {snap.rigAlert}</div>
+          <div className="mb-5 mx-4 max-w-xl px-4 py-2 rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-xs font-semibold text-center">⚠ {snap.rigAlert}</div>
         )}
-        <div className="flex gap-2 md:gap-4 w-full max-w-4xl px-4">
+        <div className="glass flex p-1 rounded-full w-[calc(100%-2rem)] max-w-xl">
           {(['supplies', 'red', 'blue'] as const).map((t) => (
-            <button data-nav key={t} onPointerDown={(e) => { e.preventDefault(); setTab(t); }} className={`flex-1 py-3 md:py-4 rounded-2xl font-black text-sm md:text-xl uppercase ${tab === t ? 'bg-white text-black' : 'bg-white/10 text-white/40'}`}>
+            <button data-nav key={t} onPointerDown={(e) => { e.preventDefault(); setTab(t); }} className={`flex-1 py-2.5 rounded-full font-display font-black italic text-xs md:text-sm uppercase tracking-wide transition-all ${tab === t ? 'bg-gradient-to-b from-white to-slate-200 text-[#0b0720] shadow-lg' : 'text-white/45 hover:text-white/80'}`}>
               {t === 'supplies' ? 'Items' : `${snap.bros[t].name}'s Rig`}
             </button>
           ))}
@@ -251,28 +289,30 @@ export const Shop = () => {
           {tab === 'supplies' && (Object.keys(ITEM_DATA) as ItemId[]).map((id) => {
             const item = ITEM_DATA[id];
             return (
-              <button data-nav key={id} onPointerDown={() => engine.buyItem(id)} className={`p-6 bg-white/5 border border-white/10 rounded-[2rem] flex justify-between items-center active:scale-95 ${snap.rp < item.cost ? 'opacity-50' : ''}`}>
-                <div className="text-left pr-2">
-                  <div className="font-black italic uppercase">{item.icon} {item.name} <span className="text-white/40">×{snap.inventory[id]}</span></div>
-                  <div className="text-[10px] font-bold text-white/40 uppercase mt-1">{item.desc}</div>
+              <button data-nav key={id} onPointerDown={() => engine.buyItem(id)} className={`glass p-5 rounded-2xl flex gap-4 items-center active:scale-95 transition-all hover:bg-white/[0.08] ${snap.rp < item.cost ? 'opacity-50' : ''}`}>
+                <div className="w-12 h-12 shrink-0 rounded-xl bg-white/[0.06] flex items-center justify-center text-2xl">{item.icon}</div>
+                <div className="flex-1 text-left">
+                  <div className="font-display font-black italic uppercase tracking-wide">{item.name} <span className="text-white/35 text-xs not-italic font-semibold tabular-nums">×{snap.inventory[id]}</span></div>
+                  <div className="text-[11px] text-white/50 mt-1 leading-snug">{item.desc}</div>
                 </div>
-                <div className="text-yellow-400 font-black text-2xl">{item.cost}</div>
+                <Price cost={item.cost} afford={snap.rp >= item.cost} />
               </button>
             );
           })}
           {tab !== 'supplies' && (Object.entries(GEAR_DATA) as [GearSlot, typeof GEAR_DATA.rope][]).map(([slot, list]) => (
             <div key={slot} className="space-y-2">
-              <div className="text-[10px] font-black text-white/40 uppercase ml-2">{slot}</div>
+              <div className="text-[10px] font-semibold tracking-[0.35em] text-white/45 uppercase ml-2 mb-1">{slot}</div>
               {list.filter((item) => !item.unlock || snap.unlocks.includes(item.unlock)).map((item) => {
                 const owned = snap.bros[tab].owned[slot].includes(item.id);
                 const equipped = snap.bros[tab].gear[slot] === item.id;
                 return (
-                  <button data-nav key={item.id} onPointerDown={() => engine.buyOrEquip(tab, slot, item.id)} className={`w-full p-4 rounded-[1.5rem] border flex justify-between items-center ${equipped ? 'bg-white text-black border-white' : owned ? 'bg-white/10 border-white/40' : 'bg-black/40 text-white/60 border-white/5 active:scale-95'}`}>
-                    <div className="text-left pr-4">
-                      <div className="text-xs font-black uppercase">{item.icon} {item.name}</div>
-                      <div className="text-[10px] font-bold opacity-60 mt-1">{item.desc}</div>
+                  <button data-nav key={item.id} onPointerDown={() => engine.buyOrEquip(tab, slot, item.id)} className={`glass w-full p-4 rounded-2xl flex gap-3 items-center active:scale-95 transition-all ${equipped ? '!border-cyan-300/50 !bg-cyan-300/[0.08]' : owned ? 'hover:bg-white/[0.08]' : 'hover:bg-white/[0.08] text-white/75'}`}>
+                    <div className="w-10 h-10 shrink-0 rounded-xl bg-white/[0.06] flex items-center justify-center text-xl">{item.icon}</div>
+                    <div className="flex-1 text-left">
+                      <div className="text-xs font-display font-black italic uppercase tracking-wide">{item.name}</div>
+                      <div className="text-[10px] text-white/50 mt-1 leading-snug">{item.desc}</div>
                     </div>
-                    {owned ? <div className="text-[10px] font-black uppercase">{equipped ? 'Equipped' : 'Owned'}</div> : <div className="text-yellow-400 font-black text-lg">{item.cost}</div>}
+                    {owned ? <div className={`text-[9px] font-semibold tracking-[0.25em] uppercase ${equipped ? 'text-cyan-300' : 'text-white/45'}`}>{equipped ? 'Equipped' : 'Owned'}</div> : <Price cost={item.cost} afford={snap.rp >= item.cost} />}
                   </button>
                 );
               })}
@@ -280,8 +320,8 @@ export const Shop = () => {
           ))}
         </div>
       </div>
-      <div className="shrink-0 bg-black/60 p-6 flex justify-center border-t border-white/10">
-        <BigButton onPress={() => engine.nextWave()} className="bg-cyan-500 text-white shadow-[0_0_60px_rgba(6,182,212,0.6)]">Next Wave</BigButton>
+      <div className="shrink-0 p-5 pb-[max(env(safe-area-inset-bottom),20px)] flex justify-center bg-gradient-to-t from-[#05030f] to-transparent">
+        <BigButton onPress={() => engine.nextWave()} className="text-[#04121a] bg-gradient-to-b from-cyan-200 to-cyan-400 shadow-[0_0_50px_rgba(34,211,238,0.45),inset_0_1px_0_rgba(255,255,255,0.6)]">Next Wave</BigButton>
       </div>
     </div>
   );
@@ -292,20 +332,19 @@ export const MutatorPick = () => {
   const { engine, snap } = useEngine();
   if (!snap.mutatorChoices) return null;
   return (
-    <Screen className="bg-[#0b0418] justify-center z-[125]">
-      <div className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter text-center mb-2">Ascend</div>
-      <div className="text-xs font-bold text-white/50 uppercase tracking-widest mb-8">Score ×{snap.mutators.reduce((m, id) => m * MUTATORS[id].score, 1).toFixed(2)}</div>
+    <Screen className="justify-center z-[125]">
+      <Heading eyebrow={`Score ×${snap.mutators.reduce((m, id) => m * MUTATORS[id].score, 1).toFixed(2)}`} color="#f0abfc">Ascend</Heading>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl">
         {snap.mutatorChoices.map((id) => {
           const m = MUTATORS[id];
           return (
-            <button data-nav key={id} onPointerDown={(e) => { e.preventDefault(); engine.chooseMutator(id); }} className="p-6 rounded-[2rem] bg-black/40 border-2 border-fuchsia-400/30 flex flex-col items-center text-center active:scale-95 hover:bg-white/5">
-              <div className="text-5xl mb-2">{m.icon}</div>
-              <div className="text-2xl font-black uppercase">{m.name}</div>
-              <div className="mt-3 text-sm font-bold text-emerald-300">+ {m.blessing}</div>
-              <div className="mt-1 text-sm font-bold text-rose-300">− {m.curse}</div>
-              <div className="mt-3 text-xs font-black text-fuchsia-300">Score ×{m.score}</div>
-            </button>
+            <ChoiceCard key={id} accent="#e879f9" onPress={() => engine.chooseMutator(id)}>
+              <div className="relative text-5xl mb-3">{m.icon}</div>
+              <div className="relative font-display text-2xl font-black italic uppercase">{m.name}</div>
+              <div className="relative mt-4 text-sm text-emerald-200">+ {m.blessing}</div>
+              <div className="relative mt-1 text-sm text-rose-200">− {m.curse}</div>
+              <div className="relative mt-5 px-3 py-1 rounded-full text-[10px] font-semibold tracking-[0.25em] text-fuchsia-200 border border-fuchsia-300/30 bg-fuchsia-300/10">SCORE ×{m.score}</div>
+            </ChoiceCard>
           );
         })}
       </div>
@@ -316,8 +355,8 @@ export const MutatorPick = () => {
 export const WaveClear = () => {
   const { engine } = useEngine();
   return (
-    <Screen className="bg-black/95 justify-center">
-      <div className="text-5xl md:text-8xl font-black italic text-yellow-400 mb-8 drop-shadow-[0_0_40px_#facc15] text-center uppercase tracking-tighter">Wave Clear</div>
+    <Screen className="justify-center">
+      <div className="rank-in font-display font-black italic uppercase text-center leading-[0.9] text-6xl md:text-8xl mb-10 bg-gradient-to-b from-amber-100 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(250,204,21,0.35)]">Wave<br />Clear</div>
       <BigButton onPress={() => engine.enterShop()}>Enter Shop</BigButton>
     </Screen>
   );
@@ -326,8 +365,8 @@ export const WaveClear = () => {
 export const TutorialDone = () => {
   const { engine } = useEngine();
   return (
-    <Screen className="bg-black/95 justify-center text-center">
-      <div className="text-5xl md:text-7xl font-black italic uppercase tracking-tighter leading-none">You've got<br />the rhythm.</div>
+    <Screen className="justify-center text-center">
+      <Heading eyebrow="Tutorial complete" className="">You've got<br />the rhythm.</Heading>
       <div className="mt-6 max-w-sm text-sm text-white/60 leading-relaxed">
         From here on, trips and hits cost HP. Clear waves to earn RP, gear up in the shop, and see how far Hop &amp; Skip can go.
       </div>
@@ -349,17 +388,17 @@ export const GameOver = () => {
   const rank = result?.rank.rank.label;
   const daily = run?.mode === 'daily';
   const stat = (label: string, v: number | string) => (
-    <div className="flex justify-between text-sm"><span className="text-white/50 uppercase font-bold">{label}</span><span className="font-black">{v}</span></div>
+    <div className="flex justify-between items-baseline text-sm py-1.5 border-b border-white/[0.06] last:border-0"><span className="text-[10px] text-white/50 uppercase font-semibold tracking-[0.2em]">{label}</span><span className="font-semibold tabular-nums">{v}</span></div>
   );
   return (
-    <Screen className="bg-[#12030a]/95 justify-center text-center">
-      <div className="text-xs font-black tracking-[0.5em] uppercase text-white/50">{daily ? 'Daily' : 'Run'} over · Wave {snap.wave}</div>
+    <Screen className="justify-center text-center">
+      <div className="text-[10px] font-semibold tracking-[0.5em] uppercase text-white/50">{daily ? 'Daily' : 'Run'} over · Wave {snap.wave}</div>
       {rank && (
-        <div className="rank-in text-[120px] md:text-[160px] font-black italic leading-none my-2" style={{ color: RANK_COLOR[rank] ?? '#fff', textShadow: `0 0 50px ${RANK_COLOR[rank] ?? '#fff'}` }}>{rank}</div>
+        <div className="rank-in font-display text-[120px] md:text-[160px] font-black italic leading-none my-2" style={{ color: RANK_COLOR[rank] ?? '#fff', textShadow: `0 0 60px ${RANK_COLOR[rank] ?? '#fff'}88` }}>{rank}</div>
       )}
-      {run && <div className="text-3xl font-black tabular-nums">{run.score.toLocaleString()}{result?.isBest && <span className="ml-3 text-sm text-yellow-300 align-middle">BEST</span>}</div>}
+      {run && <div className="font-display text-3xl font-black italic tabular-nums">{run.score.toLocaleString()}{result?.isBest && <span className="ml-3 px-2.5 py-1 rounded-full text-[10px] not-italic font-semibold tracking-[0.25em] text-amber-200 border border-amber-300/30 bg-amber-300/10 align-middle">NEW BEST</span>}</div>}
       {run && (
-        <div className="mt-6 w-full max-w-xs space-y-1.5">
+        <div className="glass mt-6 w-full max-w-xs px-5 py-3 rounded-2xl text-left">
           {stat('Waves cleared', run.stats.wavesCleared)}
           {stat('Perfect jumps', `${run.stats.perfects} / ${run.stats.perfects + run.stats.trips}`)}
           {stat('Tags landed', `${run.stats.tagsLanded} / ${run.stats.tagsLanded + run.stats.tagsMissed}`)}
@@ -370,11 +409,11 @@ export const GameOver = () => {
         </div>
       )}
       {top.length > 0 && (
-        <div className="mt-6 w-full max-w-xs">
-          <div className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-2">{daily ? "Today's best" : 'Best runs'}</div>
+        <div className="glass mt-4 w-full max-w-xs px-5 py-4 rounded-2xl">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.4em] text-white/40 mb-2">{daily ? "Today's best" : 'Best runs'}</div>
           {top.map((t, i) => (
             <div key={t.submittedAt + i} className={`flex justify-between text-sm py-0.5 ${t.score === run?.score ? 'text-yellow-300' : 'text-white/70'}`}>
-              <span>{i + 1}. W{String(t.metadata?.wave ?? '?')} · {String(t.metadata?.rank ?? '')}</span><span className="tabular-nums font-black">{t.score.toLocaleString()}</span>
+              <span>{i + 1}. W{String(t.metadata?.wave ?? '?')} · {String(t.metadata?.rank ?? '')}</span><span className="tabular-nums font-semibold">{t.score.toLocaleString()}</span>
             </div>
           ))}
         </div>
@@ -393,16 +432,15 @@ export const LevelUp = () => {
   const b = snap.bros[snap.levelUp.bro];
   const milestone = (b.lvl + 1) % 5 === 0 && snap.levelUp.choices[0]?.kind === 'perk';
   return (
-    <Screen className="bg-[#0a0a1a] justify-center z-[120]">
-      <div className="text-[10px] font-black tracking-[0.5em] mb-4 uppercase animate-pulse" style={{ color: b.color }}>{b.name} → L{b.lvl + 1}</div>
-      <div className="text-5xl md:text-[80px] font-black italic mb-2 uppercase tracking-tighter text-center leading-none" style={{ color: b.color }}>{milestone ? 'Milestone!' : 'Level Up!'}</div>
+    <Screen className="justify-center z-[120]">
+      <Heading eyebrow={`${b.name} · LV ${b.lvl} → ${b.lvl + 1}`} color={b.color} className="">{milestone ? 'Milestone' : 'Level Up'}</Heading>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full max-w-5xl mt-8">
         {snap.levelUp.choices.map((c) => (
-          <button data-nav key={c.key} onPointerDown={(e) => { e.preventDefault(); engine.chooseLevel(c); }} className="bg-black/40 border-2 border-white/10 p-6 rounded-[2rem] flex flex-col items-center active:scale-95 hover:bg-white/5">
-            <div className="text-5xl mb-2">{c.icon}</div>
-            <div className={`text-2xl md:text-4xl font-black mb-1 ${c.kind === 'stat' ? c.color : 'text-yellow-400'}`}>{c.name}{c.kind === 'stat' ? '++' : ''}</div>
-            <div className="text-white/50 font-bold uppercase tracking-widest text-[10px] md:text-xs text-center">{c.desc}</div>
-          </button>
+          <ChoiceCard key={c.key} accent={b.color} onPress={() => engine.chooseLevel(c)}>
+            <div className="relative text-5xl mb-3">{c.icon}</div>
+            <div className={`relative font-display text-2xl md:text-3xl font-black italic uppercase mb-2 ${c.kind === 'stat' ? c.color : 'text-amber-200'}`}>{c.name}{c.kind === 'stat' ? ' +' : ''}</div>
+            <div className="relative text-white/55 text-xs leading-relaxed">{c.desc}</div>
+          </ChoiceCard>
         ))}
       </div>
     </Screen>
