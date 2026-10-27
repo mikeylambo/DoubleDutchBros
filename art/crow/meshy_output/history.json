@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "folder": "20261027_234034_crow_01a17fbc",
+      "prompt": "crow",
+      "task_type": "text-to-image",
+      "root_task_id": "01a17fbc-ad72-768b-a401-0d1f7ee7b6c2",
+      "created_at": "2026-10-27T23:40:34.927Z",
+      "updated_at": "2026-10-27T23:41:21.421Z",
+      "task_count": 1
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbb-ea8f-71c0-b85f-220308d52c43",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of STONE SHELL, a tanky enemy: a stocky turtle whose shell is a heavy cast-iron city manhole cover (#94a3b8) with grip pattern and a tiny sewer grate, slate-grey skin, stubborn sleepy eyes, chunky stumpy legs, a small chain padlock on the shell. Grounded and heavy. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144384150,
+  "started_at": 1793144384154,
+  "finished_at": 1793144414295,
+  "expires_at": 1793403614295,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-5d8d-75fd-82d9-569467ad9983_part_0.png?Expires=1793403614&Signature=lkOeAzV1XYvIjNijucb6W5pi41FPQjfkzDpLlCNuywmhrKU4czWphQxTWtNuAwXDOFgbb9P2S0Cy7Pg8R-AguzUdEmGAEpoFzZ91G2uOO82MdwDfX~2hHPTX9KK8j8osdLDBHmpLAk4CXhUyNDBOLpAzsaDClVyaroP1w284AKR6vlaK0SB5hM5dOyDMUQjKiFnLI310s72ZjEDlJ3kh9nWllrlRo76IhoBEDI2ggxY5WkLeapWGKJJjEM1d5FQ6rUt7216pIB-AcbHPKP4kBpYH-msPuVFEcq-l4CmUkSP8Ch0zUnYKtKMEEyzcat9N4e07KHGqx-2dj67Uj1QXtg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-5d8d-75fd-82d9-569467ad9983_part_1.png?Expires=1793403614&Signature=e9pDNhSjucmYTCmv~Dj1aJFtz-FuK6S19YbSKlT9ZeIibNX76cz2UROnjPSITTdj1eWO6vP5YNz0awLhXkkR3Kx15-wLFdPY5a8QtyxtCdlJlD5htof58wA6cz~injGiRXzWryK5vISyADcpe8nXrtNxelWM4g3guoAo6D-bukxYKHyAsLCSiGYhKmUR4J91zLX3JJRnnUKlI4-ywu8rAeMLygRfyGmSWgJmLg3zXlYlEZfN2pEfXJ~qk4LpPlN2AvCs~TiJRnzjByeA6uhEghyLKD~ewW8pqFycrCklFVd27Vbh26Olp~huWClWD5UmTFSv4bsSosObF5l8EbRuAA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-5d8d-75fd-82d9-569467ad9983_part_2.png?Expires=1793403614&Signature=TZEdPmzKqzdgqH5qwn1JoiZvN6is5IeEJA2eaFjAyFkfKX6D52c~FGhYuodynufbgiWMOdf-m~tk7GYWh2J0p58e4TKb7JyJgNbdgwr9QxUsIpm4WWgr7olM6aETkJbSYDbfezHqPem6aU8EtIndK83icq~k8JS~wTTkPffiQw~ihPrNH039pUSQPBLTagPDZEqQwu2ehKYrvkKc-T3DWuvdJJvCc6HrUK7xXEB1hGKhxre4OpyNo6yVg5HK3fK3jpPOgFiXVpk4Sl0NF6sqvRiWKMAOuA3mCoXluDN212KWBAcJyTGqz4Bz3H1QycS9z7xmhhXzAD-prhY5~Gwrcw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

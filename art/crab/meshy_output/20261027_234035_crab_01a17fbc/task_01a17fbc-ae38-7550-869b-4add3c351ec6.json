@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbc-ae38-7550-869b-4add3c351ec6",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of BOOMBOX CRAB: a pink-red sidewalk crab (#fb7185) hauling a big chrome 90s boombox on its back like a shell, speakers with glowing cones, one oversized claw raised, eyes on stalks wearing tiny sunglasses, scuttling sideways. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144434245,
+  "started_at": 1793144434250,
+  "finished_at": 1793144460973,
+  "expires_at": 1793403660973,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-13f9-77a1-91a5-18b767419e1f_part_0.png?Expires=1793403660&Signature=EFhWr11zPOMsAFILFAym8S4n25iEr99rL72F785EzF73xNB1C3V6p-Sj-qYhUeJesZZyIW7LCwsCaM8tHBPJHraBpHGYGgfCes5jESSn77AiijMdUXqctBQo~AwZmNIyaV9pBFPaGPM0VjHvtVFTDyjqpJAAaz4le1632ZLlwRISC0VCmaz8gk~KWaJ0UXqsoWN1j3b0GNXRerPOaYfQVkG8YBSK9-i53-qJlRXI~7238sq~QyAQPn3CttYxgHrn681mBnxcob3QVCRsPpms1PNatpjw6Mqh3l6Wspk2hN3NBlCBYpiz-gIcI32scEpzGU9wJID7OtGD~yS3VRFVbg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-13f9-77a1-91a5-18b767419e1f_part_1.png?Expires=1793403660&Signature=G5eShU~ypuFxGXpyQJuHGcZtBlnSi544wrSwMs8RFv~CCJ-jS~5BzxTTzFEdZZSos-TKYNQW5MvNlNm1b2B08At4A1D2Y~5gFAwpRDwAhzpTM5Mg-WncBwv1ivQVH440Ko665UFZeYHMNLlVmUsl~OlHkeCcVY7Oy9VlgCaDxOZ68S8CPswRfbvEmiIn9kUFSRkywCPrBKyJ6S~OO4mYMbYgl9WkG8D0emx7o3yTtR7OJMllumPdc~tU0X176fHWaZt7erVmTovvjB9I96m4V8ubHNI75D2Lm907r88q9SMfGZKJiH0XzvUuiIeV93Lm0951kKgY4rw1ySCD1NqfSA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-13f9-77a1-91a5-18b767419e1f_part_2.png?Expires=1793403660&Signature=ZuRdW84dKxNBvPfLCVBcQw7Wnr0MzcBvceflJOnoyBJXUj2JxSabhDJNJpF-TgPxhSbRo6i9Ujh8NSya2CzDP8VAjpQnqkLCNEIiCQsR3kGeIbYJrXZxk-Jlm5U0877ndG~CDIT-OW16N8yV~WJSQzUOCNCn2OIvSs0h3nCe0uh7I~q7xQaa~4rZ-TspJu6O8yPhLa8XzA8xdAhQRsSLqlyuKX4xCbxG38vIgTRsTG2xfljLyyd2Cqik1wP~r8pnfeOkBZJzjvPxnwQjUuUWaspY8HSSMTpj20Ucbs2Vtrewp4CPhqCVe73MaA9seDGeqiRMETU6BWq4xjU20-4xNw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

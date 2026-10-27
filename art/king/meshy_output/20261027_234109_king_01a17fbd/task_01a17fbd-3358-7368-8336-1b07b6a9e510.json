@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbd-3358-7368-8336-1b07b6a9e510",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of BOUNCER KING, a boss: a gigantic regal gorilla bouncer with lilac-violet fur (#c4b5fd), a gold crown, purple velvet robe over a black SECURITY tee, a gold velvet-rope scepter, heavy gold rings, dark shades, smug royal frown. A-pose. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144468849,
+  "started_at": 1793144468853,
+  "finished_at": 1793144493293,
+  "expires_at": 1793403693293,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-9220-71d3-b60e-83fe2dcbda69_part_0.png?Expires=1793403693&Signature=Ue-6ewHNjlsc~xrFvVCdAsX7AFT14tQJxGtuVlTqYydrNR4Mz3WaHUmfFl4KSkKSw2wOYf3gRQ3ePo4ac9J628bjtkf9ClbSoxpmn7ApHKXs53u4a3nNWLdzt-8itDlMDexUcD8cp5heGlbqpeSZrGcPbtD~cJMJh2vwf1IhVvDtrf5Z1BVocHIrsFbq2iMG3hE-y9UefyRjD60glGdlBM6~ddFuREqOCdv5XNO42FgPts2xIIFoTGLAN-gyW19stKs4~eoRPSXh6yxCjhz9k7klzP-BIPdsThyAxZlJmhvZAEnfAGAwh9~w12d3pb8FDY~kQvGp2-4WobNZ2z632g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-9220-71d3-b60e-83fe2dcbda69_part_1.png?Expires=1793403693&Signature=Xr0O7BJwIKRE0-AurIiJ-Ilz6tqrwii2jCdbs2pTA-eTMMoAdkL0WL9qYw2cMaSXj9SM-FBAtLSWvepNgH6Pinju3CEzNYEpljgbg0q6PRjcSG8w3ar2LbXLmCq-IFnowwHyyrPNh6OM1mRDAs824PBcblnax1mqdd7xGsEhD96EkuGAjUUIY-omTVTNo1OBxX~VJ~cBWX-iYkeMP0ujL75seubfr-0sMdZ5edSOOyRzBS4kWgb6C3Rj5eMIdxhNP31GXATo3Ja3utokkUSk-LC9deBqycpQm~RH81UBgSatjeDswTk5WwYeyZKt1lxc30--tj5JZghTXFYUXud0FQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-9220-71d3-b60e-83fe2dcbda69_part_2.png?Expires=1793403693&Signature=JlqpmrlH9snLdcnypibrzjaupBwnPd2TFLFeKB5zz7-w2dkYg9Ty0F4Y06HwigUJ1P1ms78YlzJtkHQyl6gX7t29955PR-J7ahF3QAenIc-mDQXJ-Jf7kmzaUVcc2Lo3O-uy5AEBG0HujSt~bzwBhDdp2y4MMizyrmc4FJsQqzImdMM6d3ZKbuHbNIvz2jjYXd3V09KeONkfrY2x~QWTzOq6-5a9gpmRfa6dChmtJ38riN~y~j4~inMaj9Stp-F~bO7a~jhUZN1tfN2ouH-2LWW1HtjL8hhGSUIJTNTfrBpDJevm1c9QjaxDHgsJ94DEhikfJ8BW2nYXmqCraiXIYA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbc-af30-70c5-baf8-6107d3a1689c",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of VENDING MIMIC, a rare treasure enemy: a cyan-lit retro vending machine (#22d3ee) with glowing snack rows, a coin slot, and a hidden mouth of sharp teeth across the delivery flap, a long tongue, two eyes in the display panel, little stubby legs. Greedy and sly. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144434490,
+  "started_at": 1793144434495,
+  "finished_at": 1793144456177,
+  "expires_at": 1793403656177,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-00ba-71b9-88f4-ad88d6e3ed56_part_0.png?Expires=1793403656&Signature=OcxonF4Yfg5e9RORKC0xNtbzz~-ujIlGrTrF7962heXGhVFRE4BOII26ruyHtID3gmOKv9xxu5ggtiwxzQyFdm8FXALxe88JZoXJ1N0s10lp44L2-ugXpfJxPmXYjyxClK4Z0019qrHyZCARPIgaKY5ogTYg8b7qH9JMhwp5rJxnUpkiLZ9fzQ0K4~0ilznZsYzpvEwScmGIwMbXyL4yDL-DIKAXiWyzQCAKNS15Eoaptll0nhHIf~nRWvie8IKnQ9MkE2A9tqRxJ-scR~GD5a5mIWbjo94z6Cgpqsp3HEk42pUHIa2vIssK6~qYGNjlad5egaGfKgLrBmj6xHuRyw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-00ba-71b9-88f4-ad88d6e3ed56_part_1.png?Expires=1793403656&Signature=Pf1atYsde4noxxX4YO2xoTymbjT7pf~3RdE5UwVvYIv1ux~E3yubG~K~ismmS9a9JpJykKK~Zx5wmW0Pc5H2yW91EAPII5oYkXnJnMGCmpjIiZv22j-job4bIVmMSmnRjOaeISY1lTkIsKDVrmqC2p0KLGb3sVk-WZJuHWadFK7P-KQ6yuyy7LMZRL4uwK77VBfrqzD-oMvfGvDuBAWBIlE9vynEtvPlR1EA4MEKyOzqCUeoMjgII2GWSKzCLNsDRiPwasXDBQaUNYroxbti4h-x-j0Vcqbl4a8TQEgUx7b8wk4cqLs478f3NR5XPBDOst4wGPn~tcgPx8CT79ogzA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-00ba-71b9-88f4-ad88d6e3ed56_part_2.png?Expires=1793403656&Signature=gJRNTnrOePYjcGaoJU-8eL9jiDfnafl8~KhFole21X6zjowGhfWtPmmT6~cOvEe9abEBFazyBJT7b7mwxXhdEXLlOZiPp98x8JT3FLzw6N9b2RKe4bcNpACrMp5M466L8Oe9EoF8WuH9jijyZEqseaXpBrhQ8wMBGMYKwtorWCcWoIBfxrxTGIv04MxCWO0E9ETRKbiwrDEkCFGUoLrtXa9RNi00RoJ1AtWHKIUR46-1DRqyEfM8Q5ScllnROjNLYagi2fgqbLM2iOKxFNmB-1edqTSqwlNfjZGIo53iFbIuHMZsloUViRfHuuNfzQGbj8u6N4u-kC-xkg07YbYovQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

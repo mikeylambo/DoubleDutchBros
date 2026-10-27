@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbc-ad72-768b-a401-0d1f7ee7b6c2",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of HYPE CROW, a support enemy: a glossy black crow with amber-gold accents (#fbbf24), a thick gold chain with a big medallion, a gold tooth in its beak, puffed chest, wings out like a hype man shouting, flying. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144434042,
+  "started_at": 1793144434045,
+  "finished_at": 1793144463740,
+  "expires_at": 1793403663740,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-1f01-76b3-897e-50b5af158942_part_0.png?Expires=1793403663&Signature=mQM854QJh8wkZRT0C8e94axrcGNr3ejy5VZDthZ45-LdWkpCltz-4DTANI0p3Ehmjzlhhpb2mPBa~RTVGaYvE2MBstmunxCFZ42Wp98pcJbrDJPO9sjsckLV03mYh2WbvNJg2c7gdU0MZwxkl7NGLhqiM2nsC1nrPvO04Xhexir1IbQBBS1StC5VopQisCI3Bh8TeusGZTUspw0MZ5uB8D6uuML~0LuxPeZAT9GTXsAuJSEunF927eyZIzPjURbDnoUSfLOtFu4aTsg6F1NAIDSxG7YIvmap7P4Z3vXH-jWqFqeH39oOS7pqbAS~1rGoK9tFNb08diqpBMATcm6clQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-1f01-76b3-897e-50b5af158942_part_1.png?Expires=1793403663&Signature=mGFwH2Hh9rlEn~YsiWlykZMtQmCI8CGvbR3qgQUMOb-lVg0~weWsA06LPliHGkwRGEASBjqkdmM31SwOxIiiFfP9TzNtgbiPJALimFPYzvLOEW2sdSVspw-NfqLdGAOfa--5crLvrJdOxKtjLMGu~nGiLPUHme1rp-4BGUn9N~9pXxaJniqtqbxs2S6eStnjlANWtg0yvU~NWeJ7rxat76oP28qQ4tjXmngnBYnIps4Q4b1kQ1Doc5oHDpnZzZfg6hJwluArCTPp9Ain908IQuti5jLkUow3U23YXSG3B-EfNYtjBdKqi5cF6Btq4uAnQSy7aecqfNfwPAFdeop8MA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-1f01-76b3-897e-50b5af158942_part_2.png?Expires=1793403663&Signature=H09NdJ3UCv~V9FvvfZmwQPCT-VGvj0x7nuBPuCFTU4NxMzVKgVyp8qu3PkMp2Qrb7P~7PAxBStJPEXc8xhrhMpnUSFoZDwT4OeVNRzsrlXIOB45WiVCVmuKlKaRI9GhqAbhR5XqnfTyt9TPTMhEihoRAwcY8vQkGLy2TDud7IYoiaKrP4fOz~N7aTQEQc2Rcdl2gYA~daDH0XanjW607DuA6sUH5YMMslK5xeMD8ajJvC7gZ9cSo~mYiATT-LKh75ugvhiSEY7MSpw73nYjvcWd6gt4Pelhxj~xYWge~DI0spnwYcaJJ8fGKwBniqbcxBkEDt7H6BuX311YKu4oYBw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

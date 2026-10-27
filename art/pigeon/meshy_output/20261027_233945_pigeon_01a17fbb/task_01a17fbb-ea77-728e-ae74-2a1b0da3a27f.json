@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbb-ea77-728e-ae74-2a1b0da3a27f",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of PIGEON PAIR, two street pigeons standing side by side as one enemy unit: plump lavender-grey pigeons (#a5b4fc) with iridescent necks, one wearing a sideways red cap, the other a backwards blue cap, matching tough-guy squints, puffed chests. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144384128,
+  "started_at": 1793144384131,
+  "finished_at": 1793144412660,
+  "expires_at": 1793403612660,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-570e-71db-af92-3b4446fb789a_part_0.png?Expires=1793403612&Signature=gWZU3iSW8fk0~s0vrNsJMrqqWvuLjND6UHyLTPMeZYFa26oZ8tX8U-87yco7Ls7BMLly4zuPR0jJCabnPtxydxRj16NNzyBjot9fFdXxdAoIDjHzYiVRlt7uvvXvKJeWjDTvl~m8kBCdpZADCp5h~cd2TSXnLQEfBR9W2n9QRMiC~2trt1CG7Uog-yDVBIJUSt8W1nfoAmshQApldv0hfX0k2Vtq1TQRTYTtX~Qprqi6tGUxU-7jo8d8PaXFZEBoWpXzKo6CWjnDazo5SUuumWcBGfX7d8CVCOAFgiARXWc-xM6Q0T7nMffU3GSgmdBzZRI7JK0kByKrCRkmmFazLw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-570e-71db-af92-3b4446fb789a_part_1.png?Expires=1793403612&Signature=NrXBVFB6dsoqoJIaMX4HYN1YSJhSthRCfg7KaQ9JZcNMaxvzB~Wlg~NbSc3O00tYLHBzREk58jp7DpquQux27h~uejxeY8bIMNDsk-DqHcTo4WuBkVMam8AQPgkBFGL762A-HV1bWeHngW4jLtYgsuEpOeI6T7BxNDr4wEVpuBpkVTRJU2eqZcPnS2Fl0y4dpIjVe4Q-DfUIYXQi1TM02rTNgvQ1Keo8islBobWRQ749VhO8KcwDlSKdZaAoAFlt8oqQ9ewasKleSKiqqvYao0yBDehZ3A9x3ydphRl-x~PEF0MtGalQPD1-3Zx0qufZ4KPvP1p2wMDuEjaeV6YDkQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-570e-71db-af92-3b4446fb789a_part_2.png?Expires=1793403612&Signature=LI863GAHqlnWpyhvgSOXQeVqmLoMUFlKAObwBpSIK1-UWr7tL9SbAlPirvGWEaI98nsD9R3hxjrmQSUt9VNqMFCW6l58u5-ogcQQhrnTTBAXAR3qs92xlrwWiM7CDDo7TN9nl7t57Vy4yfHgwnDOnk~jBpBAT-suc72RniIv1TQunyczd~TJZTj7GVK5QrlxRDtZ8SvnZ7Q3oVQURHWVbghBhMY-eIs-2OLJVaLSALLwyoS1yzJzDZbuUt-nkXHY8s7Ft06nKj0~6fJMSPoq8kxJuV7-Qkj5MK7plb~0TfEf9fhuHRd4KPvlIajCkj1BblmU4Qk~mHLnrahIxy597w__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbd-3440-731a-bdf5-190f7c045374",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of GLITCH PIGEON, a boss: a giant teal-cyan pigeon (#5eead4) made partly of digital glitch, parts of its body break into pixel blocks and scanlines, RGB split edges, one glowing pixel eye, wings spread, hovering. Retro arcade glitch art. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144468555,
+  "started_at": 1793144468559,
+  "finished_at": 1793144498394,
+  "expires_at": 1793403698394,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-a680-7774-b202-ca355ae7ccfe_part_0.png?Expires=1793403698&Signature=OPtr7JLMtoNgKHdkHeQHYBr9yql00WL4oKPYH6CoQ8jL01FLSZT9QPREoEN4GDwnlzTdcKU54Lpoeg54GUm2fYfwcaOvTwuMPo-KazX~C-kYqzUlECTYmei1liRXNIxN3IWW~Nphk3jSU3NfgQgc-y2NUmO1Ktwn-vtcEzg0Z1zH9oG76INaUkoQK5jYNGL64v1J~BnolWo-nQpPCe1Wu9npH7HsTyAFUZRXCzaaW0PoaqXXCM~YGsaTOZnQuCDjhadIEBOnwDreJPIiwLG9hfP03qaoIdcDxypCOm9cQNbDGm-TudzJByGrBELa1d3-SiRtOseyZaV-I67CS0nPSw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-a680-7774-b202-ca355ae7ccfe_part_1.png?Expires=1793403698&Signature=V0yus0cGhHi4Xtuf~6NKc3mnOkOvvLkSouDwHK9gFx05JyRI0pE98-hDSNHhSfpR0GkerVP8sUeHMEDn85AmReBgUbGcdJ2JA1LmnkDThmVRRkljHIhaDcEzLNvQU-YR1T9GESTslmtndqaiEo5Dq2IjID7zfylUmKrgEuyUVsnCI0JpZduzE5RcbVpWAewVNFZyWIJ1gFzxzh0UWM-6fl0W9ohsJrZMyI808PBP8Agx9MR4qDDlr9wxfdgEe7NFALB0XpNMgVBuawunPxqyAjqvc8lQEWvciKIK~pCHLwynYsV0MTkHFt0wNPLbn52E-HXUgzLmC4TTrj~9Sc-MaQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-a680-7774-b202-ca355ae7ccfe_part_2.png?Expires=1793403698&Signature=d3zenrM1w7doSeFtVJ4xKHyqF65ZpyJt7TbmElczrP7H-ckBgW~BDcLwEMsO5ZY1EtZF8OEF7iTLVBOX3dYMmSqtAsS0OusH5K~5ViyjBNEd5eT-V5Jf7Q6Z1E7nCB5zwU3BNwlF1AUoyOUn5WmxOr92GG7lSyopXflnblBa9GlT2EtC3mE-VTd9jWWj8JtG0KxsEOK3ddXVMzkewDS6xKTwl-lWXICaUhHPZStrPBadYvXSc2VNZWOBsSnm5VSi106KzEBiuq1gOb38VSggHI0Qjx9ilqgGb-nEs9Gap~7tavEGJWaGYih8dPcRsvTIaVrH8gPCLxsKJGsl7toI-g__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

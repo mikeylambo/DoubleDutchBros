@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbb-eb66-7665-8212-f858a7768f64",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of TURBO BAT, a flying enemy: a small round coral-red bat (#f87171) with big leathery wings spread wide, tiny fangs, narrowed cocky eyes, wearing chunky retro aviator racing goggles pushed up and a tiny flight scarf trailing behind. Hovering, wings outstretched. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144384367,
+  "started_at": 1793144384372,
+  "finished_at": 1793144414980,
+  "expires_at": 1793403614980,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-6069-75eb-9e48-255c52874055_part_0.png?Expires=1793403614&Signature=B7bZ-X9aDEznYyRJ4tfTvGpq5qccQggQ1UUM4jxpUVodas5Wbbk~bLRTNbBxQij2d-0gGHvkZhX5IExWwcuwL8akAc3Qt~glGLolhzv5wMsHiJp6VI1Kj1kHOOxH84Mc5jFNRSpWpErV33X9ZWFyVr-ADaYjaX6hA8c~2h0okFy2eDlgozo0Suf1hlGVChTc5Jhl1lwLQjOTkXlLO8NK4a7mu6tAsp9ONXkhUeF4uj4kDS7Zpod-h6T97-2Hkk2oECDrmzNQ3uHMduT-8nPBggMg~RLcHJb3QNHF3IQcrselKzX4VxX2O9K-iqH9e7HeOaLcovU5oo1zlCUbIIZ-aQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-6069-75eb-9e48-255c52874055_part_1.png?Expires=1793403614&Signature=dzHA~gZFjM~cmibevE1kI2JF7rLbGU0FH2ULxEiIzHJAAcHksnW3HzlJ~5AWuDi36PtYO0C4ehdLusk3exaMbfrBm-39R-3B8YLAcyEtUFVnCJdBecN09Yoy0JvcUQQx6omM2UAUjjQ6fINXdLyvVXFL8PGuOp~Z6DrUNUHzy1pbgdAkQlWNfzHkA487hnOZjBiSlSTQiBKEpNQIOQ9xBGm0SvCn7jw-fRDVCRwYJ5n5LLTQxr2cj4YFaWGhDUTmmVuqAgh9Fq10zzpmfzwP0MWm1bR9fmjAM-GIBk75NXVCZKt-JkIXacpLN3gcHk~mRvPAm24KpsI5KyqEPdhtNQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-6069-75eb-9e48-255c52874055_part_2.png?Expires=1793403614&Signature=PXhBJ-h0d0GkCiEDodr3qFF2mHS7OnIdDegUYNEeQmid82gZLNhkEBNL7ih6fjw~mNAuxBPzpIubvFnj~q8zhm21NlWHTZMsQuwe-loiUw6eQ9pWcI0aUVyH3j~0YYtKrCmzi5leBfEH~~q07u4kk6EDCBMwKw0Rdm6MrdQeYc-qDZWf5nYIn07-9IXCFkym8RNudvz5wNH7HY7gRR9JAYzCbDGum4xCyOwFW6BdrQQIsQPV1p-BOI~yXPz958p4pQOB-P1o4pWjbEa0kgPv1yst3tg2sJgCME-R3VpxzmU8CL3RnuU5eBEIBueKlgbEOxA9txmrmSpdwY5Lxmkb~Q__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

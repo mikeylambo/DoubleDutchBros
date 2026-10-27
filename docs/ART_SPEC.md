@@ -22,6 +22,10 @@ they cannot hold a character identical frame to frame. Consistency comes from th
 
 ## 2. Style pillars
 
+**Direction:** 90s arcade neon swag on a designer vinyl-toy finish. Fresh, not punk: caps,
+shades, jerseys, chains, high-tops. Cute but cool; glossy semi-matte materials. Deliberately
+**not** a flat classic cartoon (an earlier pass drifted into Happy Tree Friends territory).
+
 1. **Neon alley at night.** Deep violet sky, pink moon, cyan court line, warm/cool window lights.
 2. **Readable silhouettes first.** Every character must read as solid black. Ears are the
    rabbits' signature: never hide them.
@@ -52,15 +56,21 @@ they cannot hold a character identical frame to frame. Consistency comes from th
 ### Hop (Red, button A)
 - **Role:** power. Heavy commitment, big burst, longer skill setups.
 - **Personality (proposed):** loud, restless, all-in. Bounces in place even when idle.
-- **Look:** warm cream fur, red hoodie, **blue** headband (partner's color), **left ear flops
-  over at the tip**. Slightly stockier.
+- **Look (approved concept: `art/hop/concept-v3/`):** warm cream fur, amber half-lidded eyes,
+  closed-mouth smirk. Red snapback worn backwards with a **blue** underbrim (partner's color),
+  reflective blue-purple sport shades on the forehead, red mesh **#1** jersey, blue shorts with
+  white side stripes, red-white-blue high-tops, gold chain, blue wristband. **Left ear bends
+  over at the tip.** Slightly stockier.
 - **Signature moves:** Power Slam, kick strikes.
 
 ### Skip (Blue, button B)
 - **Role:** precision and utility. Anti-air, Sync generation, tighter timing.
 - **Personality (proposed):** cool, focused, a little smug. Minimal, efficient idle.
-- **Look:** cool white-grey fur, blue hoodie, **red** headband, **both ears tall and upright**
-  (6 units taller than Hop's). Slightly leaner.
+- **Look (approved concept: `art/skip/concept/`):** cool white-grey fur, icy-blue half-lidded
+  eyes, smug smirk. **Red** sweatband headband, small round purple mirrored shades low on the
+  nose, blue mesh **#2** jersey, red shorts with white side stripes, blue-white-red high-tops,
+  red wristband, gold hoop earring. **Both ears tall and upright** (6 units taller than Hop's).
+  Slightly leaner. Hop and Skip wear the same kit in swapped colors: they read as one team.
 - **Signature moves:** Sky Clip, spin strikes.
 
 ### Shared rules

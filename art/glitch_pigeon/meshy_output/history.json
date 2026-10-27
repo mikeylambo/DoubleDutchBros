@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "folder": "20261027_234109_glitch-pigeon_01a17fbd",
+      "prompt": "glitch_pigeon",
+      "task_type": "text-to-image",
+      "root_task_id": "01a17fbd-3440-731a-bdf5-190f7c045374",
+      "created_at": "2026-10-27T23:41:09.507Z",
+      "updated_at": "2026-10-27T23:41:55.801Z",
+      "task_count": 1
+    }
+  ]
+}

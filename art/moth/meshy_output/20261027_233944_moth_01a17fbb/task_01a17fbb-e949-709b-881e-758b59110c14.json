@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbb-e949-709b-881e-758b59110c14",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of NEON MOTH, an off-beat flying enemy: a fuzzy moth whose wings are glowing magenta neon tubes like a flickering shop sign (#e879f9), soft fluffy body, feathery antennae, big dreamy glossy eyes, wings spread. Glows from within. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144383834,
+  "started_at": 1793144383840,
+  "finished_at": 1793144420768,
+  "expires_at": 1793403620768,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-76c0-71d5-8701-0e3ae5d77b87_part_0.png?Expires=1793403620&Signature=B5KxmZHL75wFqjx3bFYV7iJt35eNKmubXVq8Uy091KpPA2MoAJN-CUlp0GV05bKux6SfpWpgY3p482BwJBl7sa-3LUdt-tlHa33DIGPnWEl55JyqR0lc6MoMKJ4uS0rfySOq77coVwMuSt8bgAB2TDdXfkjmDtZZJ-JSZcbmx4IPqgwHvK5o9CTn5gi5Mtq2WYpdFoQzDrbYVWgJrR05BCIIKcAfqpA7jYbuB1jEBvOWOlH02QPvDcN3SQmgLZgitog-z4bU7d7HYftsgPI1pQBAjHqY-cQ9KTVlp01dz2x~VaYc~DvQd4ZPFbHKJdjx3u3qSPgbUZjrD-0MAnBxnQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-76c0-71d5-8701-0e3ae5d77b87_part_1.png?Expires=1793403620&Signature=leYVPPpSnuxkMoH2CSAfT9Db44dowpR8aTEkxLgQaLnWHCiHvQuZPoCWLEiRV7EGSn8XQiin9ePIboR3fdQbrlQ0db2kaA90QsFzOLcUvK-E0cvjDNRFT~66bhGapkqD7aYJOLonsU6P5-E7rnKwahbtkyYj2uFTL1WEzzP~RxAMV-KoftvOpK9-bN7qV4uHqvGlJl4j-PG5IYkjDEos8vCbt~WVdqtiZS9W~Hodt56lwEKFB8WnPyAQiCHJCo2saj99sudydgAsFgYg-EtOpT0QyxqugwWfxXO~SD-jhslyU1jDk5bcMLwdWqPT7Aa8MaCBG-ck1S2WmRWfzrrE6Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-76c0-71d5-8701-0e3ae5d77b87_part_2.png?Expires=1793403620&Signature=Rw0rB71Aj8~DD5L7f8thdT2-9pLP5UaZcqo1A3K0PWHHmqjUCuc4vis3ivHzQJXIdcjHgBLC846DlDIP02RK5zcC7q5wUieLzPYqfzZyjj-LJVyr4CsvB9IK-0Bfu9TXJw~t5D5U4kv2fOgUCVJvcrKByOEwBjAT-pI~K6j4uqT9cghfS2NM36inrrN2pRkNwDAU6-R16eYcsVb6-8UKPOYRSEN1Jhe5MX93qzvkoQCL~RbETM4Ibn0zosOq~xEt1Dk6lKnXGg3E7jfk~HSdbF5VhX9tpaDc616UQ6lEqyRX0XOmXUJnoG-czncFts7ZdNw7dIrROckkDrIRyPoh~Q__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "project_name": "rat",
+  "folder": "20261027_234018_rat_01a17fbc",
+  "root_task_id": "01a17fbc-6c72-70be-a6cb-e6dbe85395b7",
+  "created_at": "2026-10-27T23:40:18.210Z",
+  "updated_at": "2026-10-27T23:41:04.825Z",
+  "tasks": [
+    {
+      "task_id": "01a17fbc-6c72-70be-a6cb-e6dbe85395b7",
+      "task_type": "text-to-image",
+      "resource": "text-to-image",
+      "endpoint": "/openapi/v1/text-to-image",
+      "stage": "concept",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fbc-6c72-70be-a6cb-e6dbe85395b7.json",
+      "operation_id": null,
+      "created_at": "2026-10-27T23:41:01.473Z",
+      "updated_at": "2026-10-27T23:41:04.825Z"
+    }
+  ]
+}

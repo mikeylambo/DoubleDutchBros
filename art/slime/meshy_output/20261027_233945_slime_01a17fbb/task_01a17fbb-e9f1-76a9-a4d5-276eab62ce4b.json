@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbb-e9f1-76a9-a4d5-276eab62ce4b",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of SLIME, the first enemy: a cute grumpy blob of bright mint-green sewer slime (#4ade80), translucent jelly body with a glossy wet surface, little bubbles inside, a small drippy base, two big glossy eyes and a pouty frown, a tiny backwards red-and-white sweatband stuck on its head. Wobbly, bouncy, low to the ground. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144383996,
+  "started_at": 1793144384000,
+  "finished_at": 1793144420236,
+  "expires_at": 1793403620236,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-74e7-708a-8f47-902b4d0b5a06_part_0.png?Expires=1793403620&Signature=Mrqo6cYqg8lNzrto~1lO5r2BHK1wKFyispRvPwim6CC2DkCupaS2qeJ56FCMPPJ~F5vrx3DK0fZ2dtRGW5S9-pJq2QivTf2OUUydwpyr496rJvQeTHdN0fs-joqzab7uqrKeOuIGleow07AMFbRTkVkFKaPCLfv~O0Jy1Maod12RKI1XWgfcdN0aWLeLUFprGykH-YJTpoR1byQO-jVJYU1yE1xuARlJ56~Htg7HmNDNkkK4AYWqIpOA6Jyrh~LSYNLWsey28QUPfs84c8i0fgERuyR0lmzv6bI5CSVpe00b3EQAY1elLSk77ZDxEQr-lznryecg2bi8Ysi7n6NdMg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-74e7-708a-8f47-902b4d0b5a06_part_1.png?Expires=1793403620&Signature=l5eDQOK0OGLXERX2x122qxMjp3RKlqQtPjaEjUhV5bgR8j7hNd1PkBPBtQx9tf4FlFosXr1j~9X3C1hLLS4AjCho-f36hfU4lQIiVUjFvl7RdJefRIWDRDAPvIQCVhKL3WZmJOICXv0BoAZJnTv5gjFa3JRtH080JPK9nSKNm3femUTgP6hQ3XncTnI12AyTcIp8WAG9Jz8rBctIO8JNtmMx4~FGGxswYBG2UpHLZO7dTS43Td9DaVCIZFtryDFhQZkRkXVZFoMEicrem79a7iGGHng2iS9G0eNVeRoZfyqhWzaeQIh540aOG3shT50~fBajameHNvINfPgDYJDu~g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-74e7-708a-8f47-902b4d0b5a06_part_2.png?Expires=1793403620&Signature=V7UZ8sAxc6aL9aeRebveii9NTgp1Wjo1GCqHgsxkwRXgwjjk7Ds7uwLv7XmbQDyyqPHS6LF1lymYfBD3RdBrS50w0oYqxARSvT1ExHu7J-KM5-k-sIOoqMFq8u4R6LcmNM42ksphps1xv1~v~~ymu-v8mTFSmpCtNAAXz2g80~sgU1mEL8N3Eut1c8LsCnoH4DL-iSZpdBNdsVrVf0ktmOLICqJxUImuckfoupPbywyTXiylAsfvS9Hrb0o359dbBW8wHjwqmSgkJVMwGGj8SRlq0c9eIk3ROcvAy~rPtPGio0GaUsT60BpJRargElzC9TZlzedu986gNL-k0ST1KQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

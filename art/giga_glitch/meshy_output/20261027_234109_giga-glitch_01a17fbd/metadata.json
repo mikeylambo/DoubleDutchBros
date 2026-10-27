@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "project_name": "giga_glitch",
+  "folder": "20261027_234109_giga-glitch_01a17fbd",
+  "root_task_id": "01a17fbd-3527-7796-9d03-edeab7bb9065",
+  "created_at": "2026-10-27T23:41:09.773Z",
+  "updated_at": "2026-10-27T23:41:56.425Z",
+  "tasks": [
+    {
+      "task_id": "01a17fbd-3527-7796-9d03-edeab7bb9065",
+      "task_type": "text-to-image",
+      "resource": "text-to-image",
+      "endpoint": "/openapi/v1/text-to-image",
+      "stage": "concept",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fbd-3527-7796-9d03-edeab7bb9065.json",
+      "operation_id": null,
+      "created_at": "2026-10-27T23:41:53.207Z",
+      "updated_at": "2026-10-27T23:41:56.425Z"
+    }
+  ]
+}

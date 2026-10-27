@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbd-2c5b-758a-8ffe-8ae98db577c1",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of GIGA SLIME, the first boss: an enormous golden-yellow slime (#facc15) towering and glossy, a crown made of melted gold slime on top, many small bubbles and swallowed coins visible inside, a big confident grin, wobbling mass with a drippy base. Imposing but fun. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144466534,
+  "started_at": 1793144466538,
+  "finished_at": 1793144488175,
+  "expires_at": 1793403688175,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-7e62-7351-8756-b47a49736476_part_0.png?Expires=1793403688&Signature=qHWQ4qT9Ym9aMIrMUYHF7ihccg9GFSVXC9HvWrild~XpSZkJ0ArZnrCBkIGF9LB-2jFV8rbc7Jha17FBVzd3Upqce9q31nby4yV9hgxiMs7csixGzEuQNY~B2iiV~~owdGP~4gz-FVZEEh6q5WNP12aFUd5DUkrClibqSTfEWkf1ItOx7kcEC-HYrgQIBnFBDV4WlVMRGTmqaujmGX~m7Y~CbXhM1zw04byd1J7Jxmz599ajSM8VSFI31WRCD8kHGsioXMAj5WN-Op6orAkjeKQhnjMW4MV~SU4lk8s-Dy9nE-bUo3h4q4ZbQVcb5CBcYosDqQwfLN2W4BaNR5sDxg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-7e62-7351-8756-b47a49736476_part_1.png?Expires=1793403688&Signature=BmJL7HUB~vB0HOLUZoIwdn1Jm7jZeCGKitUAOvPhaEQlN3mae6Ff7P9nqp~ApDZNoWte2OJM6zDkkO-N-VBU1phhWIjXL1-hhhJRBLDcWL8s-Rgkjxo3ms03Td-qqN4qd8sR7kRRbXet8Uf1otbEHp4MTauxA8emcO9UvRl9JJQuZHtkHWmQbQgwaAnm5f-CCtHk1aCJoqs7a3UnYI3CtIxrLilhTCNEiAcbByI3vGOqNLN-qppC-RVZ0RDSORf8Qu3k38lYjdTbTnczVUgu79I1SblatsNVIXkbGYtmPKeCsqi1AJrjjFeijdrCifn02S5Yf81EFRGNu7DPagimDw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-7e62-7351-8756-b47a49736476_part_2.png?Expires=1793403688&Signature=adKoyySRu6xiKY6A8xsJurOhKWzbpsZt11i~6RL11dfahnRiSZyvAzEtSnzNFQSulKEGPdv4YzouSU2J91F5cP0RxY8BHKDjTvum~KZUJc7Bm2SQIU129Yb~xB7ENacICd3y93kXyK9CkxgmcbpPi6H4u1GfccJAyZnZixSy9vs~iTcqQCGJ3FeTBWnWWriDucjv3KiF1Yedm2NMGewmnOZ2GY79oXf-qXquN4kHxsOi-DnvedQ4lxG8jvGjo~6K2aHVZuqygy~YZGaJWuaun2Ir7tZ6dnlAAdRm7MZHNFOyftkTQKo6AwXNeEIR5vMh0WQ0pPZ5GI69F6TcTbDdQA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

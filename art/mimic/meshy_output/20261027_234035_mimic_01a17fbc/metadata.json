@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "project_name": "mimic",
+  "folder": "20261027_234035_mimic_01a17fbc",
+  "root_task_id": "01a17fbc-af30-70c5-baf8-6107d3a1689c",
+  "created_at": "2026-10-27T23:40:35.631Z",
+  "updated_at": "2026-10-27T23:41:06.988Z",
+  "tasks": [
+    {
+      "task_id": "01a17fbc-af30-70c5-baf8-6107d3a1689c",
+      "task_type": "text-to-image",
+      "resource": "text-to-image",
+      "endpoint": "/openapi/v1/text-to-image",
+      "stage": "concept",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fbc-af30-70c5-baf8-6107d3a1689c.json",
+      "operation_id": null,
+      "created_at": "2026-10-27T23:41:03.530Z",
+      "updated_at": "2026-10-27T23:41:06.988Z"
+    }
+  ]
+}

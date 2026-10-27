@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "folder": "20261027_234035_crab_01a17fbc",
+      "prompt": "crab",
+      "task_type": "text-to-image",
+      "root_task_id": "01a17fbc-ae38-7550-869b-4add3c351ec6",
+      "created_at": "2026-10-27T23:40:35.194Z",
+      "updated_at": "2026-10-27T23:41:06.577Z",
+      "task_count": 1
+    }
+  ]
+}

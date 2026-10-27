@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbd-3527-7796-9d03-edeab7bb9065",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of GIGA GLITCH, the final boss: a huge corrupted fusion of a giant slime and a glitching pigeon, hot-pink and cyan (#f472b6), body breaking into pixel shards, scanlines and RGB split, a glitchy crown, multiple flickering eyes, menacing grin. Grand final boss presence. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144468789,
+  "started_at": 1793144468793,
+  "finished_at": 1793144499711,
+  "expires_at": 1793403699711,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-ab0b-7262-87d0-3a5ffcd3436d_part_0.png?Expires=1793403699&Signature=aA-NvairYt7IgzdpOvbhx~ABgJLCLf6okcz6ZN06Ml3KNTNdxtFmXzv52oFNX1dOSulRF4h6pO6F3DaxRhndeWG~pSTZBCVmW29PDZKwB-nyP5Hwxa6dxPSvaJQ5c8OkZb2YFI4ciep9ojCz7BRRSX4mgOI-6nKgu1wq2odvsW0k-bu9fY4Ng-vYW2Uwj1Yq62mo~QmzGHk2lCYosg9-4jjftKMjrtPCkFHM9yNe3sZjwJaEJUPbvkEr4f5Y0dvOg~jHSAgXfYnoJjFFAn3yOZhimy2S7mue5Wrz56aj8Zvn6mt~JXP719vNufvYVNIW2PttOJv9Yl81CmBOkalYQQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-ab0b-7262-87d0-3a5ffcd3436d_part_1.png?Expires=1793403699&Signature=SMi3-GFzKxUOVtX9ffvNpjgbQR-Ye~MGqMia2tfa8hWD2Kz~PdSj8ouzdQ3Vy6Q~iTjg3QJGsjmwKHpsSsg15B~xfD~Zrg-BMz4j9RJAhFNeDaxXF~Cn5nshEEUlfGZSToFnCq7hOFQVfuxbGJZDqxQI9d~Kvhy8nvDIrAFiZhGoebk2guFtNgSPPrVOJMUdXVb5EmRMGxpa3b108PiMI3e5qZLy1qTgTtCPuW5d4abQUgpNEEoudguBwqGwXH8~BXqdFC9ulveLpurhsqihrHHzShXskIJZ4fZNnQY~GKSdziMGC77f0w9cpm631bo1LgsoerUwGgOvTiQ5rAoeQw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbd-ab0b-7262-87d0-3a5ffcd3436d_part_2.png?Expires=1793403699&Signature=IYS6EtsxW-5PoDxWjPz404YQzNFKGOM4Jx3~frihmOSACK90e9fUpZnbzmwcVWu8s8ouYp2tkQaL8mkeorWRsMKNETDaixgMbs3yh7lergdOXH79jx2vq0r82oIr3LWIc4yLT5ZMlk0TCUwclyy5lNZ4cgTqGC1XTHbaxt9o72zkHdOYRuNMNNecgIOBKxTQklqxbqvZzY2Ro2c~4KtWoIg56LYHGDm~WLLhEnZfPka0Qr-YDX60uS1MbyHpnp3uaO6gKwm-6iPdrGIHKmXjh-Yg4l37iwEGK5gIN4vuu2I6f3Gsp6~VUpAh-Y6K3gOKN0geJubCh2zXZvxXh07y0A__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

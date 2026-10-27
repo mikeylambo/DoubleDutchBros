@@ -1,0 +1,18 @@
+{
+  "id": "01a17fbc-6c72-70be-a6cb-e6dbe85395b7",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character sheet of ROPE-BITER, an anti-rhythm enemy: a scrappy subway rat with pale stone-grey fur (#d6d3d1), long pink tail, big front teeth chewing a frayed jump rope held in its mouth, mischievous eyes, a torn subway ticket tucked behind one ear, crouched and sneaky. Original character for a 90s-arcade neon rhythm brawler, same style as the hero rabbits: premium designer vinyl art toy look, modern stylized 3D console game character, cute but cool, smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette, bright saturated arcade colors, NOT a flat classic cartoon. Plain light grey background, full body, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144417402,
+  "started_at": 1793144417405,
+  "finished_at": 1793144448285,
+  "expires_at": 1793403648285,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-e266-728b-8a9d-723a22998631_part_0.png?Expires=1793403648&Signature=ayG2iVVHHyEQzavi4430q495uB-tz4EivBgfspzLjumpvrF3MmeRyRawavt7cpRg7JNt4-WTzBXOv9XTym6~KhNz9xjgBsx76enDoOlohKPIy6IfejOLEHodIaa8zIIXjSQFfrBLRqtTvBd5-9R3eGocvmcyrsqIZf-7S2iDXrkV7VB3loypAUQPXMUw4hHdUycsLpN0jI6Kj2TJL6nrum7g4qjH8PzdBgSd6FyuYuuUK4PrQt~NTSsttD40Iisl-8O~OR5FSJSFS609zwL82qCgXZOGo0LsnH1nchTBAjtb~ZrX6dtLEvbhU-z7GatA0zT19bql-OEOGpBfXWhvow__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-e266-728b-8a9d-723a22998631_part_1.png?Expires=1793403648&Signature=H-3EOrjHVImI1kQuh5xOZZs69BfeWUSeEroTGqILTESDQqZYcJP7jjMEK6Vt2ggQcTRroSBOCugG98cD9eSz7ZLJouph~ruXjcZiKA5EvU2FM4k-9Wx~DW8oa4XFUxYrR7D7he3vx4p89yZjcm7LVK-lFBB-vpVYoUnBdtZdWhus9~V-ZdjoyMGhMu1~-ejEzv6O7DtcTYaSMLvDy00WZwH72ucMrIQPhdeukxVM5nqeRskW6mZa37p0qdGHWfNmvBln89FhWKIozKvMxCtyAwP5eMF2JfPzEC8Z90sw6b82otuAfB4QfeVnr429K6YQJCQd50QFCQ~dMAiaxtRyOg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17fbc-e266-728b-8a9d-723a22998631_part_2.png?Expires=1793403648&Signature=IgTuc~v408rNyBq4Ey5sMZe9DLKqpCSkIk0NlkQUQuq1Cy6HR9aC-E9gwqxQnx~18TrBzs1~kSGwuOLgC0ixrGt61aU7Giu95FxVFyimQeyhGMnOwUsSOssx-tMiCflNEkTPqgtWS-ZQaa9ssITwsBypxKIWe2trqPn-N4ylUg0-j243OFZFNzZnrD~ELimhmiVHL91jnj9kyqW2yHL8UBoOwWmUqDH7oXldJNzJJ-1CqJdHCmm~WlH4vwGHe6BWwf4GRn-IKNvZojjMAZLKvddDZ27VLXAAg1b7llZZ99u4J42NazNe1NVmFZ9XDb3XjzvfxtDz-wMUV2cnc8wTSA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

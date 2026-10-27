@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "project_name": "bouncer",
+  "folder": "20261027_234036_bouncer_01a17fbc",
+  "root_task_id": "01a17fbc-afa3-7521-bd87-b3016082ce40",
+  "created_at": "2026-10-27T23:40:36.429Z",
+  "updated_at": "2026-10-27T23:41:07.175Z",
+  "tasks": [
+    {
+      "task_id": "01a17fbc-afa3-7521-bd87-b3016082ce40",
+      "task_type": "text-to-image",
+      "resource": "text-to-image",
+      "endpoint": "/openapi/v1/text-to-image",
+      "stage": "concept",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fbc-afa3-7521-bd87-b3016082ce40.json",
+      "operation_id": null,
+      "created_at": "2026-10-27T23:41:03.897Z",
+      "updated_at": "2026-10-27T23:41:07.175Z"
+    }
+  ]
+}

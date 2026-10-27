@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "folder": "20261027_234109_giga-glitch_01a17fbd",
+      "prompt": "giga_glitch",
+      "task_type": "text-to-image",
+      "root_task_id": "01a17fbd-3527-7796-9d03-edeab7bb9065",
+      "created_at": "2026-10-27T23:41:09.773Z",
+      "updated_at": "2026-10-27T23:41:56.425Z",
+      "task_count": 1
+    }
+  ]
+}
