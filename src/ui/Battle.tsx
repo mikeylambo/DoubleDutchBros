@@ -1,14 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { CANVAS_HEIGHT, CANVAS_WIDTH, ITEM_DATA, MOVE_REGISTRY, type BroId, type ItemId, type MoveId } from '../data/config';
+import { ITEM_DATA, MOVE_REGISTRY, type BroId, type ItemId, type MoveId } from '../data/config';
 import { audio } from '../game/audio';
 import { draw } from '../game/renderer';
+import { computeView, screenToWorldX, type View } from '../game/view';
 import { calculateDerived } from '../game/stats';
 import { useEngine } from './useEngine';
 
-export const Hud = () => {
+export const Hud = ({ compact = false }: { compact?: boolean }) => {
   const { engine, snap } = useEngine();
   return (
-    <div className="shrink-0 h-[10vh] min-h-[60px] p-4 flex justify-between items-center z-10 border-b border-white/5 bg-black/80 backdrop-blur-md">
+    <div className={`shrink-0 flex justify-between items-center z-10 border-b border-white/5 bg-black/80 backdrop-blur-md ${compact ? 'h-11 px-4 pl-[max(env(safe-area-inset-left),16px)] pr-[max(env(safe-area-inset-right),16px)]' : 'h-[10vh] min-h-[60px] p-4'}`}>
       <div className="flex gap-4 md:gap-12 w-full max-w-2xl">
         {(['red', 'blue'] as const).map((k) => {
           const b = snap.bros[k];
@@ -27,11 +28,11 @@ export const Hud = () => {
         })}
       </div>
       <div className="flex items-center gap-4">
-        <div className="text-right hidden sm:block leading-none">
+        <div className="text-right hidden sm:block leading-none whitespace-nowrap">
           <div className="text-[10px] font-black text-cyan-400 uppercase italic">Wave {snap.wave}</div>
-          <div className="text-xl font-black italic mt-1">{snap.rp} RP</div>
+          <div className={`font-black italic mt-1 ${compact ? 'text-sm' : 'text-xl'}`}>{snap.rp} RP</div>
         </div>
-        <button aria-label="Pause" onPointerDown={(e) => { e.preventDefault(); engine.pause(); }} className="ml-4 w-10 h-10 md:w-12 md:h-12 bg-white/10 rounded-xl flex items-center justify-center active:scale-95 border border-white/20">⏸</button>
+        <button aria-label="Pause" onPointerDown={(e) => { e.preventDefault(); engine.pause(); }} className={`ml-4 ${compact ? 'w-8 h-8' : 'w-10 h-10 md:w-12 md:h-12'} bg-white/10 rounded-xl flex items-center justify-center active:scale-95 border border-white/20`}>⏸</button>
       </div>
     </div>
   );
@@ -46,25 +47,44 @@ const PHASE_HINT: Partial<Record<string, string>> = {
 export const Playfield = () => {
   const { engine, snap } = useEngine();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const viewRef = useRef<View>(computeView(1, 1));
 
   useEffect(() => {
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    // Match the canvas bitmap to its on-screen size at full pixel density.
+    const resize = () => {
+      const { width, height } = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      viewRef.current = computeView(width, height);
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
     let raf = 0;
-    const loop = () => { engine.frame(); draw(ctx, engine); raf = requestAnimationFrame(loop); };
+    const loop = () => {
+      engine.frame();
+      draw(ctx, engine, viewRef.current, canvas.width / Math.max(1, viewRef.current.w));
+      raf = requestAnimationFrame(loop);
+    };
     raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
   }, [engine]);
 
   const onTap = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    engine.tapCanvas(((e.clientX - rect.left) / rect.width) * CANVAS_WIDTH);
+    engine.tapCanvas(screenToWorldX(e.clientX - rect.left, viewRef.current));
   };
 
   const hint = snap.tutorialHint ? null : PHASE_HINT[snap.phase];
   return (
-    <div className="relative w-full max-h-full aspect-video mx-auto bg-[#0a0a18] border-b border-white/5 touch-none overflow-hidden" onPointerDown={onTap}>
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="absolute inset-0 w-full h-full block" />
+    <div className="relative flex-1 min-h-0 w-full touch-none overflow-hidden">
+      <div className="absolute inset-0" onPointerDown={onTap}>
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
+      </div>
       {snap.combo >= 2 && (
         <div className="absolute top-4 left-6 z-20 pointer-events-none">
           <div className="text-5xl font-black italic drop-shadow-[0_0_20px_white] leading-none">{snap.combo}</div>
@@ -84,6 +104,10 @@ export const Playfield = () => {
           <div className="px-4 py-1 rounded-full bg-black/60 text-sm md:text-xl font-black italic uppercase tracking-tight animate-pulse">{hint}</div>
         </div>
       )}
+      {/* Menu floats on the court, below the action. */}
+      <div className="absolute inset-x-0 bottom-0 z-20 flex justify-center p-3 md:p-5 pointer-events-none [&>*]:pointer-events-auto">
+        <ActionBar />
+      </div>
     </div>
   );
 };
@@ -96,10 +120,10 @@ export const ActionBar = () => {
   const back = <button onPointerDown={() => engine.action('BACK')} className="px-6 bg-red-600/20 text-red-500 rounded-2xl font-black uppercase text-xs active:scale-95">Back</button>;
 
   if (phase === 'MENU') {
-    const btn = 'flex-1 px-2 py-4 font-black italic text-xs md:text-lg rounded-full active:scale-90 transition-all uppercase leading-none';
+    const btn = 'flex-1 px-2 py-4 [@media(max-height:540px)]:py-2.5 font-black italic text-xs md:text-lg rounded-full active:scale-90 transition-all uppercase leading-none';
     return (
       <div className="flex flex-col items-center w-full max-w-2xl">
-        <div className="text-[10px] font-black text-cyan-400 mb-3 tracking-[0.8em] uppercase">[{snap.bros[turn === 'RED' ? 'red' : 'blue'].name} ready]</div>
+        <div className="text-[10px] font-black text-cyan-400 mb-3 tracking-[0.8em] uppercase [@media(max-height:540px)]:hidden">[{snap.bros[turn === 'RED' ? 'red' : 'blue'].name} ready]</div>
         <div className="bg-black/90 p-2 md:p-3 rounded-[2rem] border border-white/10 flex gap-2 md:gap-4 w-full">
           <button onPointerDown={() => engine.action('BASIC')} className={`${btn} bg-white text-black`}>Attack</button>
           <button onPointerDown={() => engine.action('TECH')} className={`${btn} bg-purple-600 ${sync < 20 ? 'opacity-40 grayscale' : ''}`}>Skill</button>
@@ -144,28 +168,43 @@ export const ActionBar = () => {
   return null;
 };
 
-export const Controller = () => {
+const PAD_STYLE: Record<BroId, string> = {
+  BLUE: 'bg-blue-600 border-blue-400 shadow-[0_0_30px_blue]',
+  RED: 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 shadow-[0_0_40px_rgba(239,68,68,0.6)]'
+};
+
+/** One face button. A = Hop (red), B = Skip (blue). Glows for the acting bro; flashes "!" for a tag. */
+export const PadButton = ({ id, size = 'w-28 h-28 md:w-36 md:h-36 text-5xl md:text-6xl' }: { id: BroId; size?: string }) => {
   const { engine, snap } = useEngine();
   const { expectedTap, turn, phase } = snap;
-  const press = (id: BroId) => (e: React.PointerEvent) => { e.preventDefault(); engine.input(id, audio.fromEventTime(e.timeStamp)); };
-  const lit = (id: BroId) =>
-    phase === 'ITEMS_TARGETING' || (turn === id && ['MENU', 'TECH_SELECT', 'ITEMS', 'TARGET', 'WINDUP'].includes(phase));
-  const cls = (id: BroId, color: string) =>
-    expectedTap === id
-      ? 'bg-yellow-400 border-white shadow-[0_0_80px_#facc15] scale-110 neon-text text-black'
-      : lit(id) ? color : 'bg-white/5 border-white/10 opacity-90';
-
+  const lit = phase === 'ITEMS_TARGETING' || (turn === id && ['MENU', 'TECH_SELECT', 'ITEMS', 'TARGET', 'WINDUP'].includes(phase));
+  const cls = expectedTap === id
+    ? 'bg-yellow-400 border-white shadow-[0_0_80px_#facc15] scale-110 neon-text text-black'
+    : lit ? PAD_STYLE[id] : 'bg-white/5 border-white/10 opacity-90';
   return (
-    <div className="shrink-0 h-[25vh] min-h-[140px] max-h-[220px] w-full bg-gradient-to-t from-black/80 to-black/40 border-t border-cyan-500/30 flex items-center justify-center gap-16 md:gap-40 relative z-10 touch-none">
-      <div className="absolute top-0 left-0 w-full h-1.5 bg-black/60">
-        <div className="h-full bg-cyan-400 shadow-[0_0_15px_cyan] transition-all duration-300" style={{ width: `${snap.sync}%` }} />
-      </div>
-      <button onPointerDown={press('BLUE')} className={`w-28 h-28 md:w-36 md:h-36 rounded-full flex items-center justify-center transition-all duration-75 active:scale-90 border-4 font-black text-5xl md:text-6xl ${cls('BLUE', 'bg-blue-600 border-blue-400 shadow-[0_0_30px_blue]')}`}>
-        {expectedTap === 'BLUE' ? '!' : 'B'}
-      </button>
-      <button onPointerDown={press('RED')} className={`w-28 h-28 md:w-36 md:h-36 rounded-full flex items-center justify-center transition-all duration-75 active:scale-90 border-4 font-black text-5xl md:text-6xl ${cls('RED', 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 shadow-[0_0_40px_rgba(239,68,68,0.6)]')}`}>
-        {expectedTap === 'RED' ? '!' : 'A'}
-      </button>
+    <button
+      onPointerDown={(e) => { e.preventDefault(); engine.input(id, audio.fromEventTime(e.timeStamp)); }}
+      className={`${size} shrink-0 rounded-full flex items-center justify-center transition-all duration-75 active:scale-90 border-4 font-black touch-none ${cls}`}
+    >
+      {expectedTap === id ? '!' : id === 'RED' ? 'A' : 'B'}
+    </button>
+  );
+};
+
+export const SyncBar = () => {
+  const { snap } = useEngine();
+  return (
+    <div className="absolute top-0 left-0 w-full h-1.5 bg-black/60 z-20">
+      <div className="h-full bg-cyan-400 shadow-[0_0_15px_cyan] transition-all duration-300" style={{ width: `${snap.sync}%` }} />
     </div>
   );
 };
+
+/** Portrait / desktop: buttons in a band under the arena. */
+export const Controller = () => (
+  <div className="shrink-0 h-[22vh] min-h-[140px] max-h-[220px] w-full bg-gradient-to-t from-black/80 to-black/40 border-t border-cyan-500/30 flex items-center justify-center gap-16 md:gap-40 relative z-10 touch-none">
+    <SyncBar />
+    <PadButton id="BLUE" />
+    <PadButton id="RED" />
+  </div>
+);

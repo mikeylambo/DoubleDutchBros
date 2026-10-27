@@ -227,6 +227,7 @@ const eyes = (ctx: CanvasRenderingContext2D, x: number, y: number, gap: number) 
 // ---------------- Backdrop (pre-rendered once, it never changes) ----------------
 
 let backdrop: HTMLCanvasElement | null = null;
+export const BACKDROP_RES = 2;
 
 const rand = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 
@@ -234,10 +235,13 @@ const rand = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) 
 export const getBackdrop = () => {
   if (backdrop) return backdrop;
   const c = document.createElement('canvas');
-  c.width = CANVAS_WIDTH + 200;
-  c.height = CANVAS_HEIGHT + 200;
+  // Extends 400 world units past each side so wide screens still see skyline.
+  // Rendered at 2x so it stays crisp on high-density phone screens.
+  c.width = (CANVAS_WIDTH + 800) * BACKDROP_RES;
+  c.height = (CANVAS_HEIGHT + 200) * BACKDROP_RES;
   const ctx = c.getContext('2d')!;
-  ctx.translate(100, 100);
+  ctx.scale(BACKDROP_RES, BACKDROP_RES);
+  ctx.translate(400, 100);
   const r = rand(7);
 
   const sky = ctx.createLinearGradient(0, -100, 0, GROUND_Y);
@@ -245,7 +249,7 @@ export const getBackdrop = () => {
   sky.addColorStop(0.6, '#140b2e');
   sky.addColorStop(1, '#2a0f3a');
   ctx.fillStyle = sky;
-  ctx.fillRect(-100, -100, c.width, GROUND_Y + 100);
+  ctx.fillRect(-400, -100, CANVAS_WIDTH + 800, GROUND_Y + 100);
 
   // Moon.
   const moon = ctx.createRadialGradient(620, 90, 0, 620, 90, 120);
@@ -259,8 +263,8 @@ export const getBackdrop = () => {
 
   // Skyline, far then near.
   const skyline = (base: string, minH: number, maxH: number, windowAlpha: number) => {
-    let x = -100;
-    while (x < CANVAS_WIDTH + 100) {
+    let x = -400;
+    while (x < CANVAS_WIDTH + 400) {
       const w = 40 + r() * 70;
       const h = minH + r() * (maxH - minH);
       ctx.fillStyle = base;
@@ -293,19 +297,19 @@ export const getBackdrop = () => {
   floor.addColorStop(0, '#120a26');
   floor.addColorStop(1, '#020206');
   ctx.fillStyle = floor;
-  ctx.fillRect(-100, GROUND_Y, c.width, 300);
+  ctx.fillRect(-400, GROUND_Y, CANVAS_WIDTH + 800, 300);
   ctx.strokeStyle = 'rgba(167, 139, 250, 0.18)';
   ctx.lineWidth = 1;
   for (let i = 1; i < 12; i++) {
     const y = GROUND_Y + i * i * 2.2;
-    ctx.beginPath(); ctx.moveTo(-100, y); ctx.lineTo(CANVAS_WIDTH + 100, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-400, y); ctx.lineTo(CANVAS_WIDTH + 400, y); ctx.stroke();
   }
   ctx.save();
   ctx.strokeStyle = '#00d2ff';
   ctx.lineWidth = 2;
   ctx.shadowColor = '#00d2ff';
   ctx.shadowBlur = 10;
-  ctx.beginPath(); ctx.moveTo(-100, GROUND_Y); ctx.lineTo(CANVAS_WIDTH + 100, GROUND_Y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-400, GROUND_Y); ctx.lineTo(CANVAS_WIDTH + 400, GROUND_Y); ctx.stroke();
   ctx.restore();
 
   backdrop = c;

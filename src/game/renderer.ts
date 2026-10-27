@@ -1,19 +1,30 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH, GROUND_Y, HOME_X, MOVE_REGISTRY, type BroKey } from '../data/config';
+import { CANVAS_WIDTH, GROUND_Y, HOME_X, MOVE_REGISTRY, type BroKey } from '../data/config';
 import { perfectThreshold } from './combat';
 import type { Engine } from './engine';
 import { calculateDerived } from './stats';
-import { RABBITS, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
+import { BACKDROP_RES, RABBITS, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
 import type { Body } from './types';
+import { applyView, type View } from './view';
 
 /** Draws the current engine state. Read-only: never mutates the sim. */
-export const draw = (ctx: CanvasRenderingContext2D, e: Engine) => {
-  ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: number) => {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // Sky above and court below the pre-rendered backdrop, for tall or wide screens.
+  ctx.fillStyle = '#05030f';
+  ctx.fillRect(0, 0, v.w, v.h);
+  ctx.fillStyle = '#020206';
+  ctx.fillRect(0, v.groundY, v.w, v.h - v.groundY);
+  drawStars(ctx, v);
+
   ctx.save();
-  const sx = (Math.random() - 0.5) * e.camera.shake;
-  const sy = (Math.random() - 0.5) * e.camera.shake;
-  ctx.translate(CANVAS_WIDTH / 2 + sx, CANVAS_HEIGHT / 2 + sy);
+  // Camera shake and punch-zoom happen around the action, in screen space.
+  const sx = (Math.random() - 0.5) * e.camera.shake * v.scale;
+  const sy = (Math.random() - 0.5) * e.camera.shake * v.scale;
+  const cy = v.groundY - 120 * v.scale;
+  ctx.translate(v.w / 2 + sx, cy + sy);
   ctx.scale(e.camera.zoom, e.camera.zoom);
-  ctx.translate(-CANVAS_WIDTH / 2, -CANVAS_HEIGHT / 2);
+  ctx.translate(-v.w / 2, -cy);
+  applyView(ctx, v);
 
   drawStage(ctx);
   drawShadows(ctx, e);
@@ -28,11 +39,32 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine) => {
   drawParticles(ctx, e);
   drawTexts(ctx, e);
   ctx.restore();
-  drawFlash(ctx, e);
+  drawFlash(ctx, e, v);
+};
+
+/** Twinkling stars in the open sky above the skyline (most visible on tall portrait screens). */
+const drawStars = (ctx: CanvasRenderingContext2D, v: View) => {
+  const t = performance.now() / 1000;
+  const skyBottom = v.groundY - 280 * v.scale;
+  if (skyBottom <= 0) return;
+  ctx.save();
+  for (let i = 0; i < 90; i++) {
+    // Deterministic positions from a hash so stars don't jump between frames.
+    const hx = Math.sin(i * 127.1) * 43758.5453, hy = Math.sin(i * 311.7) * 43758.5453;
+    const x = (hx - Math.floor(hx)) * v.w;
+    const y = (hy - Math.floor(hy)) * skyBottom;
+    const tw = 0.35 + 0.65 * Math.abs(Math.sin(t * (0.6 + (i % 7) * 0.2) + i));
+    ctx.globalAlpha = tw * (0.4 + 0.6 * (1 - y / skyBottom));
+    ctx.fillStyle = i % 9 === 0 ? '#f9a8d4' : i % 5 === 0 ? '#a5f3fc' : '#ffffff';
+    const r = i % 11 === 0 ? 1.6 : 0.9;
+    ctx.fillRect(x, y, r, r);
+  }
+  ctx.restore();
 };
 
 const drawStage = (ctx: CanvasRenderingContext2D) => {
-  ctx.drawImage(getBackdrop(), -100, -100);
+  const img = getBackdrop();
+  ctx.drawImage(img, -400, -100, img.width / BACKDROP_RES, img.height / BACKDROP_RES);
 };
 
 const drawShadows = (ctx: CanvasRenderingContext2D, e: Engine) => {
@@ -196,12 +228,12 @@ const drawParticles = (ctx: CanvasRenderingContext2D, e: Engine) => {
   ctx.restore();
 };
 
-const drawFlash = (ctx: CanvasRenderingContext2D, e: Engine) => {
+const drawFlash = (ctx: CanvasRenderingContext2D, e: Engine, v: View) => {
   if (e.flash < 0.02) return;
   ctx.save();
   ctx.globalAlpha = e.flash * 0.6;
   ctx.fillStyle = e.flashColor;
-  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  ctx.fillRect(0, 0, v.w, v.h);
   ctx.restore();
 };
 

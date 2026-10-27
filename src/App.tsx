@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Engine, type MenuAction } from './game/engine';
 import { audio } from './game/audio';
-import { ActionBar, Controller, Hud, Playfield } from './ui/Battle';
+import { Controller, Hud, PadButton, Playfield, SyncBar } from './ui/Battle';
 import { GameOver, LevelUp, Pause, Shop, Title, TutorialDone, WaveClear } from './ui/Overlays';
 import { EngineContext, useEngine } from './ui/useEngine';
 
@@ -24,17 +24,39 @@ const useKeyboard = (engine: Engine) => {
   }, [engine]);
 };
 
+/** Phones held sideways: short screen, thumbs on the sides. */
+const useHandheldLandscape = () => {
+  const query = '(orientation: landscape) and (max-height: 540px)';
+  const [match, setMatch] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setMatch(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return match;
+};
+
 const Game = () => {
   const { snap } = useEngine();
+  const handheld = useHandheldLandscape();
   if (snap.gameState === 'TITLE') return <Title />;
   return (
     <div className="fixed inset-0 bg-[#020205] text-white font-sans flex flex-col h-[100dvh] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden">
-      <Hud />
-      <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-b from-[#0b0620] via-[#06040f] to-[#020205]">
-        <div className="min-h-0 flex-shrink"><Playfield /></div>
-        <div className="flex-1 flex items-center justify-center p-4 min-h-[100px]"><ActionBar /></div>
-      </div>
-      <Controller />
+      <Hud compact={handheld} />
+      {handheld ? (
+        <div className="relative flex-1 min-h-0 flex items-center pl-[max(env(safe-area-inset-left),12px)] pr-[max(env(safe-area-inset-right),12px)] gap-3">
+          <SyncBar />
+          <PadButton id="BLUE" size="w-24 h-24 text-4xl" />
+          <div className="relative flex-1 h-full min-w-0 flex flex-col"><Playfield /></div>
+          <PadButton id="RED" size="w-24 h-24 text-4xl" />
+        </div>
+      ) : (
+        <>
+          <Playfield />
+          <Controller />
+        </>
+      )}
       {snap.gameState === 'PAUSE' && <Pause />}
       {snap.gameState === 'SHOP' && <Shop />}
       {snap.gameState === 'WIN' && !snap.levelUp && <WaveClear />}
