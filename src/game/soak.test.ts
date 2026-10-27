@@ -69,7 +69,7 @@ const playRun = (accuracy: number, seed: number, maxWave = 60): Result => {
             && (m !== 'TECH6' || (e.bros.red.hp > 0 && e.bros.blue.hp > 0));
         }) ?? 'BASIC';
         e.action(move);
-        if (e.phase !== 'TARGET') e.action('BASIC');
+        if ((e.phase as string) !== 'TARGET') e.action('BASIC');
         // Kill support enemies first, then the weakest.
         const living = e.enemies.map((en, i) => ({ en, i })).filter(({ en }) => en.hp > 0);
         const support = living.find(({ en }) => en.type === 'RAT' || en.type === 'CROW');
