@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "folder": "20261027_233831_skip_01a17fba",
+      "prompt": "skip",
+      "task_type": "text-to-image",
+      "root_task_id": "01a17fba-c674-72a1-a093-8eca004ab14e",
+      "created_at": "2026-10-27T23:38:31.166Z",
+      "updated_at": "2026-10-27T23:39:01.692Z",
+      "task_count": 1
+    }
+  ]
+}
