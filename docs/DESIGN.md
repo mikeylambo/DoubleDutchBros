@@ -101,7 +101,7 @@ Each enemy teaches one of these; elites and bosses combine them.
 | Direction 🆕 | Attack comes from behind (Skip first) | Turbo Bat (air slash) |
 | Stay grounded 🆕 | Shockwave hits anyone in the air | Stone Shell (stomp) |
 | Split 🆕 | Hop and Skip need different answers at once | Pigeon Pair |
-| Call & response 🆕 | Echo a rhythm back | Copycat |
+| Silent time 🆕 | Keep the beat when the music drops out | Boombox Crab |
 | Tempo change 🆕 | The rope or song shifts mid-fight | Bouncer, Rope-Biter |
 | Greed check 🆕 | Stop your combo in time | Bouncer |
 
@@ -124,7 +124,7 @@ and sound**, not just color (constitution #9).
 | 4 | 🆕 **Neon Moth** | Glowing moth, flickers like a sign | FLUTTER `low@4.25` · SPIRAL `low@3.25 high@4.75` | 1× | Off-beat specialist. Its light pulses on the off-beat as the tell. |
 | 5 | 🆕 **Pigeon Pair** | Two street pigeons, one cap each | SPLIT `low@4 (at Hop) + high@4 (at Skip)` — Hop jumps, Skip stays | 1× | The "dual-rope lite" the original design asked for. |
 | 6 | 🆕 **Rope-Biter** | Subway rat with a frayed rope in its teeth | GNAW: until defeated, your skill charges **skip one rope peak** · NIBBLE `low@4` | erratic | Anti-rhythm. Priority target. |
-| 7 | 🆕 **Copycat** | Alley cat with a boombox | CALL: plays a 4-beat rhythm (jump/stay); you echo it next bar. Each miss = a hit. A perfect echo stuns it (no attack next turn, +Sync) | 1× | Call & response; the most "rhythm game" enemy. |
+| 7 | 🆕 **Boombox Crab** | Sidewalk crab hauling a boombox, scuttles sideways on the beat | DROP: kills the music for one bar, then `low@2` and `low@3` land inside the silence (keep counting) · BASS `wall@4` | 1× | Can you hold the beat without hearing it? The court line keeps pulsing as the only visual metronome. |
 | 8 | 🆕 **Hype Crow** | Crow with a gold chain | CAW: buffs all enemies this wave (+1 hit per attack) · PECK `burst@3` | — | Support enemy. Kill first or suffer. |
 | 9 | 🆕 **Vending Mimic** (rare) | A vending machine with teeth | Never attacks. Flees after 3 turns. Drops RP and an item. | — | Treasure goblin; greed tempter. |
 
@@ -169,7 +169,7 @@ Boss rule: every phase change is announced by the **music** (a drop, a filter sw
 | 1–4 | Learn | Slime, Bat, Shell; one attacker per turn |
 | 5 | First boss | Giga Slime |
 | 6–15 | Assemble | New enemies introduced one per wave band; first elite at 8; mutator choice at 10 |
-| 16–35 | Online | Two attackers per turn; elites every 4; Copycat/Rope-Biter combos; bosses every 5 |
+| 16–35 | Online | Two attackers per turn; elites every 4; Boombox Crab/Rope-Biter combos; bosses every 5 |
 | 36+ | Mastery | All attackers; two affixes on elites; Ascension mutators after each boss; Dual-Rope waves |
 
 **Composition over proliferation:** most new difficulty comes from combining known enemies
@@ -242,17 +242,19 @@ favors, never hard-counters. Swaps only in the shop.
 | Beat-locked rope, attacks, world | ✅ |
 | Saves, settings, accessibility, gamepad, PWA, achievements, bestiary, results, daily | ✅ |
 | Sprite animation system (art pending) | ✅ |
-| Hop/Skip rule identity, third skills | ⬜ |
-| New attacks for existing enemies (delayed, air slash, stomp) | ⬜ |
+| Hop/Skip rule identity (Heat, Steady, tag differences) | ✅ |
+| Third skills (Haymaker, Hopscotch) | ⬜ |
+| New attacks for existing enemies (delayed, air slash, stomp) | ✅ |
 | New enemies 4–9, elite affixes, Bouncer | ⬜ |
-| Boss phases; bosses 10/15/20/50 | ⬜ |
+| Giga Slime phases (Crossfire below 60%, Panic below 30%) | ✅ |
+| Bosses 10/15/20/50 | ⬜ |
 | Mutators, Legacy tree, Tandem techniques, Armory | ⬜ |
 | Swag meter, music stems | ⬜ (stems need the composer) |
 
 **Suggested order:** Hop/Skip identity → existing-enemy attacks → Giga Slime phases → Neon Moth,
-Pigeon Pair, Copycat → elites → Legacy tree → mutators → remaining enemies/bosses → Tandem.
+Pigeon Pair, Boombox Crab → elites → Legacy tree → mutators → remaining enemies/bosses → Tandem.
 
 ### Open questions
 - A light story or crown? (Hop & Skip "just out there swaggin" works for now.)
-- Final names for 🆕 enemies and moves.
+- Final names for 🆕 enemies and moves (expected to evolve through playtesting).
 - Which song(s) play where: one track per city zone, or one per boss?

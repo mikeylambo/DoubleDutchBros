@@ -247,7 +247,6 @@ describe('Hop & Skip identity', () => {
     expect(e.phase).toBe('WINDUP');
     return clock;
   };
-  const key = (who: 'RED' | 'BLUE') => (who === 'RED' ? 'red' : 'blue');
   const nextPeak = (e: Engine, clock: TestClock) => { clock.b = Math.ceil(clock.b / (1 / e.ropeRate) + 0.01) / e.ropeRate; };
 
   it('Hop builds Heat on perfects; a trip clears it and hurts more', () => {
