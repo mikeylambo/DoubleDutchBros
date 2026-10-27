@@ -11,7 +11,7 @@ export const HOME_X = { red: 550, blue: 650 } as const;
 
 export type BroKey = 'red' | 'blue';
 export type BroId = 'RED' | 'BLUE';
-export type MoveId = 'BASIC' | 'TECH1' | 'TECH2' | 'TECH3' | 'TECH4' | 'TECH5' | 'ULT';
+export type MoveId = 'BASIC' | 'TECH1' | 'TECH2' | 'TECH3' | 'TECH4' | 'TECH5' | 'TECH6' | 'ULT';
 export type StatKey = 'power' | 'rhythm' | 'vitality' | 'technique' | 'teamwork';
 export type GearSlot = 'rope' | 'shoes' | 'hat' | 'accessory';
 export type ItemId = 'coffee' | 'soda';
@@ -47,6 +47,7 @@ export const MOVE_REGISTRY: Record<MoveId, MoveDef> = {
   TECH3: { name: 'Power Slam', cost: 30, dmg: 3.2, syncGain: 2, rhythm: true, limit: () => 5, owner: 'RED', icon: '⚡', desc: 'Heavy: massive ground DMG. Long setup.' },
   TECH4: { name: 'Haymaker', cost: 25, dmg: 2.6, syncGain: 3, rhythm: true, limit: () => 3, ropeRate: 0.5, owner: 'RED', unlock: 'move_haymaker', icon: '🥊', desc: 'Half-time rope, 3 jumps. Smashes shields.' },
   TECH5: { name: 'Hopscotch', cost: 25, dmg: 1.4, syncGain: 8, rhythm: true, limit: () => 4, owner: 'BLUE', unlock: 'move_hopscotch', icon: '🪁', desc: '4 jumps. Staggers the target: it loses its next attack.' },
+  TECH6: { name: 'Tandem Master', cost: 60, dmg: 2, syncGain: 0, rhythm: true, limit: () => 6, unlock: 'move_tandem', icon: '🌀', desc: 'Trade the rope: alternate A and B on each peak. Every clean trade raises the multiplier.' },
   ULT: { name: 'Crossfire Dutch', cost: 100, dmg: 6, syncGain: 0, rhythm: false, icon: '🌟', desc: 'Ultimate: tandem cinematic finisher.' }
 };
 
@@ -112,6 +113,10 @@ export interface GearDef {
   weight?: number;
   jumpBoost?: number;
   syncMod?: number;
+  /** Legacy unlock needed before it appears in the shop. */
+  unlock?: string;
+  /** Overrides how many perfect jumps a move needs while equipped. */
+  moveLimit?: Partial<Record<MoveId, number>>;
   desc: string;
 }
 
@@ -119,7 +124,9 @@ export const GEAR_DATA: Record<GearSlot, GearDef[]> = {
   rope: [
     { id: 'r1', name: 'Nylon Cord', cost: 300, icon: '🪢', mods: { power: 5, rhythm: 2 }, desc: 'Balanced starter gear.' },
     { id: 'r2', name: 'Heavy Chain', cost: 900, icon: '⛓️', mods: { power: 25, rhythm: -4 }, weight: 2.2, desc: 'Massive Power, heavier jumps.' },
-    { id: 'r3', name: 'Pulse Wire', cost: 1600, icon: '⚡', mods: { technique: 12, teamwork: 10 }, syncMod: 1.5, desc: 'High Sync & Crit synergy.' }
+    { id: 'r3', name: 'Pulse Wire', cost: 1600, icon: '⚡', mods: { technique: 12, teamwork: 10 }, syncMod: 1.5, desc: 'High Sync & Crit synergy.' },
+    { id: 'r4', name: 'Diamond Core Rope', cost: 2200, icon: '💎', mods: { power: 20, technique: 10, rhythm: 4 }, unlock: 'gear_tier3', desc: 'Tier 3: power, precision and timing.' },
+    { id: 'r5', name: 'Titanium Core Rope', cost: 2600, icon: '🔩', mods: { power: 14 }, moveLimit: { TECH3: 3 }, unlock: 'gear_tier3', desc: 'Tier 3: Power Slam needs only 3 jumps.' }
   ],
   shoes: [
     { id: 's1', name: 'Street Kicks', cost: 400, icon: '👟', mods: { rhythm: 6, technique: 2 }, desc: 'Better timing windows.' },

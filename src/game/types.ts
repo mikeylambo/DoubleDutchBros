@@ -144,5 +144,7 @@ export interface Snapshot {
   mutators: MutatorId[];
   mutatorChoices: MutatorId[] | null;
   rigAlert: string | null;
+  unlocks: string[];
+  ropeStyle: string | null;
   tutorialDone: boolean;
 }

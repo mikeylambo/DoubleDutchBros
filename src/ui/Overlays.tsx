@@ -3,6 +3,7 @@ import type { LeaderboardEntry } from '@slu/web-shell';
 import { GEAR_DATA, GEAR_SLOTS, ITEM_DATA, PERKS_DATA, type BroKey, type GearSlot, type ItemId } from '../data/config';
 import { calculateDerived } from '../game/stats';
 import { MUTATORS } from '../game/runmods';
+import { LEGACY_BRANCHES, LEGACY_TREE, ROPE_STYLES } from '../data/legacy';
 import { TitleRabbits } from './TitleRabbits';
 import { useEngine } from './useEngine';
 import { usePlatform, useRunResult } from './usePlatform';
@@ -22,8 +23,10 @@ const SmallButton = ({ onPress, children }: { onPress: () => void; children: Rea
 export const Title = () => {
   const { engine, snap } = useEngine();
   const platform = usePlatform();
-  const [bestiary, setBestiary] = useState(false);
-  if (bestiary) return <Bestiary onClose={() => setBestiary(false)} />;
+  const [screen, setScreen] = useState<'title' | 'bestiary' | 'legacy'>('title');
+  if (screen === 'bestiary') return <Bestiary onClose={() => setScreen('title')} />;
+  if (screen === 'legacy') return <Legacy onClose={() => setScreen('title')} />;
+  const has = (id: string) => snap.unlocks.includes(id);
   return (
     <Screen className="bg-[#020205] justify-center text-center">
       <div className="text-6xl md:text-8xl font-black italic uppercase tracking-tighter leading-none">
@@ -40,7 +43,10 @@ export const Title = () => {
           : <BigButton onPress={() => engine.startTutorial()}>Start</BigButton>}
         <div className="flex flex-wrap justify-center gap-3">
           {snap.tutorialDone && <SmallButton onPress={() => platform.startDaily()}>Daily Run</SmallButton>}
-          <SmallButton onPress={() => setBestiary(true)}>Bestiary</SmallButton>
+          {has('start_w10') && <SmallButton onPress={() => engine.startRun({ startWave: 11 })}>Start W11</SmallButton>}
+          {has('start_w20') && <SmallButton onPress={() => engine.startRun({ startWave: 21 })}>Start W21</SmallButton>}
+          {snap.tutorialDone && <SmallButton onPress={() => setScreen('legacy')}>Legacy · {snap.legacy}</SmallButton>}
+          <SmallButton onPress={() => setScreen('bestiary')}>Bestiary</SmallButton>
           <SmallButton onPress={() => (snap.tutorialDone ? engine.startTutorial() : engine.startRun())}>{snap.tutorialDone ? 'Tutorial' : 'Skip tutorial'}</SmallButton>
           {platform.pwa.canInstall && <SmallButton onPress={() => void platform.pwa.promptInstall()}>Install</SmallButton>}
         </div>
@@ -48,6 +54,51 @@ export const Title = () => {
       <div className="mt-8 text-[11px] text-white/40 max-w-sm leading-relaxed">
         J / → = A (Hop) · F / ← = B (Skip) · Esc = pause · Gamepad supported
       </div>
+    </Screen>
+  );
+};
+
+/** Spend Legacy Points: unlocks over raw power (docs/DESIGN.md §9). */
+export const Legacy = ({ onClose }: { onClose: () => void }) => {
+  const { engine, snap } = useEngine();
+  const owned = (id: string) => snap.unlocks.includes(id);
+  return (
+    <Screen className="bg-[#05030f]">
+      <div className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter">Legacy</div>
+      <div className="text-sm font-black text-yellow-300 mt-2 mb-8 tracking-widest">{snap.legacy} LP</div>
+      <div className="w-full max-w-4xl space-y-6 mb-10">
+        {LEGACY_BRANCHES.map((branch) => (
+          <div key={branch}>
+            <div className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-2 ml-1">{branch}</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {LEGACY_TREE.filter((n) => n.branch === branch).map((n) => {
+                const have = owned(n.id);
+                const locked = n.requires?.some((r) => !owned(r));
+                const afford = snap.legacy >= n.cost;
+                const style = ROPE_STYLES.includes(n.id as typeof ROPE_STYLES[number]);
+                const equipped = style && snap.ropeStyle === n.id;
+                return (
+                  <button data-nav key={n.id}
+                    onPointerDown={(e) => { e.preventDefault(); if (!have) engine.buyLegacy(n.id); else if (style) engine.setRopeStyle(equipped ? null : n.id); }}
+                    className={`p-4 rounded-2xl border text-left flex gap-3 items-start active:scale-95 ${have ? 'bg-white/10 border-emerald-400/50' : locked || !afford ? 'bg-black/40 border-white/5 opacity-50' : 'bg-white/5 border-yellow-300/40'}`}>
+                    <div className="text-3xl">{n.icon}</div>
+                    <div className="flex-1">
+                      <div className="font-black uppercase text-sm">{n.name}</div>
+                      <div className="text-[11px] text-white/60 mt-0.5">{n.desc}</div>
+                      <div className="text-[11px] font-black mt-1">
+                        {have ? <span className="text-emerald-300">{style ? (equipped ? 'Equipped' : 'Tap to equip') : 'Unlocked'}</span>
+                          : locked ? <span className="text-white/40">Needs {n.requires!.map((r) => LEGACY_TREE.find((x) => x.id === r)?.name).join(' + ')}</span>
+                          : <span className="text-yellow-300">{n.cost} LP</span>}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      <BigButton onPress={onClose}>Back</BigButton>
     </Screen>
   );
 };
@@ -207,7 +258,7 @@ export const Shop = () => {
           {tab !== 'supplies' && (Object.entries(GEAR_DATA) as [GearSlot, typeof GEAR_DATA.rope][]).map(([slot, list]) => (
             <div key={slot} className="space-y-2">
               <div className="text-[10px] font-black text-white/40 uppercase ml-2">{slot}</div>
-              {list.map((item) => {
+              {list.filter((item) => !item.unlock || snap.unlocks.includes(item.unlock)).map((item) => {
                 const owned = snap.bros[tab].owned[slot].includes(item.id);
                 const equipped = snap.bros[tab].gear[slot] === item.id;
                 return (

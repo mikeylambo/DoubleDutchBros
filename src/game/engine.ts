@@ -12,6 +12,7 @@ import { PATTERN_CALL, SHOCK_WINDOW, SILENCE, buildPattern, hazardDone, hazardX,
 import { AFFIXES, attackersPerTurn, composeWave, type AffixId } from './encounters';
 import { MUTATOR_IDS, applySwag, mutatorScore, offersMutator, rigAlert, swagTier, type MutatorId, type SwagEvent } from './runmods';
 import { music, type BeatClock } from './music';
+import { LEGACY_TREE, ROPE_STYLES } from '../data/legacy';
 import { defaultSettings, freshProgress, type GameSettings, type Progress } from './save';
 import { calculateDerived, makeBro } from './stats';
 import {
@@ -31,7 +32,8 @@ export type GameEvent =
   | { type: 'hit'; move: MoveId; crit: boolean; damage: number }
   | { type: 'bro.hurt' }
   | { type: 'wave.clear'; wave: number; flawless: boolean }
-  | { type: 'tutorial.done' };
+  | { type: 'tutorial.done' }
+  | { type: 'legacy.unlock'; id: string };
 
 export interface EngineInit {
   progress?: Progress;
@@ -67,7 +69,7 @@ const keyOf = (id: BroId): BroKey => (id === 'RED' ? 'red' : 'blue');
 const idOf = (k: BroKey): BroId => (k === 'red' ? 'RED' : 'BLUE');
 const other = (id: BroId): BroId => (id === 'RED' ? 'BLUE' : 'RED');
 
-export type MenuAction = 'BASIC' | 'TECH' | 'ITEMS' | 'ULT' | 'TECH1' | 'TECH2' | 'TECH3' | 'TECH4' | 'TECH5' | 'BACK';
+export type MenuAction = 'BASIC' | 'TECH' | 'ITEMS' | 'ULT' | 'TECH1' | 'TECH2' | 'TECH3' | 'TECH4' | 'TECH5' | 'TECH6' | 'BACK';
 
 /**
  * The single source of truth for a run. React never owns game state: it sends commands in and
@@ -117,6 +119,7 @@ export class Engine {
   mutatorChoices: MutatorId[] | null = null;
   /** Set when a move was chosen on the beat: its first hit deals +10%. */
   private onBeatBonus = false;
+  private startWave = 1;
   private actionTime = 0;
   targetIdx = 0;
   comboCount = 0;
@@ -224,7 +227,7 @@ export class Engine {
   }
 
   /** Start a run. Seeded runs (daily) take their own random streams so every player meets the same waves. */
-  startRun(opts: { mode?: RunMode; seedKey?: string | null; rng?: RngStreams } = {}) {
+  startRun(opts: { mode?: RunMode; seedKey?: string | null; rng?: RngStreams; startWave?: number } = {}) {
     audio.unlock();
     this.tutorial = null;
     this.mode = opts.mode ?? 'endless';
@@ -236,6 +239,7 @@ export class Engine {
     this.swag = 0;
     this.mutators = [];
     this.mutatorChoices = null;
+    this.startWave = opts.startWave ?? 1;
     this.emit({ type: 'run.start', mode: this.mode, seedKey: this.seedKey });
     this.startMusic();
     this.progress.runs += 1;
@@ -271,11 +275,43 @@ export class Engine {
 
   private resetRun() {
     this.gameState = 'BATTLE';
-    this.wave = 1; this.rp = 800; this.sync = 0; this.turn = 'RED'; this.heat = 0;
-    this.inventory = { coffee: 3, soda: 2 };
+    const has = (id: string) => this.progress.unlocks.includes(id);
+    const start = this.tutorial ? 1 : this.startWave;
+    this.wave = start; this.sync = 0; this.turn = 'RED'; this.heat = 0;
+    this.rp = 800 + (has('nudge_rp') && !this.tutorial ? 200 : 0) + (start - 1) * 300;
+    this.inventory = { coffee: 3 + (has('nudge_coffee') && !this.tutorial ? 1 : 0), soda: 2 };
     this.bros = { red: makeBro('red'), blue: makeBro('blue') };
+    // Late starts come with the levels a run would have earned by then.
+    const stats: StatKey[] = ['power', 'vitality', 'rhythm', 'technique', 'teamwork'];
+    for (const k of ['red', 'blue'] as BroKey[]) {
+      const b = this.bros[k];
+      for (let i = 0; i < Math.floor((start - 1) / 2); i++) { b.lvl++; b.bonus[stats[i % stats.length]]++; b.maxXp = nextMaxXp(b.maxXp); }
+      b.hp = calculateDerived(b).maxHp;
+    }
     this.levelQueue = []; this.levelChoices = [];
     this.initWave();
+  }
+
+  /** Spend Legacy Points on a tree node. Returns false if unaffordable or locked. */
+  buyLegacy(id: string): boolean {
+    const node = LEGACY_TREE.find((n) => n.id === id);
+    if (!node || this.progress.unlocks.includes(id) || this.progress.legacy < node.cost) return false;
+    if (node.requires?.some((r) => !this.progress.unlocks.includes(r))) return false;
+    this.progress.legacy -= node.cost;
+    this.progress.unlocks.push(id);
+    if (ROPE_STYLES.includes(id as typeof ROPE_STYLES[number])) this.progress.ropeStyle = id;
+    this.persistProgress();
+    this.emit({ type: 'legacy.unlock', id });
+    audio.play('perfect');
+    this.touch();
+    return true;
+  }
+
+  setRopeStyle(id: string | null) {
+    if (id && !this.progress.unlocks.includes(id)) return;
+    this.progress.ropeStyle = id;
+    this.persistProgress();
+    this.touch();
   }
 
   /** Back to the title screen (music keeps playing). */
@@ -302,6 +338,8 @@ export class Engine {
     const move = MOVE_REGISTRY[a];
     if (move.owner && move.owner !== this.turn) return;
     if (!this.hasMove(a)) return;
+    // Tandem needs both rabbits standing.
+    if (a === 'TECH6' && (this.bros.red.hp <= 0 || this.bros.blue.hp <= 0)) return;
     if (this.sync < move.cost) return;
     this.moveType = a;
     audio.play('ui');
@@ -347,7 +385,7 @@ export class Engine {
         return;
       }
       case 'WINDUP': {
-        if (btn !== this.turn || bro.hp <= 0 || this.missLocked) return;
+        if (btn !== this.expectedJumper() || bro.hp <= 0 || this.missLocked) return;
         const body = this.body[key];
         if (body.jumping) return;
         const stats = calculateDerived(bro);
@@ -543,6 +581,7 @@ export class Engine {
         ? tutorialHint(this.tutorial, this.phase, this.turn, (id) => this.bros[keyOf(id)].name,
             this.windupLimit() - this.windup)
         : null,
+      unlocks: [...this.progress.unlocks], ropeStyle: this.progress.ropeStyle,
       swag: this.swag, swagTier: swagTier(this.swag).label, mutators: [...this.mutators],
       mutatorChoices: this.mutatorChoices ? [...this.mutatorChoices] : null,
       rigAlert: this.gameState === 'SHOP' ? rigAlert(this.wave + 1, this.bossFor(this.wave + 1)) : null,
@@ -582,6 +621,11 @@ export class Engine {
     }
   }
 
+  /** Who must jump the next rope peak. Tandem Master alternates between the rabbits. */
+  expectedJumper(): BroId {
+    return this.moveType === 'TECH6' && this.windup % 2 === 1 ? other(this.turn) : this.turn;
+  }
+
   /** Whether a move is available (Legacy-locked moves need their unlock). */
   hasMove(id: MoveId) {
     const lock = MOVE_REGISTRY[id].unlock;
@@ -590,7 +634,10 @@ export class Engine {
 
   /** Perfect jumps needed to launch the current skill. A living Rope-Biter adds one. */
   windupLimit() {
-    const base = MOVE_REGISTRY[this.moveType].limit?.(this.turn) ?? 3;
+    const gearLimit = Object.entries(this.bros[keyOf(this.turn)].gear)
+      .map(([slot, id]) => GEAR_DATA[slot as GearSlot].find((g) => g.id === id)?.moveLimit?.[this.moveType])
+      .find((v) => v !== undefined);
+    const base = gearLimit ?? MOVE_REGISTRY[this.moveType].limit?.(this.turn) ?? 3;
     const rat = this.enemies.some((e) => e.type === 'RAT' && e.hp > 0) ? 1 : 0;
     const heavy = this.mutators.includes('HEAVY_ROPE') && this.moveType !== 'BASIC' && this.moveType !== 'ULT' ? 1 : 0;
     return base + rat + heavy;
@@ -658,6 +705,7 @@ export class Engine {
     this.waveHurt = false;
     this.waveDodgeMark = this.runStats.dodges;
     if (this.mutators.includes('MIXTAPE')) this.applyMixtape();
+    if (this.progress.unlocks.includes('nudge_sync') && !this.tutorial) this.sync = Math.max(this.sync, 15);
     for (const en of this.enemies) this.emit({ type: 'enemy.seen', enemy: en.type });
     for (const en of this.enemies) {
       if (en.affix) this.text(en.x + 20, GROUND_Y + en.y - 120, AFFIXES[en.affix].name.toUpperCase(), AFFIXES[en.affix].color, 0.9);
@@ -846,7 +894,7 @@ export class Engine {
     this.emit({ type: 'wave.clear', wave: this.wave, flawless: !this.waveHurt && this.runStats.dodges > this.waveDodgeMark });
     const hasRpBoost = this.bros.red.perks.includes('rp_boost') || this.bros.blue.perks.includes('rp_boost');
     this.rp += Math.round(waveRp(this.wave) * (hasRpBoost ? 1.25 : 1) * (this.mutators.includes('SPOTLIGHT') ? 2 : 1));
-    if (offersMutator(this.wave)) {
+    if (offersMutator(this.wave) || (this.wave === 5 && this.progress.unlocks.includes('mutators_early'))) {
       const pool = MUTATOR_IDS.filter((m) => !this.mutators.includes(m));
       const shuffled = pool.map((m) => [this.rng.rewards(), m] as const).sort((x, y) => x[0] - y[0]).map(([, m]) => m);
       this.mutatorChoices = shuffled.slice(0, 3);
@@ -966,7 +1014,7 @@ export class Engine {
     const stats = calculateDerived(bro);
     // Follow-up hits in a tag chain are basic strikes boosted by combo; the chosen move lands once.
     const move: MoveId = this.comboCount === 0 ? this.moveType : 'BASIC';
-    const hit = resolveHit({ move, attacker: this.activeAttacker, stats, perks: bro.perks, comboCount: this.comboCount, targetAerial: aerial, roll: this.rng.combat(), heat: this.activeAttacker === 'RED' ? this.heat : 0 });
+    const hit = resolveHit({ move, attacker: this.activeAttacker, stats, perks: bro.perks, comboCount: this.comboCount, targetAerial: aerial, roll: this.rng.combat(), heat: this.activeAttacker === 'RED' ? this.heat : 0, trades: this.windup });
 
     // Run modifiers on the raw hit, before enemy defenses.
     if (this.mutators.includes('GLASS_WIRE')) hit.dmg *= 2;
@@ -992,6 +1040,14 @@ export class Engine {
     this.burst(cx, cy, hit.crit ? '#facc15' : '#ffffff', hit.crit ? 26 : 14, hit.crit ? 9 : 6);
     if (hit.crit) { this.flash = 0.35; this.flashColor = '#facc15'; }
     if (move === 'ULT') { this.flash = 0.8; this.flashColor = '#ffffff'; }
+    if (move === 'TECH6') {
+      // Tandem finisher: both rabbits arrive together.
+      this.flash = 0.7; this.flashColor = '#f0abfc';
+      this.camera.shake = 36; this.camera.zoom = 1.15;
+      const partner = this.body[keyOf(other(this.activeAttacker))];
+      this.jump(partner, -15); partner.targetX = target.x + 60;
+      this.text(target.x + 20, ty - 170, `TANDEM ×${(1 + 0.25 * this.windup).toFixed(2)}`, '#f0abfc', 1.5);
+    }
     if (target.hp === 0) {
       this.runStats.enemiesDefeated++;
       this.addSwag('ko');

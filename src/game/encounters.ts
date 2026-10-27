@@ -43,11 +43,10 @@ export const composeWave = (wave: number, rng: () => number, boss: EnemyTypeId):
 
   if (isBouncerWave(wave)) spawns.push({ type: 'BOUNCER' });
   if (debut) spawns.push({ type: debut });
+  // Support enemies (Rope-Biter, Hype Crow) never double up; draw from what's still allowed.
   while (spawns.length < count) {
-    // Support enemies (Rope-Biter, Hype Crow) never double up.
-    const t = pick(pool);
-    if ((t === 'CROW' || t === 'RAT') && spawns.some((s) => s.type === t)) continue;
-    spawns.push({ type: t });
+    const allowed = pool.filter((t) => !((t === 'CROW' || t === 'RAT') && spawns.some((s) => s.type === t)));
+    spawns.push({ type: pick(allowed) });
   }
   // Rare treasure: a Vending Mimic joins (from wave 4).
   if (wave >= 4 && rng() < 0.1 && spawns.length < 4) spawns.push({ type: 'MIMIC' });

@@ -12,6 +12,8 @@ export interface HitInput {
   roll: number;
   /** Hop's Heat stacks (0..HOP_HEAT_MAX). */
   heat?: number;
+  /** Tandem Master: clean rope trades landed. */
+  trades?: number;
 }
 
 // Hop & Skip play by different rules (docs/DESIGN.md §4).
@@ -44,6 +46,9 @@ export const resolveHit = (h: HitInput): HitResult => {
     else { dmg *= 0.75; syncGain = 25; windowBonus = 15; }
   } else if (h.move === 'TECH2') {
     if (h.targetAerial) { dmg *= move.antiAir ?? 1; clip = true; } else dmg *= 0.5;
+  } else if (h.move === 'TECH6') {
+    // Tandem Master: every clean trade of the rope multiplies the finisher.
+    dmg *= 1 + 0.25 * (h.trades ?? 0);
   } else if (h.move === 'TECH3' || h.move === 'TECH4') {
     if (h.targetAerial) dmg *= 0.4;
   }

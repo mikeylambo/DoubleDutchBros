@@ -6,6 +6,8 @@ export interface Progress {
   legacy: number; bestWave: number; runs: number; tutorialDone: boolean;
   /** Legacy tree purchases (move, gear, encounter and style unlocks). */
   unlocks: string[];
+  /** Equipped rope cosmetic (a Style unlock id), or null. */
+  ropeStyle: string | null;
 }
 
 /** Player preferences, including accessibility. */
@@ -22,7 +24,7 @@ export interface GameSettings {
   vibration: boolean;
 }
 
-export const freshProgress = (): Progress => ({ legacy: 0, bestWave: 0, runs: 0, tutorialDone: false, unlocks: [] });
+export const freshProgress = (): Progress => ({ legacy: 0, bestWave: 0, runs: 0, tutorialDone: false, unlocks: [], ropeStyle: null });
 
 export const defaultSettings = (): GameSettings => ({
   musicVolume: 0.8, sfxVolume: 0.8, latencyMs: 0, reducedMotion: false, screenShake: 1, flashes: 1, vibration: true

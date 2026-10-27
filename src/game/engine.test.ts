@@ -447,3 +447,50 @@ describe('run structure', () => {
     expect(rigAlert(7, 'BOSS')).toBeNull();
   });
 });
+
+describe('legacy & tandem', () => {
+  it('buys nodes in order and enforces prerequisites and cost', () => {
+    const e = newRun();
+    e.progress.legacy = 2000;
+    expect(e.buyLegacy('move_tandem')).toBe(false);      // needs both moves first
+    expect(e.buyLegacy('move_haymaker')).toBe(true);
+    expect(e.buyLegacy('move_hopscotch')).toBe(true);
+    expect(e.buyLegacy('move_tandem')).toBe(false);      // 1400 left < 1500
+    e.progress.legacy += 200;
+    expect(e.buyLegacy('move_tandem')).toBe(true);
+    expect(e.progress.legacy).toBe(100);
+  });
+
+  it('late starts begin with RP and levels', () => {
+    const e = makeEngine();
+    e.progress.unlocks.push('start_w10');
+    e.startRun({ startWave: 11 });
+    expect(e.wave).toBe(11);
+    expect(e.bros.red.lvl).toBe(6);
+    expect(e.rp).toBeGreaterThan(3000);
+  });
+
+  it('Tandem Master alternates who must jump and multiplies the finisher', () => {
+    const e = newRun();
+    const clock = clocks.get(e)!;
+    e.progress.unlocks.push('move_tandem');
+    e.sync = 100;
+    e.enemies[0].ropeRate = 1;
+    e.action('TECH6'); e.input('RED');
+    expect(e.phase).toBe('WINDUP');
+    for (let i = 0; i < 6; i++) {
+      const who = e.expectedJumper();
+      expect(who).toBe(i % 2 === 0 ? 'RED' : 'BLUE');
+      clock.b = Math.ceil(clock.b + 0.01);
+      e.input(who === 'RED' ? 'BLUE' : 'RED'); // the wrong rabbit is ignored
+      expect(e.windup).toBe(i);
+      e.input(who);
+      if (e.phase === 'WINDUP') runUntil(e, () => !e.body.red.jumping && !e.body.blue.jumping);
+    }
+    expect(e.phase).toBe('LAUNCH');
+    const stats = calculateDerived(makeBro('red'));
+    const one = resolveHit({ move: 'TECH6', attacker: 'RED', stats, perks: [], comboCount: 0, targetAerial: false, roll: 1, trades: 0 });
+    const six = resolveHit({ move: 'TECH6', attacker: 'RED', stats, perks: [], comboCount: 0, targetAerial: false, roll: 1, trades: 6 });
+    expect(six.dmg / one.dmg).toBeCloseTo(2.5, 1);
+  });
+});

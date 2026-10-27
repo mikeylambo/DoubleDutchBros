@@ -210,8 +210,12 @@ const drawRopes = (ctx: CanvasRenderingContext2D, e: Engine, layer: 'back' | 'fr
       ctx.save();
       ctx.globalAlpha = i === 0 ? 1 : 0.65;
       ctx.lineWidth = 3.5;
-      ctx.strokeStyle = e.bros[k].color;
-      ctx.shadowColor = e.bros[k].color;
+      const style = e.progress.ropeStyle;
+      const color = style === 'style_gold' ? '#facc15'
+        : style === 'style_rainbow' ? `hsl(${(e.beat * 90 + (k === 'blue' ? 180 : 0)) % 360}, 90%, 62%)`
+        : e.bros[k].color;
+      ctx.strokeStyle = color;
+      ctx.shadowColor = color;
       ctx.shadowBlur = 14;
       ctx.beginPath();
       ctx.moveTo(b.x - 28, HAND_Y);
@@ -225,7 +229,7 @@ const drawRopes = (ctx: CanvasRenderingContext2D, e: Engine, layer: 'back' | 'fr
 /** Floor glow under the acting bro while the rope is inside the perfect window. */
 const drawPerfectZone = (ctx: CanvasRenderingContext2D, e: Engine) => {
   if (e.phase !== 'WINDUP') return;
-  const k: BroKey = e.turn === 'RED' ? 'red' : 'blue';
+  const k: BroKey = e.expectedJumper() === 'RED' ? 'red' : 'blue';
   const threshold = e.perfectThresholdFor(k === 'red' ? 'RED' : 'BLUE');
   const s = Math.abs(Math.sin(e.ropeAngle));
   if (s <= threshold) return;
@@ -244,14 +248,20 @@ const drawWindupPips = (ctx: CanvasRenderingContext2D, e: Engine) => {
   if (e.phase !== 'WINDUP') return;
   const k: BroKey = e.turn === 'RED' ? 'red' : 'blue';
   const b = e.body[k];
-  const threshold = e.perfectThresholdFor(k === 'red' ? 'RED' : 'BLUE');
+  // The ring sits over whoever must jump next (Tandem Master alternates).
+  const jumper = e.expectedJumper();
+  const jk: BroKey = jumper === 'RED' ? 'red' : 'blue';
+  const jb = e.body[jk];
+  const threshold = e.perfectThresholdFor(jumper);
   const limit = e.windupLimit();
+  const tandem = e.moveType === 'TECH6';
+  const partner: BroKey = k === 'red' ? 'blue' : 'red';
   ctx.save();
-  ctx.fillStyle = '#fff';
-  ctx.shadowColor = '#fff';
   ctx.shadowBlur = 8;
   for (let i = 0; i < limit; i++) {
     ctx.globalAlpha = i < e.windup ? 1 : 0.25;
+    ctx.fillStyle = tandem ? e.bros[i % 2 === 0 ? k : partner].color : '#fff';
+    ctx.shadowColor = ctx.fillStyle;
     ctx.fillRect(b.x + 16 + i * 14 - limit * 7, GROUND_Y + b.y - 120, 10, 10);
   }
   // Timing ring: fills as the rope approaches the perfect zone.
@@ -261,7 +271,7 @@ const drawWindupPips = (ctx: CanvasRenderingContext2D, e: Engine) => {
   ctx.strokeStyle = s > threshold ? '#facc15' : 'rgba(255,255,255,0.35)';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.arc(b.x + 16, GROUND_Y + b.y - 150, 6 + s * 12, 0, Math.PI * 2);
+  ctx.arc(jb.x + 16, GROUND_Y + jb.y - 150, 6 + s * 12, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
 };

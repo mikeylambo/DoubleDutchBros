@@ -143,6 +143,10 @@ const boot = async (): Promise<Platform> => {
     shell.studio.telemetry.record(`game.${type}`, JSON.parse(JSON.stringify(data)));
     switch (e.type) {
       case 'run.start': void stats.increment('runs'); break;
+      case 'legacy.unlock':
+        void shell.unlocks.unlock(e.id);
+        prod.notifications.show({ id: `legacy:${e.id}`, kind: 'unlock', title: 'Unlocked', durationMs: 1800 });
+        break;
       case 'enemy.seen': prod.codex.unlock(e.enemy); break;
       case 'enemy.ko':
         void stats.increment('enemiesDefeated');
