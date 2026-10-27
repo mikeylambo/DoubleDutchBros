@@ -1,0 +1,18 @@
+{
+  "id": "01a17ee3-f143-7278-a467-286af719e714",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character turnaround of HOP, an original rabbit mascot for a 90s-arcade neon rhythm game, styled like a premium designer vinyl art toy and a modern stylized 3D console game hero. Cute but cool, NOT a classic flat cartoon. Head is a soft bean shape, slightly wider at the cheeks, with a short rounded muzzle; glossy almond-shaped eyes with amber irises and bright highlights, half-lidded cocky look; small rounded triangle nose; confident one-sided smirk, mouth closed, no teeth showing. Warm cream fur (#F6E7D4) with subtle soft shading and a lighter muzzle and belly. Long rabbit ears; the left ear bends over at the tip. Proportions: head about 40 percent of height, athletic little body, proper arms and legs, big feet. Outfit, fresh and clean 90s street style, not punk: red snapback cap worn backwards (#EF4444) with a blue underbrim (#3B82F6), sleek wraparound sport shades with blue-to-purple reflective lenses resting on his forehead above the eyes, oversized red mesh basketball jersey with white piping and number 1, blue basketball shorts with white side stripes to the knees, chunky red-white-blue high-top sneakers, slim gold chain, blue wristband. Smooth semi-gloss materials, soft studio lighting, subtle rim light, clean readable silhouette. Plain light grey background, full body, A-pose, front and back and side views.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793130230679,
+  "started_at": 1793130230689,
+  "finished_at": 1793130252043,
+  "expires_at": 1793389452043,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17ee4-43c3-73c3-82ce-750f4e829c07_part_0.png?Expires=1793389452&Signature=CegsFOVE6eV3yh8kGQws7Sk2liWLyxAuQSuajUTB9AivaSXLnUqAGYrVbo8GoN0ISklUEWcTNJBvT5xze1nudVjOde9m1pRtjR7zCbA25vdDafIlagD37yPCWNRKmtfhArMjeWOgI153xhGUIrvYDGNy7YxnhHU709tSeq0dotigKKH-LF5qknesv0ZkwnmlgFkRvkHnvqa5khybi1gk4GtnSuvsbbKvNFaoFxENNbTlmcDVHznYw72D4NSdcntlCMyuTA2b6NtdeHQOv1nrO0Hv2t5o6fUR8ENTDQPpMoSONtrRd6Lh7-Rw3FqST-FWfcqdiq3buKirY13Ev8CFuQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17ee4-43c3-73c3-82ce-750f4e829c07_part_1.png?Expires=1793389452&Signature=gnl0RNbORICKMmh2J~9p80RIj2xeygQ5S8HbS1xUVIJEG1CwEqPYKyWXyfebVfkcBO95aKkMPvzwRrGDtIzLVx-0SjC-xO6LI-QkrTrRimEuFddoGAQ051p1fMNxd40RTiUhnxw-m84iNwOEWC0a6eJbiSQvvU5~KVoxfPXbAUB5uccaSnAl13llHo98PLJoO4a61I0CdNNkwO6SdBXq0ZNSxP~4TILtL2PAr7C0fFk3lP15zctDE2-9sjzl1N6M8NlVTga8NdBfXwUyQ-c3nMCJuaMzfKmoIcvVWLFNlMtDd26801ZXj8f32mJtiy25gVFKrRTLu42B0eKH247aNw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17ee4-43c3-73c3-82ce-750f4e829c07_part_2.png?Expires=1793389452&Signature=isfw2vyhJBXy2k7zSrc-0TYk8MxT~Xk~33RjYhqaaMwCefXqDUrAJUVZhzV6Gzn7eUaTdWHTpQHRS4d2jgdX9PL48Q72yCo8Z7kGahAzX7bJqe5rvyFEooszwf3RB6MXYYkMSQY-3I7jRj-7BIXjWIpWjP8nzrUaiB9K574NbgTujrcgLabSPAWjOI8zCUgD2jnh9rYeQMD25qUrmlZp5xfw5W9kO-~DCdOpzuouwkKPFeNbVFQzkRQ50JX2CxJE6YeYc4qviuj-yRtmVeu3lkrXhp3-6ucCQ4qgiMT2JgxJLSt-vRDJQO1m3~I6n2JQL5nqvAtf-imYs2pMn1j5sA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}

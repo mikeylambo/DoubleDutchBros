@@ -4,7 +4,7 @@
   "folder": "20261027_193029_hop_01a17ed7",
   "root_task_id": "01a17ed7-a771-712f-84de-1329bb45a37d",
   "created_at": "2026-10-27T19:30:29.772Z",
-  "updated_at": "2026-10-27T19:41:35.189Z",
+  "updated_at": "2026-10-27T19:44:20.977Z",
   "tasks": [
     {
       "task_id": "01a17ed7-a771-712f-84de-1329bb45a37d",
@@ -33,6 +33,20 @@
       "operation_id": "75dfe697-fb10-4f24-b8f7-da3e853e69f2",
       "created_at": "2026-10-27T19:41:04.635Z",
       "updated_at": "2026-10-27T19:41:35.189Z"
+    },
+    {
+      "task_id": "01a17ee3-f143-7278-a467-286af719e714",
+      "task_type": "text-to-image",
+      "resource": "text-to-image",
+      "endpoint": "/openapi/v1/text-to-image",
+      "stage": "concept-v3",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17ee3-f143-7278-a467-286af719e714.json",
+      "operation_id": "3b059862-0449-49b0-b577-7ce4388b8225",
+      "created_at": "2026-10-27T19:43:50.750Z",
+      "updated_at": "2026-10-27T19:44:20.977Z"
     }
   ]
 }
