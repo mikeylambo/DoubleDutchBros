@@ -1,0 +1,37 @@
+{
+  "id": "01a17fcb-5a0e-74a5-98d6-666f94171152",
+  "type": "retexture",
+  "name": "",
+  "art_style": "realistic",
+  "object_prompt": "",
+  "style_prompt": "",
+  "negative_prompt": "",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "text_style_prompt": "Stylized vinyl-toy rabbit. Cool white-grey fur, pink inner ears, icy blue half-lidded eyes, small pink nose. Plain solid red sweatband headband with no marks or decorations on it. Clean bright blue mesh basketball jersey with white trim and a big white number 2, no stains, smudges or other marks anywhere on the jersey. Red basketball shorts with white side stripes. Red wristbands. Blue white red high-top sneakers. Small gold hoop earring. Clean semi-gloss, bright saturated colors.",
+  "image_style_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1793145397288,
+  "progress": 100,
+  "started_at": 1793145397292,
+  "finished_at": 1793145479379,
+  "expires_at": 1793404679379,
+  "task_error": null,
+  "model_url": "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/tasks/01a17fcb-5a0e-74a5-98d6-666f94171152/output/model.glb?Expires=1793404679&Signature=m0TOFNzr~lThWyr4~iFGDa-aNKPc1OWiOjwDr9a4SABftm3YKeqrxgr5SRNf0dvwNnipQtZ-gr7fVP6vcpsFghSeuSmZfa9~gVtw~jIByR2H5ZeK~emi6kvmSjAqhjwI6iyS97jgvRrJsu7dj9-Se2ZRoDZhOl6qvmftVbr8PsXZUjm3QaZ5y8t-1awCkxBv1jKrElNS5~~MTF-9UFQpou3MLNKKv9dpI4ZquHFH2szVeXr72YGA7KeFAP8f2Pz-vYMseHVK-qr2ChJzZTIzTZm7aBu9gQfq1uvIPhJgVC3dKIrQkZMEBqmlZJUtpsTvMaNu6uqAMDrqX73RVtZtJw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/tasks/01a17fcb-5a0e-74a5-98d6-666f94171152/output/model.glb?Expires=1793404679&Signature=m0TOFNzr~lThWyr4~iFGDa-aNKPc1OWiOjwDr9a4SABftm3YKeqrxgr5SRNf0dvwNnipQtZ-gr7fVP6vcpsFghSeuSmZfa9~gVtw~jIByR2H5ZeK~emi6kvmSjAqhjwI6iyS97jgvRrJsu7dj9-Se2ZRoDZhOl6qvmftVbr8PsXZUjm3QaZ5y8t-1awCkxBv1jKrElNS5~~MTF-9UFQpou3MLNKKv9dpI4ZquHFH2szVeXr72YGA7KeFAP8f2Pz-vYMseHVK-qr2ChJzZTIzTZm7aBu9gQfq1uvIPhJgVC3dKIrQkZMEBqmlZJUtpsTvMaNu6uqAMDrqX73RVtZtJw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/tasks/01a17fcb-5a0e-74a5-98d6-666f94171152/output/model.fbx?Expires=1793404679&Signature=o0cKDlatQpGP~0AP6yhsD02AOoqTs2MqJ-6OnZtkL-NuOiqeC~zrqcCx67BB30NKs1NMgstOetCDodItQCFHIeC~mDH2v9OeMkztdhWYkiVFXuLLnLFHqaEOH-s3ah2kXY9UcPypRnwV8czIOAKERrEA1tjEVhGp9AlI5G6BDgYeaVrPAdRHMCcxsMnktq~sHz-9kZdYS4ZbQwjYrz9TjkjMsAmka6ascLqonP0OWMY7zKkWM~XjYt3yaYwFKW8nXgYncaCJZBvKDpmoD1Av15jr4Y-eT~mBsYiCcKFrdyIlzPwEm62w7AuMK9OJkAmIS9q4xoPZ66SvFN~4W98saw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/tasks/01a17fcb-5a0e-74a5-98d6-666f94171152/output/preview.png?Expires=1793404679&Signature=hmFTE2Eg-uACq2vPfkkQQYgUsOVzIJMFcRrExSgWK0phFN3nTTk9rUa9mhBJqnHeu6rs8yBNz-2fWpRIViKWQqJK5HJTOkMq2q3DDp0gIuy2xVXR4R1ZO1M-UIASyhTuPzDN2D-AQor3riGg-OtHOsW1FEHK024nmbVg~iWqojGqTSLyVhb1T0xkL1U8Sy1nmKwPQK7kDvEkpAz7B2a9N6AJcCakEuLqtdbj9IHL0xHseYXW4X2kZ11MQK49gKG-SAGi7mQW~WTaMhp7y6coSy3esEwju6xWUrEZjG1ifPnVYYX3MOvoYt7KQbNUnbSFjb3v5CKSqOqYIdSo3tz5lA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [
+    {
+      "base_color": "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/tasks/01a17fcb-5a0e-74a5-98d6-666f94171152/output/texture_0.png?Expires=1793404679&Signature=PXtrZozZYesVSA4wL29Ky1K0XxvKTknt2VpM-PEq2y-0pY2UiXklWPE7qx8RIXyXXnFOrf~HmrDQqaoHG9mXMJzc5zS5kccNnzFaXQoeEUXpLKpRwJdl3axOJdUPH6mmboTcVVj0hklA7U6omJzh1gHDvQf4GDr2REnZdWH0u7eCjbpp9b8p2YhFQpra1q90oXBJ98XJwHS4G~nvl4psAV2r1rHsJuYHhzgLvSzfv67kcSt3eNTtdiIxg~uYulDHMj6N04VG6C5~Od-tGaz82OtWxhReKjhsDPyd9ThIE0SEDdqGvBMZXUsZYt968JSu78pLUnuXDk3Wl1CqcnZL2Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "metallic": "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/tasks/01a17fcb-5a0e-74a5-98d6-666f94171152/output/texture_0_metallic.png?Expires=1793404679&Signature=LoJ2cdAqlWJ2DDl6-0B~~qrYNw2ZpwrqIJB7TbGCsjOK3BeL6Jm-r5gg881-v8vnECmuc1kLGUnogJr9tA7vo5WWKsNeJvM-gU0vIIN44sdc7ZbCs3j5XTHXCiJx3R6wG407e0qbZsgVLJ19o7MvE1H5JqjDdCGELciDkmuPOsJ2fPA6BHAH06nMb2TRUdCakoQ-Oy1sepsCwbhEm3SJ6EOhRNCMljHDu-2rKk-Ip7b1e72Rw2W8bL4KQXcQFUMg7qranQlHMQ1XI1WODHaoqtJ4IKgg2ruk3zqyBHb86YyfyQeokgB5ehWLuM5j5L7-uoyMlVIavdHCSiBndH86Zg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "roughness": "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/tasks/01a17fcb-5a0e-74a5-98d6-666f94171152/output/texture_0_roughness.png?Expires=1793404679&Signature=qJU11csD~o5VAADoOOordydyEdXkFB07tbA4LRHuxEoSVA9wOyCTie-Q-zNj9aK~RkLDeB5YtW7XCbKzCtAt6CUD96LwQGJ2SEiQNXtdc9bl53j14gOtbWV1JoKQW5wYA4CYgtKOHGtGyEx4ne-IWoxKPfU4HAd-R94ZjYuNhM3URTDbPTWbrmCwU2G4ASU1oFA5qSKdMQqNoiCET7jeaY8qi~B8LYBMX05ZM4UXjI2p5xSMFHkfA4MXfQw9~t1i0mlovh7S2JKmfuKCrgpN0aYwy6L-Pf8PFjYazqOOCOJ-Ym0LNo5ts7hb-WR5J3e439sHWkHvd0M8VQjSkCAoEA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "normal": "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/tasks/01a17fcb-5a0e-74a5-98d6-666f94171152/output/texture_0_normal.png?Expires=1793404679&Signature=qkL~VY67K9j913lKkoaN9QMvTl6k7OvFbHVyp7uWBQWlGXqrBqhLtJ80x2FNOBt1j9yjxBl8B6Pp0d53c3TU0jIqK1q9PQzALesthQcOUeI4tsRzUC0m7ATuHGUmriLW9jgsyqaCmz~ElrYt9EQwxbn8jEAtSTfiZAHmj5ccsheDhBENwa8jWc5JskK8LLwCFQKkrarE29WiZovbcPtUgsylcoKHUitcKtDJ0X7Mv8VJk3nkhcchkZNPfPAJDwaygVBOdKmxl3ciu2Js~GgsBIGH~cv3Ave7lUhz3IYIgqln0InvYtkCCDIc-zkfUVOF1jCLPqRhvlJTpnegVeRofQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    }
+  ],
+  "hd_texture": true,
+  "texture_resolution": "4k",
+  "consumed_credits": 10
+}

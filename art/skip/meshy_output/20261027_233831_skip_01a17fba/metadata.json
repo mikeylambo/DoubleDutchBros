@@ -4,7 +4,7 @@
   "folder": "20261027_233831_skip_01a17fba",
   "root_task_id": "01a17fba-c674-72a1-a093-8eca004ab14e",
   "created_at": "2026-10-27T23:38:31.166Z",
-  "updated_at": "2026-10-27T23:55:00.313Z",
+  "updated_at": "2026-10-27T23:58:10.580Z",
   "tasks": [
     {
       "task_id": "01a17fba-c674-72a1-a093-8eca004ab14e",
@@ -47,6 +47,20 @@
       "operation_id": "dc54f8c1-8cbd-4b59-907a-7b9c3cd71ab5",
       "created_at": "2026-10-27T23:52:47.987Z",
       "updated_at": "2026-10-27T23:55:00.313Z"
+    },
+    {
+      "task_id": "01a17fcb-5a0e-74a5-98d6-666f94171152",
+      "task_type": "retexture",
+      "resource": "retexture",
+      "endpoint": "/openapi/v1/retexture",
+      "stage": "retexture",
+      "parent_task_id": "01a17fc7-d5dc-7652-bd86-e46ec9a9a568",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fcb-5a0e-74a5-98d6-666f94171152.json",
+      "operation_id": "844afe0b-efac-4380-95b4-3358e951b98c",
+      "created_at": "2026-10-27T23:56:37.313Z",
+      "updated_at": "2026-10-27T23:58:10.580Z"
     }
   ]
 }
