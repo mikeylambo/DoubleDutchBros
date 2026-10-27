@@ -10,7 +10,23 @@ export interface HitInput {
   targetAerial: boolean;
   /** Injected for deterministic tests. */
   roll: number;
+  /** Hop's Heat stacks (0..HOP_HEAT_MAX). */
+  heat?: number;
 }
+
+// Hop & Skip play by different rules (docs/DESIGN.md §4).
+/** Hop: each Heat stack adds 10% damage. Built by perfect jumps, lost on a trip or a hit. */
+export const HOP_HEAT_MAX = 5;
+export const HOP_HEAT_DAMAGE = 0.1;
+/** Hop trips hurt more. */
+export const HOP_TRIP_MULT = 1.5;
+/** Hop's tag-in strikes hit harder. */
+export const HOP_TAG_MULT = 1.25;
+/** Skip: wider perfect window and Sync from every perfect jump. */
+export const SKIP_WINDOW_BONUS = 0.06;
+export const SKIP_PERFECT_SYNC = 3;
+/** Skip: wider tag-in window (fraction of the impact either side of center). */
+export const TAG_WINDOW = { RED: [0.3, 0.7], BLUE: [0.2, 0.8] } as const;
 
 export interface HitResult { dmg: number; syncGain: number; crit: boolean; clip: boolean; windowBonus: number; healOnCrit: number }
 
@@ -30,6 +46,11 @@ export const resolveHit = (h: HitInput): HitResult => {
     if (h.targetAerial) { dmg *= move.antiAir ?? 1; clip = true; } else dmg *= 0.5;
   } else if (h.move === 'TECH3') {
     if (h.targetAerial) dmg *= 0.4;
+  }
+
+  if (h.attacker === 'RED') {
+    dmg *= 1 + HOP_HEAT_DAMAGE * Math.min(HOP_HEAT_MAX, h.heat ?? 0);
+    if (h.comboCount > 0) dmg *= HOP_TAG_MULT;
   }
 
   const crit = h.roll < h.stats.crit;

@@ -1,7 +1,5 @@
 import { CANVAS_WIDTH, GROUND_Y, HOME_X, MOVE_REGISTRY, type BroKey } from '../data/config';
-import { perfectThreshold } from './combat';
 import type { Engine } from './engine';
-import { calculateDerived } from './stats';
 import { Animator, CONTACT_FRAME, ENEMY_CLIPS, RABBIT_CLIPS, SPRITE_ID, airProgress, enemySpriteId, frameIndex, rabbitClip, sprites, type EnemyClip } from './anim';
 import { BACKDROP_RES, CLIP_POSE, RABBITS, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
 import type { Enemy } from './types';
@@ -44,6 +42,7 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
   drawBro(ctx, e, 'blue');
   drawBro(ctx, e, 'red');
   drawRopes(ctx, e, 'front');
+  drawHeat(ctx, e);
   drawParticles(ctx, e);
   drawTexts(ctx, e);
   ctx.restore();
@@ -116,30 +115,76 @@ const drawHazards = (ctx: CanvasRenderingContext2D, e: Engine) => {
   for (const h of e.hazards) {
     if (e.beat < h.warn) continue;
     ctx.save();
-    if (h.x + h.w < 0) {
-      // Telegraph: the lane flashes on every beat until the hit comes into view.
+    const color = h.fake ? '#f59e0b' : '#ef4444';
+    if (h.kind === 'shock') {
+      // Ground shockwave: the air above the court pulses as a warning; on its beat a ring bursts out.
+      const until = h.arrive - e.beat;
+      if (until > 0) {
+        ctx.globalAlpha = 0.06 + 0.22 * pulse(e.beat) * (until < 1 ? 2 : 1);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(0, h.y, CANVAS_WIDTH, h.h);
+        // Downward chevrons: "stay down".
+        ctx.globalAlpha = 0.5;
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 3;
+        for (let x = 120; x < CANVAS_WIDTH; x += 160) {
+          ctx.beginPath(); ctx.moveTo(x - 12, h.y + 30); ctx.lineTo(x, h.y + 42); ctx.lineTo(x + 12, h.y + 30); ctx.stroke();
+        }
+      } else if (until > -0.5) {
+        const t = -until / 0.5;
+        ctx.globalAlpha = 1 - t;
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 6 * (1 - t) + 1;
+        ctx.beginPath(); ctx.ellipse(CANVAS_WIDTH / 2, GROUND_Y, 80 + t * 500, 10 + t * 40, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.restore();
+      continue;
+    }
+    const offscreen = h.dir === 1 ? h.x + h.w < 0 : h.x > CANVAS_WIDTH;
+    if (offscreen) {
+      // Telegraph: the lane flashes on every beat until the hit comes into view; an arrow shows the side.
       ctx.globalAlpha = 0.08 + 0.3 * pulse(e.beat);
-      ctx.fillStyle = h.fake ? '#f59e0b' : '#ef4444';
+      ctx.fillStyle = color;
       ctx.fillRect(0, h.y, CANVAS_WIDTH, h.h);
+      ctx.globalAlpha = 0.4 + 0.5 * pulse(e.beat);
+      const ax = h.dir === 1 ? 20 : CANVAS_WIDTH - 20, cy = h.y + h.h / 2;
+      ctx.beginPath(); ctx.moveTo(ax, cy - 10); ctx.lineTo(ax + 14 * h.dir, cy); ctx.lineTo(ax, cy + 10); ctx.closePath(); ctx.fill();
       ctx.restore();
       continue;
     }
     if (h.fake) {
       ctx.setLineDash([8, 6]);
-      ctx.strokeStyle = '#f59e0b';
+      ctx.strokeStyle = color;
       ctx.lineWidth = 2;
       ctx.strokeRect(h.x, h.y, h.w, h.h);
     } else {
       ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
-      ctx.shadowColor = '#ef4444';
+      ctx.shadowColor = color;
       ctx.shadowBlur = 15;
       ctx.fillRect(h.x, h.y, h.w, h.h);
-      ctx.strokeStyle = '#ef4444';
+      ctx.strokeStyle = color;
       ctx.lineWidth = 2;
       ctx.strokeRect(h.x, h.y, h.w, h.h);
     }
     ctx.restore();
   }
+};
+
+/** Hop's Heat: small flames over Hop's head, one per stack. */
+const drawHeat = (ctx: CanvasRenderingContext2D, e: Engine) => {
+  if (e.heat <= 0 || e.bros.red.hp <= 0) return;
+  const b = e.body.red;
+  const p = pulse(e.beat);
+  ctx.save();
+  for (let i = 0; i < e.heat; i++) {
+    const x = b.x + 16 + (i - (e.heat - 1) / 2) * 11;
+    const y = GROUND_Y + b.y - 128 - p * 3;
+    ctx.fillStyle = i === e.heat - 1 ? '#fde047' : '#fb923c';
+    ctx.shadowColor = '#fb923c';
+    ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.moveTo(x, y - 9); ctx.quadraticCurveTo(x + 6, y - 1, x, y + 4); ctx.quadraticCurveTo(x - 6, y - 1, x, y - 9); ctx.fill();
+  }
+  ctx.restore();
 };
 
 const ROPE_CENTER = GROUND_Y - 45; // midpoint of the swing: halfway between overhead and the feet
@@ -180,7 +225,7 @@ const drawRopes = (ctx: CanvasRenderingContext2D, e: Engine, layer: 'back' | 'fr
 const drawPerfectZone = (ctx: CanvasRenderingContext2D, e: Engine) => {
   if (e.phase !== 'WINDUP') return;
   const k: BroKey = e.turn === 'RED' ? 'red' : 'blue';
-  const threshold = Math.min(0.95, perfectThreshold(calculateDerived(e.bros[k]).rhythm) + e.tightness);
+  const threshold = e.perfectThresholdFor(k === 'red' ? 'RED' : 'BLUE');
   const s = Math.abs(Math.sin(e.ropeAngle));
   if (s <= threshold) return;
   const b = e.body[k];
@@ -198,7 +243,7 @@ const drawWindupPips = (ctx: CanvasRenderingContext2D, e: Engine) => {
   if (e.phase !== 'WINDUP') return;
   const k: BroKey = e.turn === 'RED' ? 'red' : 'blue';
   const b = e.body[k];
-  const threshold = Math.min(0.95, perfectThreshold(calculateDerived(e.bros[k]).rhythm) + e.tightness);
+  const threshold = e.perfectThresholdFor(k === 'red' ? 'RED' : 'BLUE');
   const limit = MOVE_REGISTRY[e.moveType].limit?.(e.turn) ?? 3;
   ctx.save();
   ctx.fillStyle = '#fff';

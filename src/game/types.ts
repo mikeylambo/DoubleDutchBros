@@ -48,6 +48,8 @@ export interface Enemy extends Body {
   isBoss: boolean;
   /** Frames of white hit-flash remaining. */
   hurt: number;
+  /** Boss phase (1, 2, 3). */
+  phase: number;
 }
 
 /**
@@ -67,6 +69,10 @@ export interface Hazard {
   warn: number;
   /** Fakes render dashed and deal no damage. */
   fake: boolean;
+  /** 1 = travels left→right (reaches Hop first), -1 = from the right (reaches Skip first). */
+  dir: 1 | -1;
+  /** 'lane' travels across; 'shock' is a ground shockwave on `arrive` that hits anyone airborne. */
+  kind: 'lane' | 'shock';
   /** Bros already hit by this hazard. */
   hit: BroKey[];
   /** Bros this hazard has passed without hitting (dodges). */
@@ -109,6 +115,7 @@ export interface Snapshot {
   sync: number;
   turn: BroId;
   combo: number;
+  heat: number;
   expectedTap: BroId | null;
   activeItem: ItemId | null;
   inventory: Record<ItemId, number>;

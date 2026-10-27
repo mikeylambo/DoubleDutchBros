@@ -1,11 +1,14 @@
 import {
-  CANVAS_WIDTH, ENEMY_TYPES, GEAR_DATA, GRAVITY, GROUND_Y, HOME_X, ITEM_DATA, MIN_IMPACT_FRAMES, MOVE_REGISTRY,
+  ENEMY_TYPES, GEAR_DATA, GRAVITY, GROUND_Y, HOME_X, ITEM_DATA, MIN_IMPACT_FRAMES, MOVE_REGISTRY,
   PERKS_DATA, SIM_HZ, STAT_DEFS, nextMaxXp, waveRp, waveXp,
-  type BroId, type BroKey, type EnemyTypeId, type GearSlot, type ItemId, type MoveId, type PerkId, type StatKey
+  type BroId, type BroKey, type EnemyTypeId, type GearSlot, type ItemId, type MoveId, type PatternId, type PerkId, type StatKey
 } from '../data/config';
 import { audio } from './audio';
-import { impactWindow, judgeJump, perfectThreshold, resolveHit, type JumpJudgment } from './combat';
-import { PATTERN_CALL, buildPattern, hazardX, pickPattern } from './enemyScripts';
+import {
+  HOP_HEAT_MAX, HOP_TRIP_MULT, SKIP_PERFECT_SYNC, SKIP_WINDOW_BONUS, TAG_WINDOW, impactWindow, judgeJump, perfectThreshold, resolveHit,
+  type JumpJudgment
+} from './combat';
+import { PATTERN_CALL, SHOCK_WINDOW, buildPattern, hazardDone, hazardX, pickPattern } from './enemyScripts';
 import { music, type BeatClock } from './music';
 import { defaultSettings, freshProgress, type GameSettings, type Progress } from './save';
 import { calculateDerived, makeBro } from './stats';
@@ -99,6 +102,8 @@ export class Engine {
 
   // --- combat state ---
   moveType: MoveId = 'BASIC';
+  /** Hop's Heat stacks: perfect jumps build it, a trip or a hit clears it. */
+  heat = 0;
   targetIdx = 0;
   comboCount = 0;
   activeAttacker: BroId | null = null;
@@ -247,7 +252,7 @@ export class Engine {
 
   private resetRun() {
     this.gameState = 'BATTLE';
-    this.wave = 1; this.rp = 800; this.sync = 0; this.turn = 'RED';
+    this.wave = 1; this.rp = 800; this.sync = 0; this.turn = 'RED'; this.heat = 0;
     this.inventory = { coffee: 3, soda: 2 };
     this.bros = { red: makeBro('red'), blue: makeBro('blue') };
     this.levelQueue = []; this.levelChoices = [];
@@ -323,11 +328,17 @@ export class Engine {
         const airtime = Math.min(framesPerPeak * 0.8, (2 * -stats.jump) / GRAVITY);
         this.jump(body, (-GRAVITY * airtime) / 2);
         body.squash = -0.6;
-        const judgment = this.judge(atTime, stats.rhythm);
+        const judgment = this.judge(atTime, btn, stats.rhythm);
         if (judgment === 'PERFECT') {
           this.windup++;
           this.runStats.perfects++;
           this.emit({ type: 'jump.perfect', streak: ++this.perfectStreak });
+          if (btn === 'RED') {
+            if (this.heat < HOP_HEAT_MAX) this.text(body.x + 16, GROUND_Y - 150, `HEAT ${this.heat + 1}`, '#fb923c', 0.7);
+            this.heat = Math.min(HOP_HEAT_MAX, this.heat + 1);
+          } else {
+            this.sync = Math.min(100, this.sync + SKIP_PERFECT_SYNC);
+          }
           this.touch();
           audio.play('perfect');
           audio.buzz(12);
@@ -339,6 +350,7 @@ export class Engine {
           this.missLocked = true;
           this.runStats.trips++;
           this.perfectStreak = 0;
+          if (btn === 'RED') this.heat = 0;
           this.emit({ type: 'jump.trip' });
           this.camera.shake = 15;
           audio.play('trip');
@@ -350,7 +362,8 @@ export class Engine {
             this.tripRecover = 30;
             this.text(body.x + 16, GROUND_Y - 140, 'TRY AGAIN!', '#67e8f9', 0.8);
           } else {
-            this.damageBro(key, bro.perks.includes('trip_shield') ? 15 : 30);
+            const trip = (bro.perks.includes('trip_shield') ? 15 : 30) * (btn === 'RED' ? HOP_TRIP_MULT : 1);
+            this.damageBro(key, Math.round(trip));
             this.missTimer = 48; // ~0.8s, ticks with the sim so pausing can't desync it
           }
         }
@@ -360,7 +373,8 @@ export class Engine {
         const needed = other(this.activeAttacker!);
         if (btn !== needed || bro.hp <= 0 || this.actionSuccess) return;
         const progress = 1 - this.impactTimer / this.impactTotal;
-        if (progress > 0.3 && progress < 0.7) {
+        const [from, to] = TAG_WINDOW[needed];
+        if (progress > from && progress < to) {
           this.actionSuccess = true;
           this.runStats.tagsLanded++;
           this.emit({ type: 'tag.sync', combo: this.comboCount + 1 });
@@ -474,7 +488,7 @@ export class Engine {
     return {
       gameState: this.gameState, phase: this.phase, wave: this.wave, rp: this.rp,
       legacy: this.progress.legacy, bestWave: this.progress.bestWave, sync: this.sync, turn: this.turn,
-      combo: this.comboCount, expectedTap: this.expectedTap, activeItem: this.activeItem,
+      heat: this.heat, combo: this.comboCount, expectedTap: this.expectedTap, activeItem: this.activeItem,
       inventory: { ...this.inventory }, bros: structuredClone(this.bros), moveType: this.moveType,
       enemies: this.enemies.map((e) => ({ id: e.id, name: e.name, hp: e.hp, maxHp: e.maxHp })),
       tutorialDone: this.progress.tutorialDone,
@@ -490,9 +504,14 @@ export class Engine {
    * Rope timing judged at the exact press time (extrapolated between sim steps), shifted by the
    * player's calibrated latency. The Rhythm stat widens the perfect window.
    */
-  private judge(atTime: number, rhythmStat: number): JumpJudgment {
-    const angle = this.ropeAngleAt(this.heardBeat(atTime));
-    return judgeJump(angle, Math.min(0.95, perfectThreshold(rhythmStat) + this.tightness));
+  private judge(atTime: number, who: BroId, rhythmStat: number): JumpJudgment {
+    return judgeJump(this.ropeAngleAt(this.heardBeat(atTime)), this.perfectThresholdFor(who, rhythmStat));
+  }
+
+  /** |sin| the rope must exceed for a perfect. Skip's window is wider; fast enemies tighten it. */
+  perfectThresholdFor(who: BroId, rhythmStat = calculateDerived(this.bros[keyOf(who)]).rhythm) {
+    const skip = who === 'BLUE' ? SKIP_WINDOW_BONUS : 0;
+    return Math.max(0.45, Math.min(0.95, perfectThreshold(rhythmStat) + this.tightness - skip));
   }
 
   /** Rope peaks (|sin| = 1) land exactly on beats, every 1/ropeRate beats. */
@@ -526,7 +545,7 @@ export class Engine {
       const hp = Math.round(d.hp * hpMult);
       return {
         id: Date.now() + i, type, name: d.name, hp, maxHp: hp, dmg: d.dmg, color: d.color, ropeRate: d.ropeRate, tightness: d.tightness,
-        patterns: d.patterns, scale: d.scale, float: d.float, isBoss: !!d.isBoss, hurt: 0,
+        patterns: d.patterns, scale: d.scale, float: d.float, isBoss: !!d.isBoss, hurt: 0, phase: 1,
         x, y: d.float, vy: 0, jumping: false, targetX: x
       };
     });
@@ -627,10 +646,27 @@ export class Engine {
     if (id === undefined) return this.endEnemyTurn();
     this.currentEnemyId = id;
     const enemy = this.enemies.find((e) => e.id === id)!;
-    const pattern = this.tutorial ? 'WAVE' : pickPattern(enemy.patterns, this.rng.waves);
+    const pattern = this.tutorial ? 'WAVE' : pickPattern(this.patternsFor(enemy), this.rng.waves);
     // Attacks start on a whole beat with one beat of breathing room.
     this.hazards = buildPattern(pattern, Math.ceil(this.beat) + 1);
     this.text(enemy.x + 20, GROUND_Y + enemy.y - 110, PATTERN_CALL[pattern], enemy.color, 1.1);
+  }
+
+  /** Bosses change their move set as they lose HP (phase 2 below 60%, panic below 30%). */
+  private patternsFor(enemy: Enemy): PatternId[] {
+    if (!enemy.isBoss) return enemy.patterns;
+    const ratio = enemy.hp / enemy.maxHp;
+    const phase = ratio < 0.3 ? 3 : ratio < 0.6 ? 2 : 1;
+    if (phase > enemy.phase) {
+      enemy.phase = phase;
+      // Phase changes land like a drop: muffle the music for a bar, flash, shake.
+      this.text(enemy.x + 60, GROUND_Y + enemy.y - 200, phase === 3 ? 'PANIC!' : 'ENRAGED!', enemy.color, 1.6);
+      this.flash = 0.5; this.flashColor = enemy.color;
+      this.camera.shake = 30;
+      music.duck(true);
+      setTimeout(() => { if (this.gameState === 'BATTLE') music.duck(false); }, (4 * 60_000) / this.clock.bpm);
+    }
+    return phase === 3 ? ['PANIC', 'CROSSFIRE'] : phase === 2 ? ['CROSSFIRE', 'DOUBLE_WAVE', 'CHARGE'] : enemy.patterns;
   }
 
   private endEnemyTurn() {
@@ -774,7 +810,7 @@ export class Engine {
     const stats = calculateDerived(bro);
     // Follow-up hits in a tag chain are basic strikes boosted by combo; the chosen move lands once.
     const move: MoveId = this.comboCount === 0 ? this.moveType : 'BASIC';
-    const hit = resolveHit({ move, attacker: this.activeAttacker, stats, perks: bro.perks, comboCount: this.comboCount, targetAerial: aerial, roll: this.rng.combat() });
+    const hit = resolveHit({ move, attacker: this.activeAttacker, stats, perks: bro.perks, comboCount: this.comboCount, targetAerial: aerial, roll: this.rng.combat(), heat: this.activeAttacker === 'RED' ? this.heat : 0 });
 
     target.hp = Math.max(0, target.hp - hit.dmg);
     target.hurt = 6;
@@ -854,20 +890,36 @@ export class Engine {
     let live = false;
     for (const h of this.hazards) {
       h.x = hazardX(h, this.beat);
-      if (h.x < CANVAS_WIDTH + 100) live = true;
+      if (!hazardDone(h, this.beat)) live = true;
       if (h.fake) continue;
+      if (h.kind === 'shock' && Math.abs(this.beat - h.arrive) < 0.05 && !h.cleared.length && !h.hit.length) {
+        this.camera.shake = Math.max(this.camera.shake, 18);
+        this.burst(HOME_X.red + 60, GROUND_Y, '#94a3b8', 20, 7);
+      }
       (['red', 'blue'] as BroKey[]).forEach((k) => {
         if (this.bros[k].hp <= 0 || h.hit.includes(k)) return;
         const b = this.body[k];
-        if (h.x > b.x + 32) {
-          // The hit has passed this bro untouched: a dodge.
-          if (!h.cleared.includes(k)) { h.cleared.push(k); this.runStats.dodges++; }
-          return;
+        let struck: boolean;
+        if (h.kind === 'shock') {
+          // Shockwave: anyone off the ground during its window is hit; staying down is a dodge.
+          const passed = this.beat > h.arrive + SHOCK_WINDOW;
+          if (passed) {
+            if (!h.cleared.includes(k)) { h.cleared.push(k); this.runStats.dodges++; }
+            return;
+          }
+          struck = Math.abs(this.beat - h.arrive) <= SHOCK_WINDOW && b.y < -8;
+        } else {
+          const passed = h.dir === 1 ? h.x > b.x + 32 : h.x + h.w < b.x;
+          if (passed) {
+            // The hit has passed this bro untouched: a dodge.
+            if (!h.cleared.includes(k)) { h.cleared.push(k); this.runStats.dodges++; }
+            return;
+          }
+          const top = GROUND_Y + b.y - 68, bottom = GROUND_Y + b.y;
+          struck = b.x + 32 > h.x && b.x < h.x + h.w && bottom > h.y && top < h.y + h.h;
         }
-        const top = GROUND_Y + b.y - 68, bottom = GROUND_Y + b.y;
-        const overlapX = b.x + 32 > h.x && b.x < h.x + h.w;
-        const overlapY = bottom > h.y && top < h.y + h.h;
-        if (overlapX && overlapY) {
+        if (struck) {
+          if (k === 'red') this.heat = 0;
           h.hit.push(k);
           this.runStats.hitsTaken++;
           this.waveHurt = true;

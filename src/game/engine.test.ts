@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MOVE_REGISTRY } from '../data/config';
 import { judgeJump, resolveHit } from './combat';
 import { Engine, performanceOf } from './engine';
-import { HOP_CENTER, buildPattern, hazardX } from './enemyScripts';
+import { HOP_CENTER, SKIP_CENTER, buildPattern, hazardX } from './enemyScripts';
+import { HOP_HEAT_MAX } from './combat';
 import type { BeatClock } from './music';
 import { calculateDerived, makeBro } from './stats';
 
@@ -138,7 +139,7 @@ describe('engine', () => {
   it('fake hazards never deal damage', () => {
     const e = newRun();
     const hp = e.bros.red.hp;
-    e.hazards = [{ x: 0, y: 300, w: 400, h: 200, speed: 1, arrive: 1, warn: 0, fake: true, hit: [], cleared: [] }];
+    e.hazards = [{ x: 0, y: 300, w: 400, h: 200, speed: 1, arrive: 1, warn: 0, fake: true, dir: 1, kind: 'lane', hit: [], cleared: [] }];
     e.phase = 'ENEMY_TURN';
     run(e, 5);
     expect(e.bros.red.hp).toBe(hp);
@@ -235,5 +236,94 @@ describe('tutorial', () => {
     e.startRun();
     expect(e.tutorial).toBeNull();
     expect(e.enemies.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Hop & Skip identity', () => {
+  const charge = (e: Engine, clock: TestClock, who: 'RED' | 'BLUE') => {
+    e.turn = who;
+    e.sync = 100;
+    e.action('TECH1'); e.input(who);
+    expect(e.phase).toBe('WINDUP');
+    return clock;
+  };
+  const key = (who: 'RED' | 'BLUE') => (who === 'RED' ? 'red' : 'blue');
+  const nextPeak = (e: Engine, clock: TestClock) => { clock.b = Math.ceil(clock.b / (1 / e.ropeRate) + 0.01) / e.ropeRate; };
+
+  it('Hop builds Heat on perfects; a trip clears it and hurts more', () => {
+    const e = newRun();
+    const clock = clocks.get(e)!;
+    charge(e, clock, 'RED');
+    for (let i = 0; i < 2; i++) { nextPeak(e, clock); e.input('RED'); runUntil(e, () => !e.body.red.jumping); }
+    expect(e.heat).toBe(2);
+    const hp = e.bros.red.hp;
+    nextPeak(e, clock); clock.b -= 0.5 / e.ropeRate; // halfway between peaks
+    e.input('RED');
+    expect(e.heat).toBe(0);
+    expect(hp - e.bros.red.hp).toBe(45);
+  });
+
+  it('Heat raises Hop damage and caps', () => {
+    const stats = calculateDerived(makeBro('red'));
+    const base = resolveHit({ move: 'BASIC', attacker: 'RED', stats, perks: [], comboCount: 0, targetAerial: false, roll: 1 });
+    const hot = resolveHit({ move: 'BASIC', attacker: 'RED', stats, perks: [], comboCount: 0, targetAerial: false, roll: 1, heat: 99 });
+    expect(hot.dmg).toBe(Math.round(stats.pwr * 0.65 * (1 + 0.1 * HOP_HEAT_MAX)));
+    expect(hot.dmg).toBeGreaterThan(base.dmg);
+  });
+
+  it("Skip's perfect window is wider and perfects build Sync", () => {
+    const e = newRun();
+    expect(e.perfectThresholdFor('BLUE')).toBeLessThan(e.perfectThresholdFor('RED') - 0.05 + 0.06);
+    const clock = clocks.get(e)!;
+    charge(e, clock, 'BLUE');
+    e.sync = 50;
+    const sync = e.sync;
+    nextPeak(e, clock); e.input('BLUE');
+    expect(e.sync).toBe(sync + 3);
+  });
+});
+
+describe('new attacks', () => {
+  const enemyTurn = (e: Engine, pattern: Parameters<typeof buildPattern>[0]) => {
+    const clock = clocks.get(e)!;
+    e.phase = 'ENEMY_TURN';
+    e.hazards = buildPattern(pattern, Math.ceil(clock.b) + 1);
+    return { clock, h: e.hazards };
+  };
+
+  it('off-beat wave lands a quarter beat late', () => {
+    const [h] = buildPattern('DELAYED', 10);
+    expect(h.arrive).toBe(14.75);
+    expect(hazardX(h, h.arrive) + h.w / 2).toBeCloseTo(HOP_CENTER);
+  });
+
+  it('air slash comes from the right and reaches Skip first', () => {
+    const [h] = buildPattern('AIR_SLASH', 10);
+    expect(h.dir).toBe(-1);
+    expect(hazardX(h, h.arrive) + h.w / 2).toBeCloseTo(SKIP_CENTER);
+    expect(hazardX(h, h.arrive + 1) + h.w / 2).toBeCloseTo(SKIP_CENTER - 200);
+  });
+
+  it('stomp hits whoever is airborne, not who stays down', () => {
+    const e = newRun();
+    const hp = { red: e.bros.red.hp, blue: e.bros.blue.hp };
+    const { clock, h } = enemyTurn(e, 'STOMP');
+    runUntil(e, () => clock.b >= h[0].arrive - 0.3);
+    e.input('RED');                       // Hop jumps into it
+    runUntil(e, () => e.phase !== 'ENEMY_TURN' || clock.b > h[0].arrive + 0.6);
+    expect(e.bros.red.hp).toBeLessThan(hp.red);
+    expect(e.bros.blue.hp).toBe(hp.blue);
+  });
+
+  it('the boss changes move set as it loses HP', () => {
+    const e = newRun();
+    e.wave = 5; e.gameState = 'SHOP'; e.nextWave(); // wave 6? force a boss instead
+    const boss = e.enemies[0];
+    Object.assign(boss, { isBoss: true, hp: 100, maxHp: 1000, phase: 1, patterns: ['WAVE'] });
+    e.phase = 'ENEMY_TURN';
+    (e as unknown as { enemyQueue: number[] }).enemyQueue = [boss.id];
+    (e as unknown as { nextEnemyAttack: () => void }).nextEnemyAttack();
+    expect(boss.phase).toBe(3);
+    expect(e.hazards.length).toBeGreaterThanOrEqual(2);
   });
 });

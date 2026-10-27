@@ -16,7 +16,8 @@ export type StatKey = 'power' | 'rhythm' | 'vitality' | 'technique' | 'teamwork'
 export type GearSlot = 'rope' | 'shoes' | 'hat' | 'accessory';
 export type ItemId = 'coffee' | 'soda';
 export type PerkId = 'rp_boost' | 'crit_heal' | 'trip_shield' | 'sync_plus';
-export type PatternId = 'WAVE' | 'DOUBLE_WAVE' | 'DIVE' | 'FEINT_DIVE' | 'CHARGE' | 'BURST';
+export type PatternId = 'WAVE' | 'DOUBLE_WAVE' | 'DELAYED' | 'DIVE' | 'FEINT_DIVE' | 'AIR_SLASH' | 'CHARGE' | 'BURST' | 'STOMP'
+  | 'CROSSFIRE' | 'PANIC';
 export type EnemyTypeId = 'SLIME' | 'BAT' | 'SHELL' | 'BOSS';
 
 export interface MoveDef {
@@ -60,9 +61,9 @@ export interface EnemyDef {
 }
 
 export const ENEMY_TYPES: Record<EnemyTypeId, EnemyDef> = {
-  SLIME: { name: 'SLIME', hp: 60, dmg: 18, color: '#4ade80', ropeRate: 1, tightness: 0, patterns: ['WAVE', 'DOUBLE_WAVE'], xp: 50, scale: 1, float: 0 },
-  BAT: { name: 'TURBO BAT', hp: 55, dmg: 14, color: '#f87171', ropeRate: 1, tightness: 0.06, patterns: ['DIVE', 'FEINT_DIVE'], xp: 60, scale: 0.9, float: -130 },
-  SHELL: { name: 'STONE SHELL', hp: 180, dmg: 30, color: '#94a3b8', ropeRate: 0.5, tightness: 0, patterns: ['CHARGE', 'BURST'], xp: 120, scale: 1.3, float: 0 },
+  SLIME: { name: 'SLIME', hp: 60, dmg: 18, color: '#4ade80', ropeRate: 1, tightness: 0, patterns: ['WAVE', 'DOUBLE_WAVE', 'DELAYED'], xp: 50, scale: 1, float: 0 },
+  BAT: { name: 'TURBO BAT', hp: 55, dmg: 14, color: '#f87171', ropeRate: 1, tightness: 0.06, patterns: ['DIVE', 'FEINT_DIVE', 'AIR_SLASH'], xp: 60, scale: 0.9, float: -130 },
+  SHELL: { name: 'STONE SHELL', hp: 180, dmg: 30, color: '#94a3b8', ropeRate: 0.5, tightness: 0, patterns: ['CHARGE', 'BURST', 'STOMP'], xp: 120, scale: 1.3, float: 0 },
   BOSS: { name: 'GIGA SLIME', hp: 1500, dmg: 55, color: '#facc15', ropeRate: 1, tightness: 0.03, patterns: ['WAVE', 'DIVE', 'CHARGE'], xp: 2000, scale: 3.2, isBoss: true, float: 0 }
 };
 
