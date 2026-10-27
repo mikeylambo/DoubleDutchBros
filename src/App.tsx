@@ -46,6 +46,8 @@ const Game = () => {
 
 const App = () => {
   const [engine] = useState(() => new Engine());
+  // Dev-only handle for debugging and automated play tests.
+  if (import.meta.env.DEV) (window as unknown as { __engine: Engine }).__engine = engine;
   useKeyboard(engine);
   return (
     <EngineContext.Provider value={engine}>

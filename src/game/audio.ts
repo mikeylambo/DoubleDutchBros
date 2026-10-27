@@ -1,7 +1,7 @@
 // Web Audio is the master clock. The sim reads time from here so rope timing can't drift with
 // frame rate, and rope beats are scheduled on the audio timeline rather than "whenever a frame lands".
 
-type Sfx = 'tick' | 'perfect' | 'trip' | 'hit' | 'crit' | 'sync' | 'hurt' | 'ko' | 'ui';
+type Sfx = 'pulse' | 'tick' | 'perfect' | 'trip' | 'hit' | 'crit' | 'sync' | 'hurt' | 'ko' | 'ui';
 
 class AudioClock {
   private ctx: AudioContext | null = null;
@@ -36,6 +36,12 @@ class AudioClock {
     return (this.ctx.outputLatency || 0) + (this.ctx.baseLatency || 0);
   }
 
+  /** Short haptic tap where supported (Android/Chrome). Silently ignored elsewhere. */
+  buzz(ms: number) {
+    if (this.muted || typeof navigator === 'undefined' || !navigator.vibrate) return;
+    try { navigator.vibrate(ms); } catch { /* unsupported */ }
+  }
+
   play(sfx: Sfx, at?: number) {
     if (!this.running || this.muted) return;
     const ctx = this.ctx!;
@@ -50,6 +56,7 @@ class AudioClock {
       osc.start(t); osc.stop(t + dur + 0.02);
     };
     switch (sfx) {
+      case 'pulse': osc.type = 'sine'; osc.frequency.setValueAtTime(110, t); osc.frequency.exponentialRampToValueAtTime(45, t + 0.09); env(0.25, 0.1); break;
       case 'tick': osc.type = 'square'; osc.frequency.setValueAtTime(1600, t); env(0.08, 0.03); break;
       case 'perfect': osc.type = 'triangle'; osc.frequency.setValueAtTime(880, t); osc.frequency.exponentialRampToValueAtTime(1760, t + 0.08); env(0.3, 0.15); break;
       case 'trip': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(220, t); osc.frequency.exponentialRampToValueAtTime(60, t + 0.25); env(0.3, 0.3); break;

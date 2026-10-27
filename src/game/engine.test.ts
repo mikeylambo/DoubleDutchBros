@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MOVE_REGISTRY } from '../data/config';
-import { resolveHit } from './combat';
+import { judgeJump, resolveHit } from './combat';
 import { Engine } from './engine';
 import { calculateDerived, makeBro } from './stats';
 
@@ -25,6 +25,16 @@ describe('combat math', () => {
     const ground = resolveHit({ move: 'TECH2', attacker: 'BLUE', stats, perks: [], comboCount: 0, targetAerial: false, roll: 1 });
     expect(air.dmg).toBeGreaterThan(ground.dmg * 5);
     expect(air.clip).toBe(true);
+  });
+});
+
+describe('jump judgment', () => {
+  it('reports perfect at the peak, early before it, late after it', () => {
+    const peak = Math.PI / 2;
+    expect(judgeJump(peak, 0.75)).toBe('PERFECT');
+    expect(judgeJump(peak - 0.9, 0.75)).toBe('EARLY');
+    expect(judgeJump(peak + 0.9, 0.75)).toBe('LATE');
+    expect(judgeJump(peak + Math.PI - 0.9, 0.75)).toBe('EARLY'); // negative lobe too
   });
 });
 

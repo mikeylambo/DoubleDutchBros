@@ -16,13 +16,17 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine) => {
 
   drawStage(ctx);
   drawHazards(ctx, e);
-  drawRopes(ctx, e);
+  drawPerfectZone(ctx, e);
+  drawRopes(ctx, e, 'back');
   drawWindupPips(ctx, e);
   drawEnemies(ctx, e);
   drawBro(ctx, e, 'blue');
   drawBro(ctx, e, 'red');
+  drawRopes(ctx, e, 'front');
+  drawParticles(ctx, e);
   drawTexts(ctx, e);
   ctx.restore();
+  drawFlash(ctx, e);
 };
 
 const drawStage = (ctx: CanvasRenderingContext2D) => {
@@ -83,23 +87,55 @@ const drawHazards = (ctx: CanvasRenderingContext2D, e: Engine) => {
   }
 };
 
-const drawRopes = (ctx: CanvasRenderingContext2D, e: Engine) => {
+const ROPE_CENTER = GROUND_Y - 45; // midpoint of the swing: halfway between overhead and the feet
+const ROPE_AMP = 50;
+const HAND_Y = GROUND_Y - 35;
+
+/**
+ * Two ropes turning in opposite phase — actual double dutch. At every beat peak one rope is
+ * sweeping under the feet, so "jump when a rope hits the floor" is literally the timing rule.
+ * The half of the swing above the waist draws behind the bro, the lower half in front.
+ */
+const drawRopes = (ctx: CanvasRenderingContext2D, e: Engine, layer: 'back' | 'front') => {
   if (e.phase === 'ENEMY_TURN') return;
-  const sw = Math.sin(e.ropeAngle) * 75;
+  const s = Math.sin(e.ropeAngle);
   (['red', 'blue'] as BroKey[]).forEach((k) => {
     if (e.bros[k].hp <= 0) return;
     const b = e.body[k];
-    ctx.save();
-    ctx.beginPath();
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = e.bros[k].color;
-    ctx.shadowColor = e.bros[k].color;
-    ctx.shadowBlur = 15;
-    ctx.moveTo(b.x - 10, GROUND_Y - 10);
-    ctx.quadraticCurveTo(b.x + 15, GROUND_Y - 10 + sw, b.x + 40, GROUND_Y - 10);
-    ctx.stroke();
-    ctx.restore();
+    [s, -s].forEach((phase, i) => {
+      const mid = ROPE_CENTER + ROPE_AMP * phase;
+      if ((mid > ROPE_CENTER) !== (layer === 'front')) return;
+      ctx.save();
+      ctx.globalAlpha = i === 0 ? 1 : 0.65;
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = e.bros[k].color;
+      ctx.shadowColor = e.bros[k].color;
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.moveTo(b.x - 28, HAND_Y);
+      ctx.quadraticCurveTo(b.x + 16, 2 * mid - HAND_Y, b.x + 60, HAND_Y);
+      ctx.stroke();
+      ctx.restore();
+    });
   });
+};
+
+/** Floor glow under the acting bro while the rope is inside the perfect window. */
+const drawPerfectZone = (ctx: CanvasRenderingContext2D, e: Engine) => {
+  if (e.phase !== 'WINDUP') return;
+  const k: BroKey = e.turn === 'RED' ? 'red' : 'blue';
+  const threshold = perfectThreshold(calculateDerived(e.bros[k]).rhythm);
+  const s = Math.abs(Math.sin(e.ropeAngle));
+  if (s <= threshold) return;
+  const b = e.body[k];
+  ctx.save();
+  ctx.globalAlpha = (s - threshold) / (1 - threshold);
+  const g = ctx.createRadialGradient(b.x + 16, GROUND_Y, 0, b.x + 16, GROUND_Y, 60);
+  g.addColorStop(0, 'rgba(250, 204, 21, 0.8)');
+  g.addColorStop(1, 'rgba(250, 204, 21, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(b.x - 44, GROUND_Y - 20, 120, 40);
+  ctx.restore();
 };
 
 const drawWindupPips = (ctx: CanvasRenderingContext2D, e: Engine) => {
@@ -159,27 +195,60 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine) => {
 const drawBro = (ctx: CanvasRenderingContext2D, e: Engine, k: BroKey) => {
   const b: Body = e.body[k];
   const bro = e.bros[k];
+  const partner = e.bros[k === 'red' ? 'blue' : 'red'];
+  // Squash on landing / stretch on takeoff, anchored at the feet.
+  const sq = b.squash ?? 0;
+  const air = b.jumping ? Math.min(0.12, Math.abs(b.vy) / 60) : 0;
+  const sx = 1 + 0.25 * sq - air, sy = 1 - 0.25 * sq + air;
   ctx.save();
-  ctx.translate(b.x, GROUND_Y + b.y - 70);
-  if (bro.hp <= 0) { ctx.translate(20, 50); ctx.rotate(Math.PI / 2); ctx.translate(-20, -50); }
+  ctx.translate(b.x + 16, GROUND_Y + b.y);
+  if (bro.hp <= 0) { ctx.translate(4, -20); ctx.rotate(Math.PI / 2); }
+  ctx.scale(sx, sy);
+  ctx.translate(-16, -68);
   ctx.fillStyle = bro.color;
   ctx.shadowColor = bro.color;
   ctx.shadowBlur = 25;
   ctx.fillRect(0, 0, 32, 68);
   ctx.shadowBlur = 0;
+  // Headband in the partner's color: the team reads as a unit.
+  ctx.fillStyle = partner.color;
+  ctx.fillRect(0, 8, 32, 5);
+  // Visor eyes, facing the enemies (left).
   ctx.fillStyle = bro.hp > 0 ? '#fff' : '#222';
-  ctx.fillRect(4, 18, 24, 10);
+  ctx.fillRect(2, 18, 22, 8);
+  if (bro.hp > 0) { ctx.fillStyle = '#020208'; ctx.fillRect(5, 20, 4, 4); ctx.fillRect(14, 20, 4, 4); }
+  ctx.restore();
+};
+
+const drawParticles = (ctx: CanvasRenderingContext2D, e: Engine) => {
+  ctx.save();
+  for (const p of e.particles) {
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+  }
+  ctx.restore();
+};
+
+const drawFlash = (ctx: CanvasRenderingContext2D, e: Engine) => {
+  if (e.flash < 0.02) return;
+  ctx.save();
+  ctx.globalAlpha = e.flash * 0.6;
+  ctx.fillStyle = e.flashColor;
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   ctx.restore();
 };
 
 const drawTexts = (ctx: CanvasRenderingContext2D, e: Engine) => {
   for (const t of e.floatingTexts) {
+    // Pop in: start 50% larger and settle within the first ~5 frames.
+    const pop = 1 + Math.max(0, t.life - 0.9) * 5;
     ctx.save();
-    ctx.globalAlpha = Math.max(0, t.life);
+    ctx.globalAlpha = Math.max(0, Math.min(1, t.life * 1.5));
     ctx.fillStyle = t.color;
     ctx.shadowColor = t.color;
     ctx.shadowBlur = 15;
-    ctx.font = `900 ${30 * t.scale}px system-ui, sans-serif`;
+    ctx.font = `900 ${30 * t.scale * pop}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillText(t.text, t.x, t.y);
     ctx.restore();

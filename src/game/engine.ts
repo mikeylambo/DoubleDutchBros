@@ -4,11 +4,11 @@ import {
   type BroId, type BroKey, type EnemyTypeId, type GearSlot, type ItemId, type MoveId, type PerkId, type StatKey
 } from '../data/config';
 import { audio } from './audio';
-import { impactWindow, perfectThreshold, resolveHit } from './combat';
+import { impactWindow, judgeJump, perfectThreshold, resolveHit, type JumpJudgment } from './combat';
 import { PATTERN_CALL, buildPattern, pickPattern } from './enemyScripts';
 import { loadMeta, saveMeta, type MetaSave } from './save';
 import { calculateDerived, makeBro } from './stats';
-import type { Body, Bro, Enemy, FloatingText, GameState, Hazard, LevelChoice, Phase, Snapshot } from './types';
+import type { Body, Bro, Enemy, FloatingText, GameState, Hazard, LevelChoice, Particle, Phase, Snapshot } from './types';
 
 const STEP = 1 / SIM_HZ;
 const keyOf = (id: BroId): BroKey => (id === 'RED' ? 'red' : 'blue');
@@ -66,6 +66,10 @@ export class Engine {
   ropeSpeed = 0.07;
   camera = { zoom: 1, shake: 0 };
   floatingTexts: FloatingText[] = [];
+  particles: Particle[] = [];
+  /** Screen flash intensity 0..1, decays each step. */
+  flash = 0;
+  flashColor = '#ffffff';
 
   // --- clock ---
   private lastStepTime = 0;
@@ -179,18 +183,24 @@ export class Engine {
         if (body.jumping) return;
         const stats = calculateDerived(bro);
         body.vy = stats.jump; body.jumping = true;
-        if (this.isPerfect(atTime, stats.rhythm)) {
+        body.squash = -0.6;
+        const judgment = this.judge(atTime, stats.rhythm);
+        if (judgment === 'PERFECT') {
           this.windup++;
           this.ropeSpeed += 0.008;
           audio.play('perfect');
-          this.text(body.x, GROUND_Y - 80, 'PERFECT!', '#facc15', 1.2);
+          audio.buzz(12);
+          this.burst(body.x + 16, GROUND_Y, '#facc15', 10, 4);
+          this.text(body.x + 16, GROUND_Y - 80, 'PERFECT!', '#facc15', 1.2);
           const move = MOVE_REGISTRY[this.moveType];
           if (this.windup >= (move.limit?.(this.turn) ?? 3)) this.launch(this.turn, -14, 20);
         } else {
           this.missLocked = true;
           this.camera.shake = 15;
           audio.play('trip');
-          this.text(body.x, GROUND_Y - 80, 'TRIP!', '#f87171', 1);
+          audio.buzz(60);
+          this.text(body.x + 16, GROUND_Y - 80, 'TRIP!', '#f87171', 1);
+          this.text(body.x + 16, GROUND_Y - 50, judgment, '#fca5a5', 0.6);
           this.damageBro(key, bro.perks.includes('trip_shield') ? 15 : 30);
           this.missTimer = 48; // ~0.8s, ticks with the sim so pausing can't desync it
         }
@@ -203,7 +213,9 @@ export class Engine {
         if (progress > 0.3 && progress < 0.7) {
           this.actionSuccess = true;
           this.camera.shake = 12;
+          this.flash = 0.25; this.flashColor = '#00d2ff';
           audio.play('sync');
+          audio.buzz(15);
           this.text(this.body[key].x, GROUND_Y - 120, 'SYNC!', '#00d2ff', 1.5);
         }
         return;
@@ -303,11 +315,19 @@ export class Engine {
    * Rope timing judged at the exact press time (extrapolated between sim steps), shifted by the
    * player's calibrated latency. The Rhythm stat widens the perfect window.
    */
-  private isPerfect(atTime: number, rhythmStat: number) {
+  private judge(atTime: number, rhythmStat: number): JumpJudgment {
     const offset = this.meta.latencyMs / 1000 - audio.outputLatency;
     const dt = atTime - offset - this.lastStepTime;
     const angle = this.ropeAngle + this.ropeSpeed * SIM_HZ * dt;
-    return Math.abs(Math.sin(angle)) > perfectThreshold(rhythmStat);
+    return judgeJump(angle, perfectThreshold(rhythmStat));
+  }
+
+  private burst(x: number, y: number, color: string, count: number, speed: number) {
+    for (let i = 0; i < count; i++) {
+      const a = this.rng() * Math.PI * 2;
+      const v = speed * (0.4 + this.rng() * 0.8);
+      this.particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - speed * 0.5, life: 1, color, size: 2 + this.rng() * 3 });
+    }
   }
 
   private initWave() {
@@ -484,6 +504,11 @@ export class Engine {
     if (this.gameState !== 'BATTLE') return;
     this.camera.zoom += (1 - this.camera.zoom) * 0.15;
     if (this.camera.shake > 0) this.camera.shake *= 0.85;
+    this.flash *= 0.85;
+    this.particles = this.particles.filter((p) => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.vx *= 0.96;
+      return (p.life -= 0.035) > 0;
+    });
     if (this.freeze > 0) { this.freeze--; return; }
 
     this.ropeAngle += this.ropeSpeed;
@@ -494,7 +519,12 @@ export class Engine {
       o.y += o.vy;
       const floor = o.float ?? 0;
       if (o.y < floor) o.vy += GRAVITY;
-      else { o.y = floor; o.vy = 0; o.jumping = false; }
+      else {
+        // Landing: squash proportional to impact speed, plus a puff of dust.
+        if (o.vy > 4 && o.float === undefined) { o.squash = Math.min(1, o.vy / 14); this.burst(o.x + 16, GROUND_Y, '#64748b', 4, 2); }
+        o.y = floor; o.vy = 0; o.jumping = false;
+      }
+      if (o.squash) o.squash *= 0.8;
       o.x += (o.targetX - o.x) * 0.2;
     }
     this.floatingTexts = this.floatingTexts.filter((t) => (t.y += t.vy, (t.life -= 0.02) > 0));
@@ -509,15 +539,18 @@ export class Engine {
     }
   }
 
-  /** Schedule the rope's beat click on the audio timeline at the exact moment of the swing peak. */
+  /**
+   * Schedule the rope's beat on the audio timeline at the exact moment a rope passes the feet.
+   * A soft pulse always plays so the player can feel the tempo; WINDUP adds a sharp click.
+   */
   private scheduleBeat() {
-    if (this.phase !== 'WINDUP' || !audio.running) return;
+    if (this.phase === 'ENEMY_TURN' || !audio.running) return;
     const beat = Math.floor(this.ropeAngle / Math.PI + 0.5);
     if (beat === this.scheduledBeat) return;
     const peakAngle = (beat + 0.5) * Math.PI;
     const secondsAway = (peakAngle - this.ropeAngle) / (this.ropeSpeed * SIM_HZ);
     if (secondsAway > 0 && secondsAway < STEP * 2) {
-      audio.play('tick', audio.now() + secondsAway);
+      audio.play(this.phase === 'WINDUP' ? 'tick' : 'pulse', audio.now() + secondsAway);
       this.scheduledBeat = beat;
     }
   }
@@ -545,8 +578,17 @@ export class Engine {
     if (hit.clip) this.text(target.x, ty - 80, 'CLIP!', '#3b82f6', 1.8);
     if (hit.crit) this.text(target.x - 20, ty - 100, 'CRIT!', '#facc15', 1.4);
     this.text(target.x + 20, ty - 40, `-${hit.dmg}`, hit.crit ? '#facc15' : '#fff', 1.6);
-    if (target.hp === 0) { audio.play('ko'); this.text(target.x + 20, ty - 130, 'K.O.', target.color, 1.6); }
+    const cx = target.x + 20 * target.scale, cy = ty - 35 * target.scale;
+    this.burst(cx, cy, hit.crit ? '#facc15' : '#ffffff', hit.crit ? 26 : 14, hit.crit ? 9 : 6);
+    if (hit.crit) { this.flash = 0.35; this.flashColor = '#facc15'; }
+    if (move === 'ULT') { this.flash = 0.8; this.flashColor = '#ffffff'; }
+    if (target.hp === 0) {
+      audio.play('ko');
+      this.burst(cx, cy, target.color, 40, 11);
+      this.text(target.x + 20, ty - 130, 'K.O.', target.color, 1.6);
+    }
     audio.play(hit.crit ? 'crit' : 'hit');
+    audio.buzz(hit.crit || move === 'ULT' ? 35 : 18);
 
     this.impactTotal = impactWindow(stats, this.comboCount, hit.windowBonus, MIN_IMPACT_FRAMES);
     this.impactTimer = this.impactTotal;
@@ -611,7 +653,11 @@ export class Engine {
           h.hit.push(k);
           this.damageBro(k, enemy?.dmg ?? 15);
           this.camera.shake = 25;
+          this.flash = 0.3; this.flashColor = '#ef4444';
+          b.squash = 0.8;
+          this.burst(b.x + 16, GROUND_Y + b.y - 34, '#ef4444', 12, 6);
           audio.play('hurt');
+          audio.buzz(80);
           this.text(b.x, GROUND_Y - 80, 'OUCH!', '#f87171', 1.2);
         }
       });

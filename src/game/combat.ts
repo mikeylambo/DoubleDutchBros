@@ -44,5 +44,14 @@ export const resolveHit = (h: HitInput): HitResult => {
 export const impactWindow = (stats: Derived, comboCount: number, windowBonus: number, minFrames: number) =>
   Math.max(minFrames, 35 + stats.rhythm / 5 + windowBonus - comboCount * 4.5);
 
+export type JumpJudgment = 'PERFECT' | 'EARLY' | 'LATE';
+
+/** Judge a jump at a rope angle. Off-beat jumps report whether |sin| was still rising (early) or falling (late). */
+export const judgeJump = (angle: number, threshold: number): JumpJudgment => {
+  const s = Math.sin(angle);
+  if (Math.abs(s) > threshold) return 'PERFECT';
+  return Math.sign(s) * Math.cos(angle) > 0 ? 'EARLY' : 'LATE';
+};
+
 /** |sin(ropeAngle)| above this counts as a perfect jump. Higher Rhythm widens the window. */
 export const perfectThreshold = (rhythmStat: number) => Math.max(0.55, 0.85 - rhythmStat * 0.0025);

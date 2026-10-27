@@ -21,7 +21,9 @@ export interface Bro {
   perks: PerkId[];
 }
 
-export interface Body { x: number; y: number; vy: number; jumping: boolean; targetX: number; float?: number }
+export interface Body { x: number; y: number; vy: number; jumping: boolean; targetX: number; float?: number; squash?: number }
+
+export interface Particle { x: number; y: number; vx: number; vy: number; life: number; color: string; size: number }
 
 export interface Enemy extends Body {
   id: number;
