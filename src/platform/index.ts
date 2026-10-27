@@ -87,6 +87,8 @@ const boot = async (): Promise<Platform> => {
   const save = new SaveManager<SaveData>(storage, 'save', SAVE_VERSION);
   const recovered = await save.loadWithRecovery().catch(() => ({ data: null }));
   let data: SaveData = recovered.data ?? { progress: freshProgress(), production: null, leaderboards: {} };
+  // Older saves predate some progress fields; fill them with defaults.
+  data.progress = { ...freshProgress(), ...data.progress };
 
   // One-time migration from the pre-shell save.
   const legacy = recovered.data ? null : readLegacyMeta();

@@ -57,6 +57,8 @@ export interface Enemy extends Body {
   shield: boolean;
   /** Enemy turns taken (Vending Mimic flees after 3). */
   turns: number;
+  /** Hopscotch: skips its next attack. */
+  staggered?: boolean;
 }
 
 /**

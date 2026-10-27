@@ -134,7 +134,7 @@ export const ActionBar = () => {
     );
   }
   if (phase === 'TECH_SELECT') {
-    const techs = (['TECH1', 'TECH2', 'TECH3'] as MoveId[]).filter((id) => !MOVE_REGISTRY[id].owner || MOVE_REGISTRY[id].owner === turn);
+    const techs = (['TECH1', 'TECH2', 'TECH3', 'TECH4', 'TECH5'] as MoveId[]).filter((id) => (!MOVE_REGISTRY[id].owner || MOVE_REGISTRY[id].owner === turn) && engine.hasMove(id));
     return (
       <div className="bg-black/90 p-3 rounded-[2rem] border border-white/10 flex gap-2 w-full max-w-2xl">
         {techs.map((id) => {

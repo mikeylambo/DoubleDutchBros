@@ -44,7 +44,7 @@ export const resolveHit = (h: HitInput): HitResult => {
     else { dmg *= 0.75; syncGain = 25; windowBonus = 15; }
   } else if (h.move === 'TECH2') {
     if (h.targetAerial) { dmg *= move.antiAir ?? 1; clip = true; } else dmg *= 0.5;
-  } else if (h.move === 'TECH3') {
+  } else if (h.move === 'TECH3' || h.move === 'TECH4') {
     if (h.targetAerial) dmg *= 0.4;
   }
 

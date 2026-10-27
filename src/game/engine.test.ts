@@ -389,3 +389,29 @@ describe('boss ladder', () => {
     expect(h.flipAt).toBe(h.arrive - 1);
   });
 });
+
+describe('third skills', () => {
+  it('Haymaker and Hopscotch are locked until unlocked in the Legacy tree', () => {
+    const e = newRun();
+    e.sync = 100;
+    expect(e.hasMove('TECH4')).toBe(false);
+    e.action('TECH4');
+    expect(e.phase).toBe('MENU');
+    e.progress.unlocks.push('move_haymaker');
+    e.action('TECH4');
+    expect(e.phase).toBe('TARGET');
+    e.input('RED');
+    expect(e.ropeRate).toBe(0.5); // half-time rope whatever the enemy
+  });
+
+  it('a staggered enemy loses its next attack', () => {
+    const e = newRun();
+    const en = e.enemies[0];
+    en.staggered = true;
+    e.phase = 'ENEMY_TURN';
+    (e as unknown as { enemyQueue: number[] }).enemyQueue = [en.id];
+    (e as unknown as { nextEnemyAttack: () => void }).nextEnemyAttack();
+    expect(e.hazards.length).toBe(0);
+    expect(en.staggered).toBe(false);
+  });
+});

@@ -11,7 +11,7 @@ export const HOME_X = { red: 550, blue: 650 } as const;
 
 export type BroKey = 'red' | 'blue';
 export type BroId = 'RED' | 'BLUE';
-export type MoveId = 'BASIC' | 'TECH1' | 'TECH2' | 'TECH3' | 'ULT';
+export type MoveId = 'BASIC' | 'TECH1' | 'TECH2' | 'TECH3' | 'TECH4' | 'TECH5' | 'ULT';
 export type StatKey = 'power' | 'rhythm' | 'vitality' | 'technique' | 'teamwork';
 export type GearSlot = 'rope' | 'shoes' | 'hat' | 'accessory';
 export type ItemId = 'coffee' | 'soda';
@@ -32,6 +32,10 @@ export interface MoveDef {
   antiAir?: number;
   /** Which bro may use it; undefined = both. */
   owner?: BroId;
+  /** Rope speed override while charging (0.5 = half time). */
+  ropeRate?: number;
+  /** Legacy unlock id required to use it; undefined = always available. */
+  unlock?: string;
   icon: string;
   desc: string;
 }
@@ -41,6 +45,8 @@ export const MOVE_REGISTRY: Record<MoveId, MoveDef> = {
   TECH1: { name: 'Rhythm Vault', cost: 20, dmg: 1.8, syncGain: 5, rhythm: true, limit: (b) => (b === 'RED' ? 4 : 3), icon: '🔥', desc: 'Rhythmic combo. Red: burst. Blue: Sync + wide window.' },
   TECH2: { name: 'Sky Clip', cost: 20, dmg: 1.0, syncGain: 5, rhythm: true, limit: () => 2, antiAir: 3.5, owner: 'BLUE', icon: '🦅', desc: 'Anti-Air: 3.5x DMG to flyers. Fast setup.' },
   TECH3: { name: 'Power Slam', cost: 30, dmg: 3.2, syncGain: 2, rhythm: true, limit: () => 5, owner: 'RED', icon: '⚡', desc: 'Heavy: massive ground DMG. Long setup.' },
+  TECH4: { name: 'Haymaker', cost: 25, dmg: 2.6, syncGain: 3, rhythm: true, limit: () => 3, ropeRate: 0.5, owner: 'RED', unlock: 'move_haymaker', icon: '🥊', desc: 'Half-time rope, 3 jumps. Smashes shields.' },
+  TECH5: { name: 'Hopscotch', cost: 25, dmg: 1.4, syncGain: 8, rhythm: true, limit: () => 4, owner: 'BLUE', unlock: 'move_hopscotch', icon: '🪁', desc: '4 jumps. Staggers the target: it loses its next attack.' },
   ULT: { name: 'Crossfire Dutch', cost: 100, dmg: 6, syncGain: 0, rhythm: false, icon: '🌟', desc: 'Ultimate: tandem cinematic finisher.' }
 };
 
@@ -124,7 +130,10 @@ export const GEAR_DATA: Record<GearSlot, GearDef[]> = {
     { id: 'h2', name: 'Snapback', cost: 1100, icon: '🎓', mods: { teamwork: 15 }, desc: 'Massive Partner DMG.' }
   ],
   accessory: [
-    { id: 'a1', name: 'Wristband', cost: 500, icon: '💍', mods: { technique: 10 }, desc: 'Precision: +35% Crit Rate.' }
+    { id: 'a1', name: 'Wristband', cost: 500, icon: '💍', mods: { technique: 10 }, desc: 'Precision: +35% Crit Rate.' },
+    { id: 'a2', name: 'Sweatband', cost: 600, icon: '🎽', mods: { vitality: 6, technique: 4 }, desc: 'Toughness and a little precision.' },
+    { id: 'a3', name: 'Metronome Watch', cost: 900, icon: '⌚', mods: { rhythm: 12 }, desc: 'Wider perfect and tag windows.' },
+    { id: 'a4', name: 'Gold Chain', cost: 1300, icon: '📿', mods: { teamwork: 12, power: 6 }, desc: 'Combo damage and a bit of punch.' }
   ]
 };
 

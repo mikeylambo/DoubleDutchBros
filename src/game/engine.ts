@@ -66,7 +66,7 @@ const keyOf = (id: BroId): BroKey => (id === 'RED' ? 'red' : 'blue');
 const idOf = (k: BroKey): BroId => (k === 'red' ? 'RED' : 'BLUE');
 const other = (id: BroId): BroId => (id === 'RED' ? 'BLUE' : 'RED');
 
-export type MenuAction = 'BASIC' | 'TECH' | 'ITEMS' | 'ULT' | 'TECH1' | 'TECH2' | 'TECH3' | 'BACK';
+export type MenuAction = 'BASIC' | 'TECH' | 'ITEMS' | 'ULT' | 'TECH1' | 'TECH2' | 'TECH3' | 'TECH4' | 'TECH5' | 'BACK';
 
 /**
  * The single source of truth for a run. React never owns game state: it sends commands in and
@@ -287,6 +287,7 @@ export class Engine {
     if (a === 'TECH') { if (this.sync >= 20) this.setPhase('TECH_SELECT'); return; }
     const move = MOVE_REGISTRY[a];
     if (move.owner && move.owner !== this.turn) return;
+    if (!this.hasMove(a)) return;
     if (this.sync < move.cost) return;
     this.moveType = a;
     audio.play('ui');
@@ -537,6 +538,12 @@ export class Engine {
     }
   }
 
+  /** Whether a move is available (Legacy-locked moves need their unlock). */
+  hasMove(id: MoveId) {
+    const lock = MOVE_REGISTRY[id].unlock;
+    return !lock || this.progress.unlocks.includes(lock);
+  }
+
   /** Perfect jumps needed to launch the current skill. A living Rope-Biter adds one. */
   windupLimit() {
     const base = MOVE_REGISTRY[this.moveType].limit?.(this.turn) ?? 3;
@@ -575,7 +582,7 @@ export class Engine {
       return {
         id: Date.now() + i, type: spawn.type, name: d.name, hp, maxHp: hp, dmg: d.dmg, color: d.color, ropeRate: d.ropeRate, tightness: d.tightness,
         patterns: d.patterns, scale: d.scale, float: d.float, isBoss: !!d.isBoss, hurt: 0, phase: 1,
-        affix: spawn.affix, shield: spawn.affix === 'SHIELDED', turns: 0,
+        affix: spawn.affix, shield: spawn.affix === 'SHIELDED', turns: 0, staggered: false,
         x, y: d.float, vy: 0, jumping: false, targetX: x
       };
     });
@@ -613,7 +620,7 @@ export class Engine {
     const enemy = this.enemies[idx];
     const move = MOVE_REGISTRY[this.moveType];
     if (move.rhythm) {
-      this.ropeRate = this.tutorial ? TUTORIAL_ROPE_RATE : enemy.ropeRate;
+      this.ropeRate = this.tutorial ? TUTORIAL_ROPE_RATE : move.ropeRate ?? enemy.ropeRate;
       this.tightness = this.tutorial ? 0 : enemy.tightness;
       this.windup = 0;
       this.setPhase('WINDUP');
@@ -682,6 +689,12 @@ export class Engine {
     this.currentEnemyId = id;
     const enemy = this.enemies.find((e) => e.id === id)!;
     enemy.turns++;
+    if (enemy.staggered) {
+      // Hopscotch: it loses this attack.
+      enemy.staggered = false;
+      this.text(enemy.x + 20, GROUND_Y + enemy.y - 110, 'STAGGERED', '#93c5fd', 1);
+      return this.nextEnemyAttack();
+    }
     if (enemy.type === 'MIMIC') {
       // Treasure never fights back; it runs after three turns.
       if (enemy.turns >= 3) {
@@ -891,6 +904,7 @@ export class Engine {
     if (def.blocked) this.text(target.x + 20, GROUND_Y + target.y - 150, 'BLOCKED', '#67e8f9', 1);
     target.hp = Math.max(0, target.hp - hit.dmg);
     target.hurt = 6;
+    if (move === 'TECH5') target.staggered = true;
     this.runStats.damageDealt += hit.dmg;
     if (move === 'ULT') this.runStats.ultsLanded++;
     this.emit({ type: 'hit', move, crit: hit.crit, damage: hit.dmg });

@@ -2,7 +2,11 @@
 // (src/platform) owns where and how they are stored.
 
 /** Progress that survives between runs. */
-export interface Progress { legacy: number; bestWave: number; runs: number; tutorialDone: boolean }
+export interface Progress {
+  legacy: number; bestWave: number; runs: number; tutorialDone: boolean;
+  /** Legacy tree purchases (move, gear, encounter and style unlocks). */
+  unlocks: string[];
+}
 
 /** Player preferences, including accessibility. */
 export interface GameSettings {
@@ -18,7 +22,7 @@ export interface GameSettings {
   vibration: boolean;
 }
 
-export const freshProgress = (): Progress => ({ legacy: 0, bestWave: 0, runs: 0, tutorialDone: false });
+export const freshProgress = (): Progress => ({ legacy: 0, bestWave: 0, runs: 0, tutorialDone: false, unlocks: [] });
 
 export const defaultSettings = (): GameSettings => ({
   musicVolume: 0.8, sfxVolume: 0.8, latencyMs: 0, reducedMotion: false, screenShake: 1, flashes: 1, vibration: true
