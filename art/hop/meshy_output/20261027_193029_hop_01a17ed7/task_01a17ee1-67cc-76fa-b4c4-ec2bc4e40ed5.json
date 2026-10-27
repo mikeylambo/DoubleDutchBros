@@ -1,0 +1,18 @@
+{
+  "id": "01a17ee1-67cc-76fa-b4c4-ec2bc4e40ed5",
+  "type": "text-to-image",
+  "ai_model": "nano-banana-pro",
+  "prompt": "Character turnaround of HOP, a cute cartoon rabbit with 90s arcade neon street swag, in the simple rounded style of Happy Tree Friends: big round head, small round body, soft simple shapes, huge friendly cartoon eyes, tiny pink nose, buck teeth, warm cream fur (#F6E7D4). Long rabbit ears, one ear flops over at the tip. Outfit is fresh, clean and stylish, not punk: a red snapback cap worn backwards with a blue brim (#3B82F6), shiny wraparound sport shades pushed up on the cap OR worn with a neon blue lens, an oversized red basketball jersey (#EF4444) with white trim and a big number 1 on the front, loose blue-and-white basketball shorts down to the knees, chunky red-and-white high-top sneakers with oversized soles, a gold chain, sweatband on one wrist. Cocky confident smirk, chest out, swagger. Fluffy round tail. Clean toon cel shading, crisp dark outline, bright saturated 90s arcade colors, premium stylized 3D game character. Plain light grey background, full body, no props, A-pose.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793130064585,
+  "started_at": 1793130064593,
+  "finished_at": 1793130082980,
+  "expires_at": 1793389282980,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17ee1-afe8-7588-b9e3-e105a05c1741_part_0.png?Expires=1793389282&Signature=mqcnzz1iT19KnG0f18XVQGPFq4OM02tefvBQj46fZO9KPeVHpQhw3Q3Zj~x4gzE~QHxf-8cWVVp4OsA5CmVYktf04l5SOe4bTcMgaDsveT11gfz1qSgFki2-pMZ7pewTyRkQ5j6CWgLNsk4iZ53X4BNHDrUwxjXQnf-~AcgtrQRPCfBqzl2mEXFTgRT945h-kkfE1YHdJaqQsS2fqWLq3vaWLAbQUGJWb3h294lGFZJR5nDG~FqiecekH51oTV4Y6GSUbV3B-TwqsnHIF52LVC-C8GINKSBU0AFG5KOKRXuhpQkWl05CmvNb1OznQQI3EfZOKPucd8yfv9CPrLhNNw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17ee1-afe8-7588-b9e3-e105a05c1741_part_1.png?Expires=1793389282&Signature=BmoULAEu-IJvodYb3LynBwKOeqdFFom4dWOlRAZR~kTAz8EHTebigfaOBXd5-pOP9nbb21G-y1r1MAtXyzS8rcn7h6I3-6EvPgZFzoLfye4jdUDLPpmiYzGhpTRQCvpR0BF1MiVoar1fGtGubRuWYMF1539HqyYdIrektDUUzhA9pDWVzmYOXmHII2UYdCen0rc82KJRrN~O16OtI6u~pmpWInhYKoszoq5UDh0eGZsCQ1IXCy0iodF1UAWA-QnhK-w0YjpQ5wugd58LUOYpHzyGh-Fr2SrZDbXHBljrTgL6K8nnCNb65dtQBo~jQEjiao5iUJmOHqnxR5N~U5AblQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/multi_view_image_01a17ee1-afe8-7588-b9e3-e105a05c1741_part_2.png?Expires=1793389282&Signature=j4bgDStwXQ5v26oO2GtqBz1FnbJYnm9K57CvzVdS801JtV59hZnuV~y6FFcurI6d279VXIFoYWDOw51SCFaUOl38xIbeeYJP1Y6X8ixrjzIFApv2ocop5cDfBLSLOV6vwaBcMJvFen9lpomeA9zTD~MOFgcJN7tKWpXNDDt8jFRa17SdX8JpPCvbgpVzrfg7dYLNHh5uUPvnX1~CzL4BIO3w9sSwFaucpWILLZjMUMmVHOzZ-bh2DVyKNQ4n7pjYlMe9gfvhrNTk3AkH5cRa3nxE51DECQMbgB5dS~xk0kGyD5cq09N09x5oypURflQefyFrt1WpJVrqtnnuERdHqA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 9
+}
