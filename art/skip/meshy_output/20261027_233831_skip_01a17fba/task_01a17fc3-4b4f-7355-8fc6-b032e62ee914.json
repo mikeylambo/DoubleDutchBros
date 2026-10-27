@@ -1,0 +1,16 @@
+{
+  "id": "01a17fc3-4b4f-7355-8fc6-b032e62ee914",
+  "type": "image-to-image",
+  "ai_model": "gpt-image-2-5-sunburst",
+  "prompt": "Edit only the tail of this rabbit character. Replace the flat grey teardrop shape on the jersey with a fluffy round white cotton-ball bunny tail that pokes out just below the hem of the blue jersey, above the red shorts. Keep everything else exactly the same: pose, character, jersey, shorts, colors, lighting, background, framing.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793144867860,
+  "started_at": 1793144867863,
+  "finished_at": 1793144891593,
+  "expires_at": 1793404091593,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/image_01a17fc3-4b4f-7355-8fc6-b032e62ee914_0.png?Expires=1793404091&Signature=OLPcQD2~RvcTeYBcMldPJxI96ZuP20ncrOcDy5kcWDDtzlF7z1952BRokhnNiCkh9p-RIQSqnZ83C1cgcvj7DfZLQWKMBU00hWPVDnMcXS0-CTDchtQE3P-9HRjg7scRPPfUaS6CpKcHAB7MVgSHzNiCIWBmWpA53tU2Oe04D8h6KV9gxy-5cFo5A-7JMDOOH-FLXK2plBxcY23fHETUNOtRsATS7QthUDfkSNe3uqx~A37f0n-JtfXgrCa~oyeSJ4BPzjFXk08Q1ei0RxQXptryjrxTGJr53TvUxjrklJ9VVNOCXt~4n2CVJlrILu1Kp0KVZypZIZgU0Nn5cJ1Kpg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 12
+}
