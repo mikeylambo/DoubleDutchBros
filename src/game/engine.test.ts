@@ -494,3 +494,35 @@ describe('legacy & tandem', () => {
     expect(six.dmg / one.dmg).toBeCloseTo(2.5, 1);
   });
 });
+
+describe('attack fairness', () => {
+  // Every hit that must be jumped has to leave time to land and jump again (a jump lasts about one
+  // beat); hits that arrive together can share one jump. Stomps must not land mid-jump.
+  it('every pattern is clearable by both rabbits', async () => {
+    const { PATTERN_IDS, buildPattern: build, HOP_CENTER: front, SKIP_CENTER: back } = await import('./enemyScripts');
+    const problems: string[] = [];
+    for (const id of PATTERN_IDS) {
+      for (const mods of [{}, { echo: true }, { mirror: true }, { extra: true }]) {
+        const hz = build(id, 0, mods);
+        for (const pos of [front, back]) {
+          const jumps: number[] = [], stomps: number[] = [];
+          for (const h of hz) {
+            if (h.kind === 'shock') { stomps.push(h.arrive); continue; }
+            if (h.y < 300 || (h.fake && h.flipAt === undefined)) continue; // high lane or pure feint: stay down
+            const first = h.dir === 1 ? front : back;
+            jumps.push(h.arrive + Math.abs(pos - first) / h.speed);
+          }
+          jumps.sort((a, b) => a - b);
+          for (let i = 1; i < jumps.length; i++) {
+            const gap = jumps[i] - jumps[i - 1];
+            if (gap > 0.1 && gap < 0.95) problems.push(`${id} ${JSON.stringify(mods)} @${pos}: hits ${gap.toFixed(2)} beats apart`);
+          }
+          for (const s of stomps) for (const j of jumps) {
+            if (Math.abs(s - j) < 0.6) problems.push(`${id} ${JSON.stringify(mods)} @${pos}: stomp ${(s - j).toFixed(2)} beats from a jump`);
+          }
+        }
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+});

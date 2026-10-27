@@ -59,7 +59,7 @@ Turn-based waves on a live beat:
    - Skills charge on the rope: jump on rope peaks (perfect = gold floor glow). Misses trip.
    - On a hit, the partner's button flashes: tap in rhythm to **tag in** and extend the combo.
 2. **Enemy turn:** each enemy plays an attack written in beats. A hit reaches Hop on the "and"
-   and Skip one beat later. Jump on the beat to clear it.
+   and Skip half a beat later, on the next beat. Jump on the beat to clear it.
 3. Wave clear → XP, RP, level-ups → shop → next wave. Game over → results (rank, score, best runs).
 
 Modes: **Endless** ✅, **Daily** (same seed for everyone) ✅, **Tutorial** ✅.
@@ -78,7 +78,7 @@ rules**:
 | Tag-in | Hop's tag hits are heavy (+25% damage) | Skip's tag window is wider (easier combos) |
 | Skill 1 | Rhythm Vault (shared) | Rhythm Vault (shared) |
 | Skill 2 ✅ | Power Slam: 5 jumps, huge ground damage | Sky Clip: 2 jumps, 3.5× vs flyers |
-| Skill 3 🆕 | **Haymaker**: 3 jumps on a half-time rope, ignores shields | **Hopscotch**: 4 jumps that alternate high/low rope lanes, applies Off-Beat (enemy's next attack is delayed half a beat) |
+| Skill 3 ✅ | **Haymaker**: 3 jumps on a half-time rope, breaks shields | **Hopscotch**: 4 jumps, staggers the target (it loses its next attack) |
 | Weakness | Trips hurt more | Lower raw damage cap |
 
 Rule of thumb: **Hop wins fights, Skip keeps you alive.** The best runs use both.
@@ -178,9 +178,9 @@ Boss rule: every phase change is announced by the **music** (a drop, a filter sw
 ### Ascension Mutators (pick 1 of 3 after bosses from wave 10)
 | Mutator | Blessing | Curse |
 |---|---|---|
-| Glass Wire | 2× damage | A trip is an instant KO |
-| Lead Shoes | Jumps are faster | Jumps are lower: walls need skills |
-| Double Time | +50% score | Song plays at 1.25× tempo |
+| Glass Wire | 2× damage | A trip knocks that rabbit out |
+| Heavy Rope | +40% skill damage | Skills need one more jump |
+| Rush Hour | +50% score | Every attack starts a beat early |
 | Spotlight | +100% RP | Hits taken cost 2× |
 | Echo Chamber | Tag windows +50% | Every enemy has Echo |
 | Mixtape | Random perk each wave | Random enemy affix each wave |
@@ -243,13 +243,14 @@ favors, never hard-counters. Swaps only in the shop.
 | Saves, settings, accessibility, gamepad, PWA, achievements, bestiary, results, daily | ✅ |
 | Sprite animation system (art pending) | ✅ |
 | Hop/Skip rule identity (Heat, Steady, tag differences) | ✅ |
-| Third skills (Haymaker, Hopscotch) | ⬜ |
+| Third skills (Haymaker, Hopscotch) | ✅ |
 | New attacks for existing enemies (delayed, air slash, stomp) | ✅ |
-| New enemies 4–9, elite affixes, Bouncer | ⬜ |
+| New enemies 4–9, elite affixes, Bouncer | ✅ |
 | Giga Slime phases (Crossfire below 60%, Panic below 30%) | ✅ |
-| Bosses 10/15/20/50 | ⬜ |
-| Mutators, Legacy tree, Tandem techniques, Armory | ⬜ |
-| Swag meter, music stems | ⬜ (stems need the composer) |
+| Bosses 10/15/20/50 | ✅ |
+| Mutators, Legacy tree, Tandem Master, Rig Alert | ✅ |
+| Swag meter | ✅ |
+| Music stems reacting to Swag | ⬜ (needs stems from the composer) |
 
 **Suggested order:** Hop/Skip identity → existing-enemy attacks → Giga Slime phases → Neon Moth,
 Pigeon Pair, Boombox Crab → elites → Legacy tree → mutators → remaining enemies/bosses → Tandem.

@@ -3,7 +3,7 @@ import type { Hazard } from './types';
 
 // Every enemy attack is written in beats. A hazard reaches Hop on the "and" (half a beat after
 // the beat) so jumping ON the beat puts Hop at the top of the jump as it passes. At the base
-// speed of 200 units/beat it reaches Skip, 100 units further, exactly one beat later.
+// speed of 200 units/beat it reaches Skip, 100 units further, half a beat later: on the next beat.
 //
 //  WAVE        one low sweep — jump it.
 //  DOUBLE_WAVE two low sweeps a beat apart — jump, land, jump again.
@@ -59,7 +59,8 @@ const PATTERNS: Record<PatternId, Hit[]> = {
   FLUTTER: [{ lane: 'low', beats: 4, at: 0.75 }],
   SPIRAL: [{ lane: 'low', beats: 3, at: 0.75 }, { lane: 'high', beats: 5, at: 0.25 }],
   // Pigeon Pair: two at once from both sides.
-  PECK_PAIR: [{ lane: 'low', beats: 4 }, { lane: 'low', beats: 4, fromRight: true }],
+  // The right-hand peck arrives with the left one at Skip, so one jump clears both there.
+  PECK_PAIR: [{ lane: 'low', beats: 4 }, { lane: 'low', beats: 5, at: 0, fromRight: true }],
   SPLIT: [{ lane: 'low', beats: 4 }, { lane: 'high', beats: 4, fromRight: true }],
   // Rope-Biter.
   NIBBLE: [{ lane: 'burst', beats: 3, speed: 2 }, { lane: 'low', beats: 5 }],
@@ -73,10 +74,13 @@ const PATTERNS: Record<PatternId, Hit[]> = {
   // Vending Mimic never attacks.
   NONE: [],
   // Bouncer King, phase 2: the beat doubles. Hits arrive every half beat at double speed.
-  DOUBLE_TIME: [{ lane: 'low', beats: 3, speed: 2 }, { lane: 'low', beats: 4, at: 0, speed: 2 }, { lane: 'low', beats: 4, speed: 2 }, { lane: 'wall', beats: 6, at: 0 }],
+  // Each rabbit gets one hit per beat (Skip a quarter beat after Hop): fast, but always clearable.
+  DOUBLE_TIME: [{ lane: 'low', beats: 3, speed: 2 }, { lane: 'low', beats: 4, speed: 2 }, { lane: 'wall', beats: 6, at: 0 }],
   // Glitch bosses: warnings that look fake until the last beat.
   GLITCH_FEINT: [{ lane: 'high', beats: 4, flip: true }, { lane: 'low', beats: 4, flip: true, fromRight: true }, { lane: 'low', beats: 6 }]
 };
+
+export const PATTERN_IDS = Object.keys(PATTERNS) as PatternId[];
 
 /** Patterns that cut the music: [from, to) in beats after the attack start. */
 export const SILENCE: Partial<Record<PatternId, [number, number]>> = { DROP: [0, 4] };
