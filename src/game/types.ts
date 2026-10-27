@@ -8,7 +8,8 @@ export type GameState = 'TITLE' | 'BATTLE' | 'PAUSE' | 'WIN' | 'SHOP' | 'GAMEOVE
 
 export interface Bro {
   key: BroKey;
-  name: BroId;
+  /** Display name: Hop or Skip. */
+  name: string;
   color: string;
   lvl: number;
   xp: number;
@@ -38,6 +39,8 @@ export interface Enemy extends Body {
   scale: number;
   float: number;
   isBoss: boolean;
+  /** Frames of white hit-flash remaining. */
+  hurt: number;
 }
 
 /** A single hitbox travelling across the arena during an enemy attack. */

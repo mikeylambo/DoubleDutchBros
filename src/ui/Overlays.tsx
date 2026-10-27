@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GEAR_DATA, GEAR_SLOTS, ITEM_DATA, PERKS_DATA, type BroKey, type GearSlot, type ItemId } from '../data/config';
 import { calculateDerived } from '../game/stats';
+import { TitleRabbits } from './TitleRabbits';
 import { useEngine } from './useEngine';
 
 const Screen = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -20,11 +21,13 @@ export const Title = () => {
         <span className="text-blue-500 drop-shadow-[0_0_30px_#3b82f6]">Dutch</span>
         <div className="text-white">Bros</div>
       </div>
-      <div className="mt-6 text-xs font-bold text-white/50 uppercase tracking-widest">Best Wave {snap.bestWave} • {snap.legacy} Legacy</div>
+      <div className="mt-2 text-sm font-black italic uppercase tracking-widest text-pink-400 drop-shadow-[0_0_12px_#f472b6]">starring Hop &amp; Skip</div>
+      <TitleRabbits />
+      <div className="mt-2 text-xs font-bold text-white/50 uppercase tracking-widest">Best Wave {snap.bestWave} • {snap.legacy} Legacy</div>
       <div className="mt-10"><BigButton onPress={() => engine.startRun()}>Start Run</BigButton></div>
       <div className="mt-8 text-[11px] text-white/40 max-w-sm leading-relaxed">
         Skills charge by jumping on the rope's beat. After each hit, tap the partner's glowing button to tag in and extend the combo.
-        Keys: F / ← = B (Blue), J / → = A (Red), Esc = pause.
+        Keys: J / → = A (Hop), F / ← = B (Skip), Esc = pause.
       </div>
     </Screen>
   );
@@ -175,7 +178,7 @@ export const LevelUp = () => {
   const milestone = (b.lvl + 1) % 5 === 0 && snap.levelUp.choices[0]?.kind === 'perk';
   return (
     <Screen className="bg-[#0a0a1a] justify-center z-[120]">
-      <div className="text-[10px] font-black tracking-[0.5em] mb-4 uppercase animate-pulse" style={{ color: b.color }}>{b.name} Bro → L{b.lvl + 1}</div>
+      <div className="text-[10px] font-black tracking-[0.5em] mb-4 uppercase animate-pulse" style={{ color: b.color }}>{b.name} → L{b.lvl + 1}</div>
       <div className="text-5xl md:text-[80px] font-black italic mb-2 uppercase tracking-tighter text-center leading-none" style={{ color: b.color }}>{milestone ? 'Milestone!' : 'Level Up!'}</div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full max-w-5xl mt-8">
         {snap.levelUp.choices.map((c) => (

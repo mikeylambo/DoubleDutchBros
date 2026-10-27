@@ -343,7 +343,7 @@ export class Engine {
       const hp = Math.round(d.hp * hpMult);
       return {
         id: Date.now() + i, type, name: d.name, hp, maxHp: hp, dmg: d.dmg, color: d.color, speed: d.speed,
-        patterns: d.patterns, scale: d.scale, float: d.float, isBoss: !!d.isBoss,
+        patterns: d.patterns, scale: d.scale, float: d.float, isBoss: !!d.isBoss, hurt: 0,
         x, y: d.float, vy: 0, jumping: false, targetX: x
       };
     });
@@ -527,6 +527,7 @@ export class Engine {
       if (o.squash) o.squash *= 0.8;
       o.x += (o.targetX - o.x) * 0.2;
     }
+    for (const en of this.enemies) if (en.hurt > 0) en.hurt--;
     this.floatingTexts = this.floatingTexts.filter((t) => (t.y += t.vy, (t.life -= 0.02) > 0));
 
     if (this.missTimer > 0 && --this.missTimer === 0) this.startEnemyTurn();
@@ -572,6 +573,7 @@ export class Engine {
     const hit = resolveHit({ move, attacker: this.activeAttacker, stats, perks: bro.perks, comboCount: this.comboCount, targetAerial: aerial, roll: this.rng() });
 
     target.hp = Math.max(0, target.hp - hit.dmg);
+    target.hurt = 6;
     this.sync = Math.min(100, this.sync + hit.syncGain);
     if (hit.healOnCrit) bro.hp = Math.min(stats.maxHp, bro.hp + hit.healOnCrit);
     const ty = GROUND_Y + target.y;

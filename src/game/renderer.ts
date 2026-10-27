@@ -1,7 +1,8 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH, GROUND_Y, MOVE_REGISTRY, type BroKey } from '../data/config';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, GROUND_Y, HOME_X, MOVE_REGISTRY, type BroKey } from '../data/config';
 import { perfectThreshold } from './combat';
 import type { Engine } from './engine';
 import { calculateDerived } from './stats';
+import { RABBITS, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
 import type { Body } from './types';
 
 /** Draws the current engine state. Read-only: never mutates the sim. */
@@ -15,6 +16,7 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine) => {
   ctx.translate(-CANVAS_WIDTH / 2, -CANVAS_HEIGHT / 2);
 
   drawStage(ctx);
+  drawShadows(ctx, e);
   drawHazards(ctx, e);
   drawPerfectZone(ctx, e);
   drawRopes(ctx, e, 'back');
@@ -30,31 +32,12 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine) => {
 };
 
 const drawStage = (ctx: CanvasRenderingContext2D) => {
-  const sky = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
-  sky.addColorStop(0, '#020208');
-  sky.addColorStop(1, '#0e0e24');
-  ctx.fillStyle = sky;
-  ctx.fillRect(-1000, -1000, 3000, 3000);
+  ctx.drawImage(getBackdrop(), -100, -100);
+};
 
-  ctx.save();
-  ctx.strokeStyle = '#00d2ff';
-  ctx.lineWidth = 2;
-  ctx.shadowColor = '#00d2ff';
-  ctx.shadowBlur = 10;
-  ctx.beginPath(); ctx.moveTo(-500, GROUND_Y); ctx.lineTo(1500, GROUND_Y); ctx.stroke();
-  ctx.restore();
-
-  const floor = ctx.createLinearGradient(0, GROUND_Y, 0, CANVAS_HEIGHT);
-  floor.addColorStop(0, '#0c0c20');
-  floor.addColorStop(1, '#020206');
-  ctx.fillStyle = floor;
-  ctx.fillRect(-500, GROUND_Y + 1, 2000, 300);
-
-  ctx.strokeStyle = '#1e1b4b';
-  ctx.lineWidth = 1;
-  for (let i = 1; i < 15; i++) {
-    ctx.beginPath(); ctx.moveTo(-500, GROUND_Y + i * 18); ctx.lineTo(1500, GROUND_Y + i * 18); ctx.stroke();
-  }
+const drawShadows = (ctx: CanvasRenderingContext2D, e: Engine) => {
+  (['red', 'blue'] as BroKey[]).forEach((k) => drawShadow(ctx, e.body[k].x + 16, -e.body[k].y, 18));
+  e.enemies.forEach((en) => { if (en.hp > 0) drawShadow(ctx, en.x + 20 * en.scale, -en.y, 20 * en.scale); });
 };
 
 const drawHazards = (ctx: CanvasRenderingContext2D, e: Engine) => {
@@ -101,7 +84,8 @@ const drawRopes = (ctx: CanvasRenderingContext2D, e: Engine, layer: 'back' | 'fr
   const s = Math.sin(e.ropeAngle);
   (['red', 'blue'] as BroKey[]).forEach((k) => {
     if (e.bros[k].hp <= 0) return;
-    const b = e.body[k];
+    // Anchored at home: the rope is held by the turners, the bro leaps out of it to attack.
+    const b = { x: HOME_X[k] };
     [s, -s].forEach((phase, i) => {
       const mid = ROPE_CENTER + ROPE_AMP * phase;
       if ((mid > ROPE_CENTER) !== (layer === 'front')) return;
@@ -165,28 +149,27 @@ const drawWindupPips = (ctx: CanvasRenderingContext2D, e: Engine) => {
 };
 
 const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine) => {
+  const t = performance.now() / 1000;
   e.enemies.forEach((en, i) => {
     if (en.hp <= 0 && e.phase !== 'IMPACT' && e.phase !== 'LAUNCH') return;
     ctx.save();
-    ctx.translate(en.x, GROUND_Y + en.y - 70);
+    ctx.translate(en.x, GROUND_Y + en.y - 70 * en.scale);
     ctx.scale(en.scale, en.scale);
     ctx.globalAlpha = en.hp > 0 ? 1 : 0.3;
-    ctx.fillStyle = en.color;
-    ctx.shadowColor = en.color;
-    ctx.shadowBlur = e.currentEnemyId === en.id ? 35 : 20;
-    ctx.beginPath();
-    ctx.moveTo(0, 70);
-    ctx.quadraticCurveTo(20, -20 + Math.sin(e.ropeAngle * 3.5) * 12, 40, 70);
-    ctx.fill();
-    ctx.shadowBlur = 0;
+    drawEnemyShape(ctx, en.type, en.color, t + i, en.hurt > 0);
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, -15, 40, 6);
+    ctx.fillRect(0, 12, 40, 5);
     ctx.fillStyle = '#ef4444';
-    ctx.fillRect(0, -15, (en.hp / en.maxHp) * 40, 6);
+    ctx.fillRect(0, 12, (en.hp / en.maxHp) * 40, 5);
     if (e.phase === 'TARGET' && i === e.targetIdx && en.hp > 0) {
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2 / en.scale;
-      ctx.strokeRect(-6, -24, 52, 100);
+      ctx.setLineDash([6 / en.scale, 4 / en.scale]);
+      ctx.strokeRect(-10, 4, 60, 72);
+    }
+    if (e.currentEnemyId === en.id) {
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(26, 0); ctx.lineTo(20, 8); ctx.fill();
     }
     ctx.restore();
   });
@@ -194,29 +177,12 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine) => {
 
 const drawBro = (ctx: CanvasRenderingContext2D, e: Engine, k: BroKey) => {
   const b: Body = e.body[k];
-  const bro = e.bros[k];
-  const partner = e.bros[k === 'red' ? 'blue' : 'red'];
-  // Squash on landing / stretch on takeoff, anchored at the feet.
-  const sq = b.squash ?? 0;
-  const air = b.jumping ? Math.min(0.12, Math.abs(b.vy) / 60) : 0;
-  const sx = 1 + 0.25 * sq - air, sy = 1 - 0.25 * sq + air;
   ctx.save();
   ctx.translate(b.x + 16, GROUND_Y + b.y);
-  if (bro.hp <= 0) { ctx.translate(4, -20); ctx.rotate(Math.PI / 2); }
-  ctx.scale(sx, sy);
-  ctx.translate(-16, -68);
-  ctx.fillStyle = bro.color;
-  ctx.shadowColor = bro.color;
-  ctx.shadowBlur = 25;
-  ctx.fillRect(0, 0, 32, 68);
-  ctx.shadowBlur = 0;
-  // Headband in the partner's color: the team reads as a unit.
-  ctx.fillStyle = partner.color;
-  ctx.fillRect(0, 8, 32, 5);
-  // Visor eyes, facing the enemies (left).
-  ctx.fillStyle = bro.hp > 0 ? '#fff' : '#222';
-  ctx.fillRect(2, 18, 22, 8);
-  if (bro.hp > 0) { ctx.fillStyle = '#020208'; ctx.fillRect(5, 20, 4, 4); ctx.fillRect(14, 20, 4, 4); }
+  drawRabbit(ctx, RABBITS[k], {
+    vy: b.vy, squash: b.squash ?? 0, airborne: b.jumping, down: e.bros[k].hp <= 0,
+    t: performance.now() / 1000, seed: k === 'red' ? 0 : 1.7
+  });
   ctx.restore();
 };
 
