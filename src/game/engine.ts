@@ -8,6 +8,9 @@ import { impactWindow, judgeJump, perfectThreshold, resolveHit, type JumpJudgmen
 import { PATTERN_CALL, buildPattern, pickPattern } from './enemyScripts';
 import { loadMeta, saveMeta, type MetaSave } from './save';
 import { calculateDerived, makeBro } from './stats';
+import {
+  TUTORIAL_IMPACT_SCALE, TUTORIAL_ROPE_SPEED, TUTORIAL_SLIME_HP, tutorialAllows, tutorialHint, type TutorialStep
+} from './tutorial';
 import type { Body, Bro, Enemy, FloatingText, GameState, Hazard, LevelChoice, Particle, Phase, Snapshot } from './types';
 
 const STEP = 1 / SIM_HZ;
@@ -33,6 +36,9 @@ export class Engine {
   bros: Record<BroKey, Bro> = { red: makeBro('red'), blue: makeBro('blue') };
   enemies: Enemy[] = [];
   meta: MetaSave = loadMeta();
+  /** Non-null while the guided first fight is running. */
+  tutorial: TutorialStep | null = null;
+  private tripRecover = 0;
 
   // --- combat state ---
   moveType: MoveId = 'BASIC';
@@ -111,8 +117,23 @@ export class Engine {
 
   startRun() {
     audio.unlock();
+    this.tutorial = null;
     this.meta.runs += 1;
     saveMeta(this.meta);
+    this.resetRun();
+  }
+
+  /** The guided first fight: one slime, no real damage, slowed rope. */
+  startTutorial() {
+    audio.unlock();
+    this.tutorial = 'ATTACK';
+    this.resetRun();
+    const slime = this.enemies[0];
+    this.enemies = [{ ...slime, type: 'SLIME', name: 'SLIME', hp: TUTORIAL_SLIME_HP, maxHp: TUTORIAL_SLIME_HP, color: ENEMY_TYPES.SLIME.color, patterns: ['WAVE'], scale: 1, float: 0, y: 0, x: 250, targetX: 250, isBoss: false }];
+    this.touch();
+  }
+
+  private resetRun() {
     this.gameState = 'BATTLE';
     this.wave = 1; this.rp = 800; this.sync = 0; this.turn = 'RED';
     this.inventory = { coffee: 3, soda: 2 };
@@ -136,6 +157,7 @@ export class Engine {
       return;
     }
     if (p !== 'MENU' && p !== 'TECH_SELECT') return;
+    if (this.tutorial && !tutorialAllows(this.tutorial, a)) return;
     if (a === 'ITEMS') return this.setPhase('ITEMS');
     if (a === 'TECH') { if (this.sync >= 20) this.setPhase('TECH_SELECT'); return; }
     const move = MOVE_REGISTRY[a];
@@ -187,6 +209,7 @@ export class Engine {
         const judgment = this.judge(atTime, stats.rhythm);
         if (judgment === 'PERFECT') {
           this.windup++;
+          this.touch();
           this.ropeSpeed += 0.008;
           audio.play('perfect');
           audio.buzz(12);
@@ -201,8 +224,14 @@ export class Engine {
           audio.buzz(60);
           this.text(body.x + 16, GROUND_Y - 80, 'TRIP!', '#f87171', 1);
           this.text(body.x + 16, GROUND_Y - 50, judgment, '#fca5a5', 0.6);
-          this.damageBro(key, bro.perks.includes('trip_shield') ? 15 : 30);
-          this.missTimer = 48; // ~0.8s, ticks with the sim so pausing can't desync it
+          if (this.tutorial) {
+            // Practice: no damage and the turn isn't lost. Let them try again right away.
+            this.tripRecover = 30;
+            this.text(body.x + 16, GROUND_Y - 140, 'TRY AGAIN!', '#67e8f9', 0.8);
+          } else {
+            this.damageBro(key, bro.perks.includes('trip_shield') ? 15 : 30);
+            this.missTimer = 48; // ~0.8s, ticks with the sim so pausing can't desync it
+          }
         }
         return;
       }
@@ -288,7 +317,24 @@ export class Engine {
     this.flushQueued = true;
     queueMicrotask(() => { this.flushQueued = false; this.flush(); });
   }
-  private setPhase(p: Phase) { this.phase = p; this.touch(); }
+  private setPhase(p: Phase) { this.phase = p; this.advanceTutorial(); this.touch(); }
+
+  /** Tutorial steps advance on gameplay events, never on a timer. */
+  private advanceTutorial() {
+    const t = this.tutorial, p = this.phase;
+    if (t === 'ATTACK' && p === 'LAUNCH') this.tutorial = 'TAG';
+    else if (t === 'TAG' && p === 'ENEMY_TURN') this.tutorial = 'DODGE';
+    else if (t === 'DODGE' && p === 'MENU') { this.tutorial = 'SKILL'; this.sync = Math.max(this.sync, 20); }
+    else if (t === 'SKILL' && p === 'LAUNCH') this.tutorial = 'FINISH';
+  }
+
+  private finishTutorial() {
+    this.tutorial = null;
+    this.meta.tutorialDone = true;
+    saveMeta(this.meta);
+    this.gameState = 'TUTORIAL_DONE';
+    this.touch();
+  }
   private text(x: number, y: number, text: string, color: string, scale = 1) {
     this.floatingTexts.push({ x, y, text, color, life: 1, vy: -2, scale });
   }
@@ -307,6 +353,11 @@ export class Engine {
       combo: this.comboCount, expectedTap: this.expectedTap, activeItem: this.activeItem,
       inventory: { ...this.inventory }, bros: structuredClone(this.bros), moveType: this.moveType,
       enemies: this.enemies.map((e) => ({ id: e.id, name: e.name, hp: e.hp, maxHp: e.maxHp })),
+      tutorialDone: this.meta.tutorialDone,
+      tutorialHint: this.tutorial
+        ? tutorialHint(this.tutorial, this.phase, this.turn, (id) => this.bros[keyOf(id)].name,
+            (MOVE_REGISTRY[this.moveType].limit?.(this.turn) ?? 3) - this.windup)
+        : null,
       levelUp: this.levelQueue.length && this.levelChoices.length ? { bro: this.levelQueue[0], choices: this.levelChoices } : null
     };
   }
@@ -360,7 +411,7 @@ export class Engine {
   }
 
   private resetTempo() {
-    this.ropeSpeed = 0.07; this.windup = 0; this.actionSuccess = false; this.missLocked = false; this.missTimer = 0;
+    this.ropeSpeed = 0.07; this.windup = 0; this.actionSuccess = false; this.missLocked = false; this.missTimer = 0; this.tripRecover = 0;
     this.moveType = 'BASIC'; this.activeAttacker = null; this.hazards = []; this.expectedTap = null; this.activeItem = null;
     this.touch();
   }
@@ -375,7 +426,7 @@ export class Engine {
     const enemy = this.enemies[idx];
     const move = MOVE_REGISTRY[this.moveType];
     if (move.rhythm) {
-      this.ropeSpeed = enemy.speed;
+      this.ropeSpeed = this.tutorial ? TUTORIAL_ROPE_SPEED : enemy.speed;
       this.windup = 0;
       this.setPhase('WINDUP');
     } else {
@@ -397,6 +448,7 @@ export class Engine {
   }
 
   private damageBro(key: BroKey, amount: number) {
+    if (this.tutorial) return;
     const b = this.bros[key];
     b.hp = Math.max(0, b.hp - amount);
     if (b.hp === 0) this.text(this.body[key].x, GROUND_Y - 110, 'DOWN!', '#f87171', 1.4);
@@ -440,7 +492,7 @@ export class Engine {
     if (id === undefined) return this.endEnemyTurn();
     this.currentEnemyId = id;
     const enemy = this.enemies.find((e) => e.id === id)!;
-    const pattern = pickPattern(enemy.patterns, this.rng);
+    const pattern = this.tutorial ? 'WAVE' : pickPattern(enemy.patterns, this.rng);
     this.hazards = buildPattern(pattern, this.wave);
     this.text(enemy.x + 20, GROUND_Y + enemy.y - 110, PATTERN_CALL[pattern], enemy.color, 1.1);
   }
@@ -464,6 +516,7 @@ export class Engine {
 
   /** All wave-clear rewards resolve here, once, outside any state updater. */
   private waveClear() {
+    if (this.tutorial) return this.finishTutorial();
     const hasRpBoost = this.bros.red.perks.includes('rp_boost') || this.bros.blue.perks.includes('rp_boost');
     this.rp += Math.round(waveRp(this.wave) * (hasRpBoost ? 1.25 : 1));
     this.meta.legacy += this.wave * 10;
@@ -531,6 +584,7 @@ export class Engine {
     this.floatingTexts = this.floatingTexts.filter((t) => (t.y += t.vy, (t.life -= 0.02) > 0));
 
     if (this.missTimer > 0 && --this.missTimer === 0) this.startEnemyTurn();
+    if (this.tripRecover > 0 && --this.tripRecover === 0) { this.missLocked = false; this.touch(); }
 
     switch (this.phase) {
       case 'LAUNCH': return this.stepLaunch();
@@ -592,7 +646,7 @@ export class Engine {
     audio.play(hit.crit ? 'crit' : 'hit');
     audio.buzz(hit.crit || move === 'ULT' ? 35 : 18);
 
-    this.impactTotal = impactWindow(stats, this.comboCount, hit.windowBonus, MIN_IMPACT_FRAMES);
+    this.impactTotal = impactWindow(stats, this.comboCount, hit.windowBonus, MIN_IMPACT_FRAMES) * (this.tutorial ? TUTORIAL_IMPACT_SCALE : 1);
     this.impactTimer = this.impactTotal;
     this.freeze = 8;
     if (move === 'ULT') this.camera.shake = 40;

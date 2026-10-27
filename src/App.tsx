@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Engine, type MenuAction } from './game/engine';
 import { audio } from './game/audio';
 import { ActionBar, Controller, Hud, Playfield } from './ui/Battle';
-import { GameOver, LevelUp, Pause, Shop, Title, WaveClear } from './ui/Overlays';
+import { GameOver, LevelUp, Pause, Shop, Title, TutorialDone, WaveClear } from './ui/Overlays';
 import { EngineContext, useEngine } from './ui/useEngine';
 
 const MENU_KEYS: Record<string, MenuAction> = { Digit1: 'BASIC', Digit2: 'TECH', Digit3: 'ITEMS', Digit4: 'ULT', Backspace: 'BACK' };
@@ -30,7 +30,7 @@ const Game = () => {
   return (
     <div className="fixed inset-0 bg-[#020205] text-white font-sans flex flex-col h-[100dvh] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden">
       <Hud />
-      <div className="flex-1 flex flex-col bg-[#010103] min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-b from-[#0b0620] via-[#06040f] to-[#020205]">
         <div className="min-h-0 flex-shrink"><Playfield /></div>
         <div className="flex-1 flex items-center justify-center p-4 min-h-[100px]"><ActionBar /></div>
       </div>
@@ -39,6 +39,7 @@ const Game = () => {
       {snap.gameState === 'SHOP' && <Shop />}
       {snap.gameState === 'WIN' && !snap.levelUp && <WaveClear />}
       {snap.gameState === 'GAMEOVER' && <GameOver />}
+      {snap.gameState === 'TUTORIAL_DONE' && <TutorialDone />}
       <LevelUp />
     </div>
   );

@@ -61,7 +61,7 @@ export const Playfield = () => {
     engine.tapCanvas(((e.clientX - rect.left) / rect.width) * CANVAS_WIDTH);
   };
 
-  const hint = PHASE_HINT[snap.phase];
+  const hint = snap.tutorialHint ? null : PHASE_HINT[snap.phase];
   return (
     <div className="relative w-full max-h-full aspect-video mx-auto bg-[#0a0a18] border-b border-white/5 touch-none overflow-hidden" onPointerDown={onTap}>
       <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="absolute inset-0 w-full h-full block" />
@@ -69,6 +69,14 @@ export const Playfield = () => {
         <div className="absolute top-4 left-6 z-20 pointer-events-none">
           <div className="text-5xl font-black italic drop-shadow-[0_0_20px_white] leading-none">{snap.combo}</div>
           <div className="text-[10px] font-black text-cyan-400 tracking-widest uppercase mt-1">Combo</div>
+        </div>
+      )}
+      {snap.tutorialHint && (
+        <div className="absolute inset-x-0 top-3 flex justify-center pointer-events-none z-30 px-4">
+          <div className="max-w-xl px-5 py-3 rounded-2xl bg-black/80 border border-cyan-400/60 shadow-[0_0_30px_rgba(34,211,238,0.35)] text-center">
+            <div className="text-[9px] font-black tracking-[0.5em] text-cyan-400 uppercase mb-1">Tutorial</div>
+            <div className="text-sm md:text-lg font-black leading-snug">{snap.tutorialHint}</div>
+          </div>
         </div>
       )}
       {hint && (
@@ -91,7 +99,7 @@ export const ActionBar = () => {
     const btn = 'flex-1 px-2 py-4 font-black italic text-xs md:text-lg rounded-full active:scale-90 transition-all uppercase leading-none';
     return (
       <div className="flex flex-col items-center w-full max-w-2xl">
-        <div className="text-[10px] font-black text-cyan-400 mb-3 tracking-[0.8em] uppercase">[{turn} READY]</div>
+        <div className="text-[10px] font-black text-cyan-400 mb-3 tracking-[0.8em] uppercase">[{snap.bros[turn === 'RED' ? 'red' : 'blue'].name} ready]</div>
         <div className="bg-black/90 p-2 md:p-3 rounded-[2rem] border border-white/10 flex gap-2 md:gap-4 w-full">
           <button onPointerDown={() => engine.action('BASIC')} className={`${btn} bg-white text-black`}>Attack</button>
           <button onPointerDown={() => engine.action('TECH')} className={`${btn} bg-purple-600 ${sync < 20 ? 'opacity-40 grayscale' : ''}`}>Skill</button>

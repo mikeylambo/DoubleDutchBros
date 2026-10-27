@@ -1,10 +1,10 @@
 // Meta progression that survives between runs. Every access is guarded: storage can be
 // unavailable (private mode, blocked site data) and the game must still run.
 
-export interface MetaSave { version: 1; legacy: number; bestWave: number; runs: number; latencyMs: number }
+export interface MetaSave { version: 1; legacy: number; bestWave: number; runs: number; latencyMs: number; tutorialDone: boolean }
 
 const KEY = 'ddb.meta.v1';
-const fresh = (): MetaSave => ({ version: 1, legacy: 0, bestWave: 0, runs: 0, latencyMs: 0 });
+const fresh = (): MetaSave => ({ version: 1, legacy: 0, bestWave: 0, runs: 0, latencyMs: 0, tutorialDone: false });
 
 export const loadMeta = (): MetaSave => {
   try {

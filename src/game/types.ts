@@ -4,7 +4,7 @@ export type Phase =
   | 'MENU' | 'TECH_SELECT' | 'ITEMS' | 'ITEMS_TARGETING' | 'TARGET'
   | 'WINDUP' | 'LAUNCH' | 'IMPACT' | 'RETURN' | 'ENEMY_TURN';
 
-export type GameState = 'TITLE' | 'BATTLE' | 'PAUSE' | 'WIN' | 'SHOP' | 'GAMEOVER';
+export type GameState = 'TITLE' | 'BATTLE' | 'PAUSE' | 'WIN' | 'SHOP' | 'GAMEOVER' | 'TUTORIAL_DONE';
 
 export interface Bro {
   key: BroKey;
@@ -81,4 +81,6 @@ export interface Snapshot {
   enemies: { id: number; name: string; hp: number; maxHp: number }[];
   levelUp: { bro: BroKey; choices: LevelChoice[] } | null;
   moveType: MoveId;
+  tutorialHint: string | null;
+  tutorialDone: boolean;
 }

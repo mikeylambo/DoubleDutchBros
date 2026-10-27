@@ -24,7 +24,14 @@ export const Title = () => {
       <div className="mt-2 text-sm font-black italic uppercase tracking-widest text-pink-400 drop-shadow-[0_0_12px_#f472b6]">starring Hop &amp; Skip</div>
       <TitleRabbits />
       <div className="mt-2 text-xs font-bold text-white/50 uppercase tracking-widest">Best Wave {snap.bestWave} • {snap.legacy} Legacy</div>
-      <div className="mt-10"><BigButton onPress={() => engine.startRun()}>Start Run</BigButton></div>
+      <div className="mt-10 flex flex-col items-center gap-4">
+        {snap.tutorialDone
+          ? <BigButton onPress={() => engine.startRun()}>Start Run</BigButton>
+          : <BigButton onPress={() => engine.startTutorial()}>Start</BigButton>}
+        <button onPointerDown={(e) => { e.preventDefault(); snap.tutorialDone ? engine.startTutorial() : engine.startRun(); }} className="text-xs font-black uppercase tracking-widest text-white/50 underline underline-offset-4">
+          {snap.tutorialDone ? 'Replay tutorial' : 'Skip tutorial'}
+        </button>
+      </div>
       <div className="mt-8 text-[11px] text-white/40 max-w-sm leading-relaxed">
         Skills charge by jumping on the rope's beat. After each hit, tap the partner's glowing button to tag in and extend the combo.
         Keys: J / → = A (Hop), F / ← = B (Skip), Esc = pause.
@@ -104,7 +111,7 @@ export const Shop = () => {
         <div className="flex gap-2 md:gap-4 w-full max-w-4xl px-4">
           {(['supplies', 'red', 'blue'] as const).map((t) => (
             <button key={t} onPointerDown={(e) => { e.preventDefault(); setTab(t); }} className={`flex-1 py-3 md:py-4 rounded-2xl font-black text-sm md:text-xl uppercase ${tab === t ? 'bg-white text-black' : 'bg-white/10 text-white/40'}`}>
-              {t === 'supplies' ? 'Items' : `${t} Rig`}
+              {t === 'supplies' ? 'Items' : `${snap.bros[t].name}'s Rig`}
             </button>
           ))}
         </div>
@@ -156,6 +163,20 @@ export const WaveClear = () => {
     <Screen className="bg-black/95 justify-center">
       <div className="text-5xl md:text-8xl font-black italic text-yellow-400 mb-8 drop-shadow-[0_0_40px_#facc15] text-center uppercase tracking-tighter">Wave Clear</div>
       <BigButton onPress={() => engine.enterShop()}>Enter Shop</BigButton>
+    </Screen>
+  );
+};
+
+export const TutorialDone = () => {
+  const { engine } = useEngine();
+  return (
+    <Screen className="bg-black/95 justify-center text-center">
+      <div className="text-[10px] font-black tracking-[0.6em] text-cyan-400 mb-4 uppercase">Tutorial Complete</div>
+      <div className="text-5xl md:text-7xl font-black italic uppercase tracking-tighter leading-none">You've got<br />the rhythm.</div>
+      <div className="mt-6 max-w-sm text-sm text-white/60 leading-relaxed">
+        From here on, trips and hits cost HP. Clear waves to earn RP, gear up in the shop, and see how far Hop &amp; Skip can go.
+      </div>
+      <div className="mt-10"><BigButton onPress={() => engine.startRun()}>Start Run</BigButton></div>
     </Screen>
   );
 };

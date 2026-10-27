@@ -131,3 +131,59 @@ describe('engine', () => {
     expect(e.gameState).toBe('BATTLE');
   });
 });
+
+describe('tutorial', () => {
+  it('walks attack → tag → dodge → skill → finish without real damage', () => {
+    const e = new Engine(() => 0.99);
+    e.startTutorial();
+    expect(e.tutorial).toBe('ATTACK');
+    const hp = { red: e.bros.red.hp, blue: e.bros.blue.hp };
+
+    e.sync = 50;
+    e.action('TECH'); // gated: only ATTACK allowed in step 1
+    expect(e.phase).toBe('MENU');
+    e.action('BASIC'); e.input('RED');
+    expect(e.tutorial).toBe('TAG');
+
+    runUntil(e, () => e.phase === 'ENEMY_TURN');
+    expect(e.tutorial).toBe('DODGE');
+    runUntil(e, () => e.phase === 'MENU');
+    expect(e.tutorial).toBe('SKILL');
+    expect(e.bros.red.hp).toBe(hp.red);
+    expect(e.bros.blue.hp).toBe(hp.blue);
+    expect(e.sync).toBeGreaterThanOrEqual(20);
+
+    e.action('BASIC'); // gated
+    expect(e.phase).toBe('MENU');
+    e.action('TECH'); e.action('TECH1');
+    e.input(e.turn);
+    expect(e.phase).toBe('WINDUP');
+
+    // A trip costs nothing and doesn't end the turn.
+    e.ropeAngle = 0;
+    e.ropeSpeed = 0;
+    e.input(e.turn);
+    runUntil(e, () => !e.missLocked && !e.body[e.turn === 'RED' ? 'red' : 'blue'].jumping);
+    expect(e.phase).toBe('WINDUP');
+
+    for (let i = 0; i < 3; i++) {
+      e.ropeAngle = Math.PI / 2; e.ropeSpeed = 0; // each perfect speeds the rope up; pin it for the test
+      e.input(e.turn);
+      if (e.phase === 'WINDUP') runUntil(e, () => !e.body[e.turn === 'RED' ? 'red' : 'blue'].jumping);
+    }
+    expect(e.tutorial).toBe('FINISH');
+
+    // Finish the slime however it takes.
+    for (let guard = 0; guard < 20 && e.gameState === 'BATTLE'; guard++) {
+      runUntil(e, () => e.phase === 'MENU' || e.gameState !== 'BATTLE');
+      if (e.gameState !== 'BATTLE') break;
+      e.action('BASIC'); e.input(e.turn);
+    }
+    expect(e.gameState).toBe('TUTORIAL_DONE');
+    expect(e.meta.tutorialDone).toBe(true);
+
+    e.startRun();
+    expect(e.tutorial).toBeNull();
+    expect(e.enemies.length).toBeGreaterThan(0);
+  });
+});

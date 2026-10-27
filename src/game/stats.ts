@@ -36,7 +36,7 @@ export const calculateDerived = (bro: Bro): Derived => {
 export const makeBro = (key: 'red' | 'blue'): Bro => {
   const red = key === 'red';
   const bro: Bro = {
-    key, name: red ? 'HOP' : 'SKIP', color: red ? '#ef4444' : '#3b82f6',
+    key, name: red ? 'Hop' : 'Skip', color: red ? '#ef4444' : '#3b82f6',
     lvl: 1, xp: 0, maxXp: 120, hp: 0,
     base: red
       ? { vitality: 8, power: 10, rhythm: 5, technique: 5, teamwork: 8 }
