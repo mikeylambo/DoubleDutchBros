@@ -31,4 +31,4 @@ Built on [SLU Web Shell](https://github.com/mikeylambo/Web-Game-Shell-v1.02), pi
 | `src/platform/` | SLU Web Shell wiring: saves, settings, input (keyboard/touch/gamepad), achievements, bestiary, results, daily seeds, PWA |
 | `src/ui/` | React screens; they read engine snapshots and send commands |
 
-Art and audio asset rules: [`docs/ART_SPEC.md`](docs/ART_SPEC.md).
+Design: [`docs/DESIGN.md`](docs/DESIGN.md) · Art and audio rules: [`docs/ART_SPEC.md`](docs/ART_SPEC.md).
