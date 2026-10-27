@@ -7,12 +7,55 @@ import { audio } from './audio';
 import { impactWindow, judgeJump, perfectThreshold, resolveHit, type JumpJudgment } from './combat';
 import { PATTERN_CALL, buildPattern, hazardX, pickPattern } from './enemyScripts';
 import { music, type BeatClock } from './music';
-import { loadMeta, saveMeta, type MetaSave } from './save';
+import { defaultSettings, freshProgress, type GameSettings, type Progress } from './save';
 import { calculateDerived, makeBro } from './stats';
 import {
   TUTORIAL_IMPACT_SCALE, TUTORIAL_ROPE_RATE, TUTORIAL_SLIME_HP, tutorialAllows, tutorialHint, type TutorialStep
 } from './tutorial';
-import type { Body, Bro, Enemy, FloatingText, GameState, Hazard, LevelChoice, Particle, Phase, Snapshot } from './types';
+import type { Body, Bro, Enemy, FloatingText, GameState, Hazard, LevelChoice, Particle, Phase, RunMode, RunStats, RunSummary, Snapshot } from './types';
+
+/** Semantic things that happened in the game. Platform code turns these into stats, achievements, telemetry. */
+export type GameEvent =
+  | { type: 'run.start'; mode: RunMode; seedKey: string | null }
+  | { type: 'run.end'; summary: RunSummary }
+  | { type: 'enemy.seen'; enemy: EnemyTypeId }
+  | { type: 'enemy.ko'; enemy: EnemyTypeId; boss: boolean }
+  | { type: 'jump.perfect'; streak: number }
+  | { type: 'jump.trip' }
+  | { type: 'tag.sync'; combo: number }
+  | { type: 'hit'; move: MoveId; crit: boolean; damage: number }
+  | { type: 'bro.hurt' }
+  | { type: 'wave.clear'; wave: number; flawless: boolean }
+  | { type: 'tutorial.done' };
+
+export interface EngineInit {
+  progress?: Progress;
+  settings?: GameSettings;
+  saveProgress?: (p: Progress) => void;
+  saveSettings?: (s: GameSettings) => void;
+  onEvent?: (e: GameEvent) => void;
+}
+
+/** Separate random streams, so in a seeded run a crit roll never changes which enemies show up. */
+export interface RngStreams { waves: () => number; combat: () => number; rewards: () => number }
+
+const freshRunStats = (): RunStats => ({
+  perfects: 0, trips: 0, tagsLanded: 0, tagsMissed: 0, dodges: 0, hitsTaken: 0, enemiesDefeated: 0,
+  bossesDefeated: 0, damageDealt: 0, maxCombo: 0, wavesCleared: 0, ultsLanded: 0
+});
+
+/** Score for leaderboards: progress first, then how well it was played. */
+export const scoreRun = (s: RunStats) =>
+  s.wavesCleared * 1000 + s.damageDealt + s.maxCombo * 100 + s.perfects * 25 + s.dodges * 20 + s.bossesDefeated * 2500;
+
+/** 0..100 execution quality (timing, tags, dodges); feeds the letter rank. */
+export const performanceOf = (s: RunStats) => {
+  // Untried skills score as average, not perfect, so skipping them can't inflate the rank.
+  const rate = (good: number, bad: number) => (good + bad === 0 ? 0.6 : good / (good + bad));
+  const quality = Math.round(100 * (0.4 * rate(s.perfects, s.trips) + 0.3 * rate(s.tagsLanded, s.tagsMissed) + 0.3 * rate(s.dodges, s.hitsTaken)));
+  // A run that never cleared a wave can't rank above C.
+  return s.wavesCleared === 0 ? Math.min(quality, 50) : quality;
+};
 
 const STEP = 1 / SIM_HZ;
 const keyOf = (id: BroId): BroKey => (id === 'RED' ? 'red' : 'blue');
@@ -36,7 +79,20 @@ export class Engine {
   inventory: Record<ItemId, number> = { coffee: 3, soda: 2 };
   bros: Record<BroKey, Bro> = { red: makeBro('red'), blue: makeBro('blue') };
   enemies: Enemy[] = [];
-  meta: MetaSave = loadMeta();
+  progress: Progress;
+  settings: GameSettings;
+  private hooks: EngineInit;
+  mode: RunMode = 'endless';
+  seedKey: string | null = null;
+  runStats: RunStats = freshRunStats();
+  /** Summary of the last finished run, shown on the results screen. */
+  lastRun: RunSummary | null = null;
+  private perfectStreak = 0;
+  private waveHurt = false;
+  /** Dodges at the start of the wave, to tell a flawless wave from one with no attacks. */
+  private waveDodgeMark = 0;
+  private rng: RngStreams;
+  private readonly defaultRng: RngStreams;
   /** Non-null while the guided first fight is running. */
   tutorial: TutorialStep | null = null;
   private tripRecover = 0;
@@ -94,9 +150,26 @@ export class Engine {
   private dirty = true;
   private snap!: Snapshot;
 
-  constructor(private rng: () => number = Math.random, readonly clock: BeatClock = music) {
+  constructor(rng: () => number = Math.random, readonly clock: BeatClock = music, init: EngineInit = {}) {
+    this.defaultRng = { waves: rng, combat: rng, rewards: rng };
+    this.rng = this.defaultRng;
+    this.progress = init.progress ?? freshProgress();
+    this.settings = { ...defaultSettings(), ...init.settings };
+    this.hooks = init;
     this.snap = this.buildSnapshot();
     this.applyVolumes();
+  }
+
+  private emit(e: GameEvent) { this.hooks.onEvent?.(e); }
+  private persistProgress() { this.hooks.saveProgress?.(this.progress); }
+
+  /** Change preferences (volume, calibration, accessibility) and persist them. */
+  updateSettings(patch: Partial<GameSettings>) {
+    this.settings = { ...this.settings, ...patch };
+    this.settings.latencyMs = Math.max(-150, Math.min(150, Math.round(this.settings.latencyMs)));
+    this.applyVolumes();
+    this.hooks.saveSettings?.(this.settings);
+    this.touch();
   }
 
   /**
@@ -104,7 +177,7 @@ export class Engine {
    * the player's calibration. Used for visuals, judging and attacks alike so they always agree.
    */
   heardBeat(t: number) {
-    return this.clock.beatAt(t - audio.outputLatency - this.meta.latencyMs / 1000);
+    return this.clock.beatAt(t - audio.outputLatency - this.settings.latencyMs / 1000);
   }
 
   // ================= Public API: React subscribes and sends commands =================
@@ -129,12 +202,20 @@ export class Engine {
     this.flush();
   }
 
-  startRun() {
+  /** Start a run. Seeded runs (daily) take their own random streams so every player meets the same waves. */
+  startRun(opts: { mode?: RunMode; seedKey?: string | null; rng?: RngStreams } = {}) {
     audio.unlock();
     this.tutorial = null;
+    this.mode = opts.mode ?? 'endless';
+    this.seedKey = opts.seedKey ?? null;
+    this.rng = opts.rng ?? this.defaultRng;
+    this.runStats = freshRunStats();
+    this.lastRun = null;
+    this.perfectStreak = 0;
+    this.emit({ type: 'run.start', mode: this.mode, seedKey: this.seedKey });
     this.startMusic();
-    this.meta.runs += 1;
-    saveMeta(this.meta);
+    this.progress.runs += 1;
+    this.persistProgress();
     this.resetRun();
   }
 
@@ -142,6 +223,9 @@ export class Engine {
   startTutorial() {
     audio.unlock();
     this.tutorial = 'ATTACK';
+    this.mode = 'endless';
+    this.seedKey = null;
+    this.runStats = freshRunStats();
     this.startMusic();
     this.resetRun();
     const slime = this.enemies[0];
@@ -156,16 +240,9 @@ export class Engine {
   }
 
   private applyVolumes() {
-    music.setVolume(this.meta.musicVolume);
-    audio.setVolume(this.meta.sfxVolume);
-  }
-
-  setVolumes(musicVolume: number, sfxVolume: number) {
-    this.meta.musicVolume = Math.max(0, Math.min(1, musicVolume));
-    this.meta.sfxVolume = Math.max(0, Math.min(1, sfxVolume));
-    this.applyVolumes();
-    saveMeta(this.meta);
-    this.touch();
+    audio.hapticsEnabled = this.settings.vibration;
+    music.setVolume(this.settings.musicVolume);
+    audio.setVolume(this.settings.sfxVolume);
   }
 
   private resetRun() {
@@ -177,11 +254,13 @@ export class Engine {
     this.initWave();
   }
 
+  /** Back to the title screen (music keeps playing). */
+  toTitle() { this.tutorial = null; this.gameState = 'TITLE'; music.duck(false); this.touch(); }
+
   pause() { if (this.gameState === 'BATTLE') { this.gameState = 'PAUSE'; music.duck(true); this.touch(); } }
   /** Resuming never re-initializes the wave (old build rerolled enemies on resume). */
   resume() { if (this.gameState === 'PAUSE') { this.gameState = 'BATTLE'; music.duck(false); this.touch(); } }
 
-  setLatency(ms: number) { this.meta.latencyMs = Math.max(-150, Math.min(150, Math.round(ms))); saveMeta(this.meta); this.touch(); }
 
   action(a: MenuAction) {
     if (this.gameState !== 'BATTLE') return;
@@ -247,6 +326,8 @@ export class Engine {
         const judgment = this.judge(atTime, stats.rhythm);
         if (judgment === 'PERFECT') {
           this.windup++;
+          this.runStats.perfects++;
+          this.emit({ type: 'jump.perfect', streak: ++this.perfectStreak });
           this.touch();
           audio.play('perfect');
           audio.buzz(12);
@@ -256,6 +337,9 @@ export class Engine {
           if (this.windup >= (move.limit?.(this.turn) ?? 3)) this.launch(this.turn, -14, 20);
         } else {
           this.missLocked = true;
+          this.runStats.trips++;
+          this.perfectStreak = 0;
+          this.emit({ type: 'jump.trip' });
           this.camera.shake = 15;
           audio.play('trip');
           audio.buzz(60);
@@ -278,6 +362,8 @@ export class Engine {
         const progress = 1 - this.impactTimer / this.impactTotal;
         if (progress > 0.3 && progress < 0.7) {
           this.actionSuccess = true;
+          this.runStats.tagsLanded++;
+          this.emit({ type: 'tag.sync', combo: this.comboCount + 1 });
           this.camera.shake = 12;
           this.flash = 0.25; this.flashColor = '#00d2ff';
           audio.play('sync');
@@ -367,8 +453,9 @@ export class Engine {
 
   private finishTutorial() {
     this.tutorial = null;
-    this.meta.tutorialDone = true;
-    saveMeta(this.meta);
+    this.progress.tutorialDone = true;
+    this.persistProgress();
+    this.emit({ type: 'tutorial.done' });
     this.gameState = 'TUTORIAL_DONE';
     this.touch();
   }
@@ -386,11 +473,11 @@ export class Engine {
   private buildSnapshot(): Snapshot {
     return {
       gameState: this.gameState, phase: this.phase, wave: this.wave, rp: this.rp,
-      legacy: this.meta.legacy, bestWave: this.meta.bestWave, sync: this.sync, turn: this.turn,
+      legacy: this.progress.legacy, bestWave: this.progress.bestWave, sync: this.sync, turn: this.turn,
       combo: this.comboCount, expectedTap: this.expectedTap, activeItem: this.activeItem,
       inventory: { ...this.inventory }, bros: structuredClone(this.bros), moveType: this.moveType,
       enemies: this.enemies.map((e) => ({ id: e.id, name: e.name, hp: e.hp, maxHp: e.maxHp })),
-      tutorialDone: this.meta.tutorialDone,
+      tutorialDone: this.progress.tutorialDone,
       tutorialHint: this.tutorial
         ? tutorialHint(this.tutorial, this.phase, this.turn, (id) => this.bros[keyOf(id)].name,
             (MOVE_REGISTRY[this.moveType].limit?.(this.turn) ?? 3) - this.windup)
@@ -419,9 +506,10 @@ export class Engine {
 
   private burst(x: number, y: number, color: string, count: number, speed: number) {
     for (let i = 0; i < count; i++) {
-      const a = this.rng() * Math.PI * 2;
-      const v = speed * (0.4 + this.rng() * 0.8);
-      this.particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - speed * 0.5, life: 1, color, size: 2 + this.rng() * 3 });
+      // Cosmetic randomness stays off the gameplay streams.
+      const a = Math.random() * Math.PI * 2;
+      const v = speed * (0.4 + Math.random() * 0.8);
+      this.particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - speed * 0.5, life: 1, color, size: 2 + Math.random() * 3 });
     }
   }
 
@@ -432,7 +520,7 @@ export class Engine {
     const count = isBoss ? 1 : Math.min(3, Math.floor(this.wave / 3) + 1);
     const pool: EnemyTypeId[] = ['SLIME', 'BAT', 'SHELL'];
     this.enemies = Array.from({ length: count }, (_, i) => {
-      const type: EnemyTypeId = isBoss ? 'BOSS' : pool[Math.floor(this.rng() * pool.length)];
+      const type: EnemyTypeId = isBoss ? 'BOSS' : pool[Math.floor(this.rng.waves() * pool.length)];
       const d = ENEMY_TYPES[type];
       const x = isBoss ? 200 : 100 + i * 150;
       const hp = Math.round(d.hp * hpMult);
@@ -450,6 +538,9 @@ export class Engine {
     this.targetIdx = 0;
     this.resetTempo();
     this.comboCount = 0;
+    this.waveHurt = false;
+    this.waveDodgeMark = this.runStats.dodges;
+    for (const en of this.enemies) this.emit({ type: 'enemy.seen', enemy: en.type });
     this.turn = this.livingTurn(this.turn);
     this.setPhase('MENU');
   }
@@ -536,7 +627,7 @@ export class Engine {
     if (id === undefined) return this.endEnemyTurn();
     this.currentEnemyId = id;
     const enemy = this.enemies.find((e) => e.id === id)!;
-    const pattern = this.tutorial ? 'WAVE' : pickPattern(enemy.patterns, this.rng);
+    const pattern = this.tutorial ? 'WAVE' : pickPattern(enemy.patterns, this.rng.waves);
     // Attacks start on a whole beat with one beat of breathing room.
     this.hazards = buildPattern(pattern, Math.ceil(this.beat) + 1);
     this.text(enemy.x + 20, GROUND_Y + enemy.y - 110, PATTERN_CALL[pattern], enemy.color, 1.1);
@@ -552,10 +643,15 @@ export class Engine {
   }
 
   private gameOver() {
-    this.meta.legacy += this.wave * 5;
-    this.meta.bestWave = Math.max(this.meta.bestWave, this.wave);
-    saveMeta(this.meta);
+    this.progress.legacy += this.wave * 5;
+    this.progress.bestWave = Math.max(this.progress.bestWave, this.wave);
+    this.persistProgress();
     music.duck(true);
+    this.lastRun = {
+      mode: this.mode, seedKey: this.seedKey, wave: this.wave, stats: { ...this.runStats },
+      score: scoreRun(this.runStats), performance: performanceOf(this.runStats)
+    };
+    this.emit({ type: 'run.end', summary: this.lastRun });
     this.gameState = 'GAMEOVER';
     this.touch();
   }
@@ -563,11 +659,13 @@ export class Engine {
   /** All wave-clear rewards resolve here, once, outside any state updater. */
   private waveClear() {
     if (this.tutorial) return this.finishTutorial();
+    this.runStats.wavesCleared++;
+    this.emit({ type: 'wave.clear', wave: this.wave, flawless: !this.waveHurt && this.runStats.dodges > this.waveDodgeMark });
     const hasRpBoost = this.bros.red.perks.includes('rp_boost') || this.bros.blue.perks.includes('rp_boost');
     this.rp += Math.round(waveRp(this.wave) * (hasRpBoost ? 1.25 : 1));
-    this.meta.legacy += this.wave * 10;
-    this.meta.bestWave = Math.max(this.meta.bestWave, this.wave);
-    saveMeta(this.meta);
+    this.progress.legacy += this.wave * 10;
+    this.progress.bestWave = Math.max(this.progress.bestWave, this.wave);
+    this.persistProgress();
     const queue = new Set<BroKey>();
     (['red', 'blue'] as BroKey[]).forEach((k) => {
       const b = this.bros[k];
@@ -586,7 +684,7 @@ export class Engine {
     const key = this.levelQueue[0];
     if (!key || this.levelChoices.length) return;
     const b = this.bros[key];
-    const shuffle = <T,>(arr: T[]) => arr.map((v) => [this.rng(), v] as const).sort((a, z) => a[0] - z[0]).map(([, v]) => v);
+    const shuffle = <T,>(arr: T[]) => arr.map((v) => [this.rng.rewards(), v] as const).sort((a, z) => a[0] - z[0]).map(([, v]) => v);
     if ((b.lvl + 1) % 5 === 0) {
       const available = PERKS_DATA.filter((p) => !b.perks.includes(p.id as PerkId));
       if (available.length) {
@@ -676,10 +774,13 @@ export class Engine {
     const stats = calculateDerived(bro);
     // Follow-up hits in a tag chain are basic strikes boosted by combo; the chosen move lands once.
     const move: MoveId = this.comboCount === 0 ? this.moveType : 'BASIC';
-    const hit = resolveHit({ move, attacker: this.activeAttacker, stats, perks: bro.perks, comboCount: this.comboCount, targetAerial: aerial, roll: this.rng() });
+    const hit = resolveHit({ move, attacker: this.activeAttacker, stats, perks: bro.perks, comboCount: this.comboCount, targetAerial: aerial, roll: this.rng.combat() });
 
     target.hp = Math.max(0, target.hp - hit.dmg);
     target.hurt = 6;
+    this.runStats.damageDealt += hit.dmg;
+    if (move === 'ULT') this.runStats.ultsLanded++;
+    this.emit({ type: 'hit', move, crit: hit.crit, damage: hit.dmg });
     this.sync = Math.min(100, this.sync + hit.syncGain);
     if (hit.healOnCrit) bro.hp = Math.min(stats.maxHp, bro.hp + hit.healOnCrit);
     const ty = GROUND_Y + target.y;
@@ -691,6 +792,9 @@ export class Engine {
     if (hit.crit) { this.flash = 0.35; this.flashColor = '#facc15'; }
     if (move === 'ULT') { this.flash = 0.8; this.flashColor = '#ffffff'; }
     if (target.hp === 0) {
+      this.runStats.enemiesDefeated++;
+      if (target.isBoss) this.runStats.bossesDefeated++;
+      this.emit({ type: 'enemy.ko', enemy: target.type, boss: target.isBoss });
       audio.play('ko');
       this.burst(cx, cy, target.color, 40, 11);
       this.text(target.x + 20, ty - 130, 'K.O.', target.color, 1.6);
@@ -713,9 +817,11 @@ export class Engine {
     this.impactTimer--;
     const target = this.enemies[this.targetIdx];
     if (this.impactTimer > 0 && target?.hp > 0) return;
+    if (this.expectedTap && !this.actionSuccess && target?.hp > 0) this.runStats.tagsMissed++;
     this.expectedTap = null;
     if (this.actionSuccess && target?.hp > 0) {
       this.comboCount++;
+      this.runStats.maxCombo = Math.max(this.runStats.maxCombo, this.comboCount + 1);
       const prev = this.body[keyOf(this.activeAttacker!)];
       prev.vy = -12;
       prev.targetX = HOME_X[keyOf(this.activeAttacker!)];
@@ -753,11 +859,19 @@ export class Engine {
       (['red', 'blue'] as BroKey[]).forEach((k) => {
         if (this.bros[k].hp <= 0 || h.hit.includes(k)) return;
         const b = this.body[k];
+        if (h.x > b.x + 32) {
+          // The hit has passed this bro untouched: a dodge.
+          if (!h.cleared.includes(k)) { h.cleared.push(k); this.runStats.dodges++; }
+          return;
+        }
         const top = GROUND_Y + b.y - 68, bottom = GROUND_Y + b.y;
         const overlapX = b.x + 32 > h.x && b.x < h.x + h.w;
         const overlapY = bottom > h.y && top < h.y + h.h;
         if (overlapX && overlapY) {
           h.hit.push(k);
+          this.runStats.hitsTaken++;
+          this.waveHurt = true;
+          this.emit({ type: 'bro.hurt' });
           this.damageBro(k, enemy?.dmg ?? 15);
           this.camera.shake = 25;
           this.flash = 0.3; this.flashColor = '#ef4444';

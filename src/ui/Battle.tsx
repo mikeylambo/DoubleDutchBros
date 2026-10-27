@@ -117,7 +117,7 @@ const SyncCost = ({ cost }: { cost: number }) => <div className="text-[8px] text
 export const ActionBar = () => {
   const { engine, snap } = useEngine();
   const { phase, sync, turn } = snap;
-  const back = <button onPointerDown={() => engine.action('BACK')} className="px-6 bg-red-600/20 text-red-500 rounded-2xl font-black uppercase text-xs active:scale-95">Back</button>;
+  const back = <button data-nav onPointerDown={() => engine.action('BACK')} className="px-6 bg-red-600/20 text-red-500 rounded-2xl font-black uppercase text-xs active:scale-95">Back</button>;
 
   if (phase === 'MENU') {
     const btn = 'flex-1 px-2 py-4 [@media(max-height:540px)]:py-2.5 font-black italic text-xs md:text-lg rounded-full active:scale-90 transition-all uppercase leading-none';
@@ -125,10 +125,10 @@ export const ActionBar = () => {
       <div className="flex flex-col items-center w-full max-w-2xl">
         <div className="text-[10px] font-black text-cyan-400 mb-3 tracking-[0.8em] uppercase [@media(max-height:540px)]:hidden">[{snap.bros[turn === 'RED' ? 'red' : 'blue'].name} ready]</div>
         <div className="bg-black/90 p-2 md:p-3 rounded-[2rem] border border-white/10 flex gap-2 md:gap-4 w-full">
-          <button onPointerDown={() => engine.action('BASIC')} className={`${btn} bg-white text-black`}>Attack</button>
-          <button onPointerDown={() => engine.action('TECH')} className={`${btn} bg-purple-600 ${sync < 20 ? 'opacity-40 grayscale' : ''}`}>Skill</button>
-          <button onPointerDown={() => engine.action('ITEMS')} className={`${btn} bg-slate-800`}>Items</button>
-          <button onPointerDown={() => engine.action('ULT')} className={`${btn} ${sync >= 100 ? 'bg-yellow-400 text-black shadow-[0_0_30px_gold]' : 'bg-white/5 text-white/20'}`}>Ult</button>
+          <button data-nav onPointerDown={() => engine.action('BASIC')} className={`${btn} bg-white text-black`}>Attack</button>
+          <button data-nav onPointerDown={() => engine.action('TECH')} className={`${btn} bg-purple-600 ${sync < 20 ? 'opacity-40 grayscale' : ''}`}>Skill</button>
+          <button data-nav onPointerDown={() => engine.action('ITEMS')} className={`${btn} bg-slate-800`}>Items</button>
+          <button data-nav onPointerDown={() => engine.action('ULT')} className={`${btn} ${sync >= 100 ? 'bg-yellow-400 text-black shadow-[0_0_30px_gold]' : 'bg-white/5 text-white/20'}`}>Ult</button>
         </div>
       </div>
     );
@@ -140,7 +140,7 @@ export const ActionBar = () => {
         {techs.map((id) => {
           const m = MOVE_REGISTRY[id];
           return (
-            <button key={id} onPointerDown={() => engine.action(id as 'TECH1')} className={`flex-1 p-4 bg-white/5 rounded-2xl flex flex-col items-center active:scale-95 text-center leading-none ${sync < m.cost ? 'opacity-40' : ''}`}>
+            <button data-nav key={id} onPointerDown={() => engine.action(id as 'TECH1')} className={`flex-1 p-4 bg-white/5 rounded-2xl flex flex-col items-center active:scale-95 text-center leading-none ${sync < m.cost ? 'opacity-40' : ''}`}>
               <span className="text-xl">{m.icon}</span>
               <div className="text-[10px] font-black uppercase text-yellow-400">{m.name}</div>
               <SyncCost cost={m.cost} />
@@ -155,7 +155,7 @@ export const ActionBar = () => {
     return (
       <div className="bg-black/90 p-3 rounded-[2rem] border border-white/10 flex gap-2 w-full max-w-2xl">
         {(Object.keys(ITEM_DATA) as ItemId[]).map((id) => (
-          <button key={id} onPointerDown={() => engine.selectItem(id)} className={`flex-1 p-3 bg-white/5 rounded-2xl flex flex-col items-center active:scale-95 text-center leading-none ${snap.inventory[id] <= 0 ? 'opacity-40' : ''}`}>
+          <button data-nav key={id} onPointerDown={() => engine.selectItem(id)} className={`flex-1 p-3 bg-white/5 rounded-2xl flex flex-col items-center active:scale-95 text-center leading-none ${snap.inventory[id] <= 0 ? 'opacity-40' : ''}`}>
             <span className="text-xl">{ITEM_DATA[id].icon}</span>
             <span className="text-[9px] font-black mt-1 uppercase">{ITEM_DATA[id].name} ({snap.inventory[id]})</span>
           </button>

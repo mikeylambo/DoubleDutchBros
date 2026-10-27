@@ -69,6 +69,8 @@ export interface Hazard {
   fake: boolean;
   /** Bros already hit by this hazard. */
   hit: BroKey[];
+  /** Bros this hazard has passed without hitting (dodges). */
+  cleared: BroKey[];
 }
 
 export interface FloatingText { x: number; y: number; text: string; color: string; life: number; vy: number; scale: number }
@@ -76,6 +78,26 @@ export interface FloatingText { x: number; y: number; text: string; color: strin
 export type LevelChoice =
   | { kind: 'stat'; key: StatKey; name: string; icon: string; color: string; desc: string }
   | { kind: 'perk'; key: PerkId; name: string; icon: string; desc: string };
+
+export type RunMode = 'endless' | 'daily';
+
+/** Per-run performance counters, used for results, rank and stats. */
+export interface RunStats {
+  perfects: number; trips: number; tagsLanded: number; tagsMissed: number;
+  dodges: number; hitsTaken: number; enemiesDefeated: number; bossesDefeated: number;
+  damageDealt: number; maxCombo: number; wavesCleared: number; ultsLanded: number;
+}
+
+export interface RunSummary {
+  mode: RunMode;
+  /** Daily seed key, e.g. "daily:2026-10-27". */
+  seedKey: string | null;
+  wave: number;
+  score: number;
+  /** 0..100 execution quality: timing, tags, dodges. */
+  performance: number;
+  stats: RunStats;
+}
 
 export interface Snapshot {
   gameState: GameState;

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MOVE_REGISTRY } from '../data/config';
 import { judgeJump, resolveHit } from './combat';
-import { Engine } from './engine';
+import { Engine, performanceOf } from './engine';
 import { HOP_CENTER, buildPattern, hazardX } from './enemyScripts';
 import type { BeatClock } from './music';
 import { calculateDerived, makeBro } from './stats';
@@ -48,6 +48,15 @@ describe('jump judgment', () => {
     expect(judgeJump(peak - 0.9, 0.75)).toBe('EARLY');
     expect(judgeJump(peak + 0.9, 0.75)).toBe('LATE');
     expect(judgeJump(peak + Math.PI - 0.9, 0.75)).toBe('EARLY'); // negative lobe too
+  });
+});
+
+describe('run rank', () => {
+  it('an instant loss cannot rank high; clean play does', () => {
+    const blank = { perfects: 0, trips: 0, tagsLanded: 0, tagsMissed: 0, dodges: 0, hitsTaken: 0, enemiesDefeated: 0, bossesDefeated: 0, damageDealt: 0, maxCombo: 0, wavesCleared: 0, ultsLanded: 0 };
+    expect(performanceOf(blank)).toBeLessThanOrEqual(50);
+    expect(performanceOf({ ...blank, wavesCleared: 8, perfects: 30, tagsLanded: 12, dodges: 20 })).toBe(100);
+    expect(performanceOf({ ...blank, wavesCleared: 8, perfects: 10, trips: 10, tagsLanded: 5, tagsMissed: 5, dodges: 5, hitsTaken: 5 })).toBe(50);
   });
 });
 
@@ -129,7 +138,7 @@ describe('engine', () => {
   it('fake hazards never deal damage', () => {
     const e = newRun();
     const hp = e.bros.red.hp;
-    e.hazards = [{ x: 0, y: 300, w: 400, h: 200, speed: 1, arrive: 1, warn: 0, fake: true, hit: [] }];
+    e.hazards = [{ x: 0, y: 300, w: 400, h: 200, speed: 1, arrive: 1, warn: 0, fake: true, hit: [], cleared: [] }];
     e.phase = 'ENEMY_TURN';
     run(e, 5);
     expect(e.bros.red.hp).toBe(hp);
@@ -221,7 +230,7 @@ describe('tutorial', () => {
       e.action('BASIC'); e.input(e.turn);
     }
     expect(e.gameState).toBe('TUTORIAL_DONE');
-    expect(e.meta.tutorialDone).toBe(true);
+    expect(e.progress.tutorialDone).toBe(true);
 
     e.startRun();
     expect(e.tutorial).toBeNull();

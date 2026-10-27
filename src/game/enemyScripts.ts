@@ -45,7 +45,8 @@ export const buildPattern = (pattern: PatternId, start: number): Hazard[] =>
       arrive: start + hit.beats + 0.5,
       warn: start,
       fake: !!hit.fake,
-      hit: []
+      hit: [],
+      cleared: []
     };
   });
 

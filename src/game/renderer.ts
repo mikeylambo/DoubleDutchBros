@@ -19,12 +19,15 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
 
   ctx.save();
   // Camera shake and punch-zoom happen around the action, in screen space.
-  const sx = (Math.random() - 0.5) * e.camera.shake * v.scale;
-  const sy = (Math.random() - 0.5) * e.camera.shake * v.scale;
+  // Accessibility: shake and camera motion scale with the player's settings.
+  const motion = e.settings.reducedMotion ? 0 : 1;
+  const shake = e.camera.shake * e.settings.screenShake * motion;
+  const sx = (Math.random() - 0.5) * shake * v.scale;
+  const sy = (Math.random() - 0.5) * shake * v.scale;
   const cy = v.groundY - 120 * v.scale;
   // A tiny camera push on every bar's downbeat keeps the whole frame breathing with the music.
   const bar = ((e.beat % 4) + 4) % 4 < 1 ? pulse(e.beat) : 0;
-  const zoom = e.camera.zoom * (1 + 0.012 * bar);
+  const zoom = 1 + ((e.camera.zoom - 1) + 0.012 * bar) * motion;
   ctx.translate(v.w / 2 + sx, cy + sy);
   ctx.scale(zoom, zoom);
   ctx.translate(-v.w / 2, -cy);
@@ -315,9 +318,10 @@ const drawParticles = (ctx: CanvasRenderingContext2D, e: Engine) => {
 };
 
 const drawFlash = (ctx: CanvasRenderingContext2D, e: Engine, v: View) => {
-  if (e.flash < 0.02) return;
+  const flash = e.flash * e.settings.flashes;
+  if (flash < 0.02) return;
   ctx.save();
-  ctx.globalAlpha = e.flash * 0.6;
+  ctx.globalAlpha = flash * 0.6;
   ctx.fillStyle = e.flashColor;
   ctx.fillRect(0, 0, v.w, v.h);
   ctx.restore();

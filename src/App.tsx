@@ -1,28 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Engine, type MenuAction } from './game/engine';
-import { audio } from './game/audio';
+import type { Engine } from './game/engine';
+import { bootPlatform, type Platform } from './platform';
+import { attachInput } from './platform/input';
 import { Controller, Hud, PadButton, Playfield, SyncBar } from './ui/Battle';
 import { GameOver, LevelUp, Pause, Shop, Title, TutorialDone, WaveClear } from './ui/Overlays';
 import { EngineContext, useEngine } from './ui/useEngine';
-
-const MENU_KEYS: Record<string, MenuAction> = { Digit1: 'BASIC', Digit2: 'TECH', Digit3: 'ITEMS', Digit4: 'ULT', Backspace: 'BACK' };
-
-const useKeyboard = (engine: Engine) => {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.repeat) return;
-      const at = audio.fromEventTime(e.timeStamp);
-      if (e.code === 'KeyF' || e.code === 'ArrowLeft') engine.input('BLUE', at);
-      else if (e.code === 'KeyJ' || e.code === 'ArrowRight') engine.input('RED', at);
-      else if (e.code === 'Escape') engine.gameState === 'PAUSE' ? engine.resume() : engine.pause();
-      else if (MENU_KEYS[e.code]) engine.action(MENU_KEYS[e.code]);
-      else return;
-      e.preventDefault();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [engine]);
-};
+import { PlatformContext } from './ui/usePlatform';
+import { Toasts } from './ui/Toasts';
 
 /** Phones held sideways: short screen, thumbs on the sides. */
 const useHandheldLandscape = () => {
@@ -68,14 +52,30 @@ const Game = () => {
 };
 
 const App = () => {
-  const [engine] = useState(() => new Engine());
-  // Dev-only handle for debugging and automated play tests.
-  if (import.meta.env.DEV) (window as unknown as { __engine: Engine }).__engine = engine;
-  useKeyboard(engine);
+  const [platform, setPlatform] = useState<Platform | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let detach = () => {};
+    let cancelled = false;
+    bootPlatform()
+      .then((p) => {
+        if (cancelled) return;
+        // Dev-only handle for debugging and automated play tests.
+        if (import.meta.env.DEV) (window as unknown as { __engine: Engine }).__engine = p.engine;
+        detach = attachInput(p.engine);
+        setPlatform(p);
+      })
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+    return () => { cancelled = true; detach(); };
+  }, []);
+  if (error) return <div className="fixed inset-0 flex items-center justify-center text-white/60 p-8 text-center">Couldn't start: {error}</div>;
+  if (!platform) return <div className="fixed inset-0 bg-[#020205]" />;
   return (
-    <EngineContext.Provider value={engine}>
-      <div className="text-white font-sans"><Game /></div>
-    </EngineContext.Provider>
+    <PlatformContext.Provider value={platform}>
+      <EngineContext.Provider value={platform.engine}>
+        <div className="text-white font-sans"><Game /><Toasts /></div>
+      </EngineContext.Provider>
+    </PlatformContext.Provider>
   );
 };
 

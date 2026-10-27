@@ -1,22 +1,44 @@
-// Meta progression that survives between runs. Every access is guarded: storage can be
-// unavailable (private mode, blocked site data) and the game must still run.
+// Durable player data shapes. The engine only holds these; the platform layer
+// (src/platform) owns where and how they are stored.
 
-export interface MetaSave { version: 1; legacy: number; bestWave: number; runs: number; latencyMs: number; tutorialDone: boolean; musicVolume: number; sfxVolume: number }
+/** Progress that survives between runs. */
+export interface Progress { legacy: number; bestWave: number; runs: number; tutorialDone: boolean }
 
-const KEY = 'ddb.meta.v1';
-const fresh = (): MetaSave => ({ version: 1, legacy: 0, bestWave: 0, runs: 0, latencyMs: 0, tutorialDone: false, musicVolume: 0.8, sfxVolume: 0.8 });
+/** Player preferences, including accessibility. */
+export interface GameSettings {
+  musicVolume: number;
+  sfxVolume: number;
+  /** Rhythm calibration in ms (+ = player hears late, e.g. Bluetooth). */
+  latencyMs: number;
+  reducedMotion: boolean;
+  /** 0..1 multiplier for camera shake. */
+  screenShake: number;
+  /** 0..1 multiplier for screen flashes. */
+  flashes: number;
+  vibration: boolean;
+}
 
-export const loadMeta = (): MetaSave => {
+export const freshProgress = (): Progress => ({ legacy: 0, bestWave: 0, runs: 0, tutorialDone: false });
+
+export const defaultSettings = (): GameSettings => ({
+  musicVolume: 0.8, sfxVolume: 0.8, latencyMs: 0, reducedMotion: false, screenShake: 1, flashes: 1, vibration: true
+});
+
+const LEGACY_KEY = 'ddb.meta.v1';
+
+/** Reads the pre-shell save (one localStorage blob) so existing players keep their progress. */
+export const readLegacyMeta = (): { progress: Progress; settings: Partial<GameSettings> } | null => {
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return fresh();
-    const parsed = JSON.parse(raw) as Partial<MetaSave>;
-    return { ...fresh(), ...parsed, version: 1 };
+    const raw = localStorage.getItem(LEGACY_KEY);
+    if (!raw) return null;
+    const m = JSON.parse(raw) as Partial<Progress & GameSettings>;
+    return {
+      progress: { ...freshProgress(), legacy: m.legacy ?? 0, bestWave: m.bestWave ?? 0, runs: m.runs ?? 0, tutorialDone: !!m.tutorialDone },
+      settings: { musicVolume: m.musicVolume, sfxVolume: m.sfxVolume, latencyMs: m.latencyMs }
+    };
   } catch {
-    return fresh();
+    return null;
   }
 };
 
-export const saveMeta = (meta: MetaSave) => {
-  try { localStorage.setItem(KEY, JSON.stringify(meta)); } catch { /* storage unavailable: keep playing */ }
-};
+export const clearLegacyMeta = () => { try { localStorage.removeItem(LEGACY_KEY); } catch { /* unavailable */ } };

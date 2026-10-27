@@ -7,6 +7,8 @@ class AudioClock {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   muted = false;
+  /** Player setting; off silences all vibration. */
+  hapticsEnabled = true;
 
   /** Must be called from a user gesture (browsers block audio until then). */
   unlock() {
@@ -42,7 +44,7 @@ class AudioClock {
 
   /** Short haptic tap where supported (Android/Chrome). Silently ignored elsewhere. */
   buzz(ms: number) {
-    if (this.muted || typeof navigator === 'undefined' || !navigator.vibrate) return;
+    if (!this.hapticsEnabled || typeof navigator === 'undefined' || !navigator.vibrate) return;
     try { navigator.vibrate(ms); } catch { /* unsupported */ }
   }
 

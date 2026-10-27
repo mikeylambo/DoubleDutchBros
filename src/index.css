@@ -9,3 +9,15 @@ html, body, #root { height: 100%; overscroll-behavior: none; -webkit-user-select
   50% { text-shadow: 0 0 20px currentColor, 0 0 40px currentColor; }
 }
 .neon-text { animation: neon-pulse 1.5s ease-in-out infinite; }
+
+/* Gamepad / arrow-key menu focus */
+[data-focused] { outline: 3px solid #22d3ee; outline-offset: 3px; box-shadow: 0 0 24px rgba(34, 211, 238, 0.6); }
+
+@keyframes toast-in { from { opacity: 0; transform: translateY(-12px) scale(0.96); } to { opacity: 1; transform: none; } }
+.toast-in { animation: toast-in 220ms ease-out; }
+@keyframes rank-in { 0% { opacity: 0; transform: scale(2.2) rotate(-8deg); } 60% { opacity: 1; transform: scale(0.92); } 100% { transform: scale(1); } }
+.rank-in { animation: rank-in 520ms cubic-bezier(.2,.9,.3,1.2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-in, .rank-in, .neon-text, .animate-pulse { animation: none !important; }
+}

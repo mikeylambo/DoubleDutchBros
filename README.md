@@ -9,7 +9,10 @@ npm test           # engine + combat tests
 npm run build      # typecheck + production build
 ```
 
-Controls: tap / click, or **F / ←** = B (Blue), **J / →** = A (Red), **1–4** menu, **Esc** pause.
+Controls: tap / click, or **J / →** = A (Hop), **F / ←** = B (Skip), **1–4** menu, **Esc** pause, **↑/↓ + Enter** menus.
+Gamepad: A = Hop, B = Skip, Start = pause; in menus the D-pad moves and A/B confirm/back.
+
+Built on [SLU Web Shell](https://github.com/mikeylambo/Web-Game-Shell-v1.02), pinned by commit in `package.json`.
 
 ## Layout
 
@@ -25,6 +28,7 @@ Controls: tap / click, or **F / ←** = B (Blue), **J / →** = A (Red), **1–4
 | `src/game/sprites.ts` | Procedural art: rabbits, enemies, backdrop (fallback for missing sprites) |
 | `src/game/audio.ts` | Web Audio clock + synthesized SFX |
 | `src/game/save.ts` | Persistent meta progression (localStorage) |
+| `src/platform/` | SLU Web Shell wiring: saves, settings, input (keyboard/touch/gamepad), achievements, bestiary, results, daily seeds, PWA |
 | `src/ui/` | React screens; they read engine snapshots and send commands |
 
 Art and audio asset rules: [`docs/ART_SPEC.md`](docs/ART_SPEC.md).
