@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { LeaderboardEntry } from '@slu/web-shell';
 import { GEAR_DATA, GEAR_SLOTS, ITEM_DATA, PERKS_DATA, type BroKey, type GearSlot, type ItemId } from '../data/config';
 import { calculateDerived } from '../game/stats';
+import { MUTATORS } from '../game/runmods';
 import { TitleRabbits } from './TitleRabbits';
 import { useEngine } from './useEngine';
 import { usePlatform, useRunResult } from './usePlatform';
@@ -177,7 +178,10 @@ export const Shop = () => {
     <div data-layer="overlay" className="fixed inset-0 bg-[#050508] z-[100] flex flex-col">
       <div className="shrink-0 pt-8 pb-4 flex flex-col items-center">
         <div className="text-3xl font-black italic mb-2 uppercase tracking-tighter">Shop</div>
-        <div className="text-xs font-bold text-yellow-400 mb-6 tracking-widest uppercase">{snap.rp} RP</div>
+        <div className="text-xs font-bold text-yellow-400 mb-4 tracking-widest uppercase">{snap.rp} RP</div>
+        {snap.rigAlert && (
+          <div className="mb-5 mx-4 max-w-xl px-4 py-2 rounded-xl border border-amber-400/50 bg-amber-400/10 text-amber-200 text-xs font-bold text-center">⚠ {snap.rigAlert}</div>
+        )}
         <div className="flex gap-2 md:gap-4 w-full max-w-4xl px-4">
           {(['supplies', 'red', 'blue'] as const).map((t) => (
             <button data-nav key={t} onPointerDown={(e) => { e.preventDefault(); setTab(t); }} className={`flex-1 py-3 md:py-4 rounded-2xl font-black text-sm md:text-xl uppercase ${tab === t ? 'bg-white text-black' : 'bg-white/10 text-white/40'}`}>
@@ -224,6 +228,32 @@ export const Shop = () => {
         <BigButton onPress={() => engine.nextWave()} className="bg-cyan-500 text-white shadow-[0_0_60px_rgba(6,182,212,0.6)]">Next Wave</BigButton>
       </div>
     </div>
+  );
+};
+
+/** After a boss: pick one Ascension mutator. Each one raises the score multiplier. */
+export const MutatorPick = () => {
+  const { engine, snap } = useEngine();
+  if (!snap.mutatorChoices) return null;
+  return (
+    <Screen className="bg-[#0b0418] justify-center z-[125]">
+      <div className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter text-center mb-2">Ascend</div>
+      <div className="text-xs font-bold text-white/50 uppercase tracking-widest mb-8">Score ×{snap.mutators.reduce((m, id) => m * MUTATORS[id].score, 1).toFixed(2)}</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl">
+        {snap.mutatorChoices.map((id) => {
+          const m = MUTATORS[id];
+          return (
+            <button data-nav key={id} onPointerDown={(e) => { e.preventDefault(); engine.chooseMutator(id); }} className="p-6 rounded-[2rem] bg-black/40 border-2 border-fuchsia-400/30 flex flex-col items-center text-center active:scale-95 hover:bg-white/5">
+              <div className="text-5xl mb-2">{m.icon}</div>
+              <div className="text-2xl font-black uppercase">{m.name}</div>
+              <div className="mt-3 text-sm font-bold text-emerald-300">+ {m.blessing}</div>
+              <div className="mt-1 text-sm font-bold text-rose-300">− {m.curse}</div>
+              <div className="mt-3 text-xs font-black text-fuchsia-300">Score ×{m.score}</div>
+            </button>
+          );
+        })}
+      </div>
+    </Screen>
   );
 };
 
@@ -279,6 +309,8 @@ export const GameOver = () => {
           {stat('Tags landed', `${run.stats.tagsLanded} / ${run.stats.tagsLanded + run.stats.tagsMissed}`)}
           {stat('Dodges', `${run.stats.dodges} / ${run.stats.dodges + run.stats.hitsTaken}`)}
           {stat('Best combo', run.stats.maxCombo)}
+          {stat('Style', run.stats.stylePoints.toLocaleString())}
+          {run.mutators.length > 0 && stat('Mutators', run.mutators.map((m) => MUTATORS[m].icon).join(' '))}
         </div>
       )}
       {top.length > 0 && (
@@ -301,7 +333,7 @@ export const GameOver = () => {
 
 export const LevelUp = () => {
   const { engine, snap } = useEngine();
-  if (!snap.levelUp) return null;
+  if (!snap.levelUp || snap.mutatorChoices) return null;
   const b = snap.bros[snap.levelUp.bro];
   const milestone = (b.lvl + 1) % 5 === 0 && snap.levelUp.choices[0]?.kind === 'perk';
   return (

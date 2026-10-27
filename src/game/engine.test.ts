@@ -54,7 +54,7 @@ describe('jump judgment', () => {
 
 describe('run rank', () => {
   it('an instant loss cannot rank high; clean play does', () => {
-    const blank = { perfects: 0, trips: 0, tagsLanded: 0, tagsMissed: 0, dodges: 0, hitsTaken: 0, enemiesDefeated: 0, bossesDefeated: 0, damageDealt: 0, maxCombo: 0, wavesCleared: 0, ultsLanded: 0 };
+    const blank = { perfects: 0, trips: 0, tagsLanded: 0, tagsMissed: 0, dodges: 0, hitsTaken: 0, enemiesDefeated: 0, bossesDefeated: 0, damageDealt: 0, maxCombo: 0, wavesCleared: 0, ultsLanded: 0, stylePoints: 0 };
     expect(performanceOf(blank)).toBeLessThanOrEqual(50);
     expect(performanceOf({ ...blank, wavesCleared: 8, perfects: 30, tagsLanded: 12, dodges: 20 })).toBe(100);
     expect(performanceOf({ ...blank, wavesCleared: 8, perfects: 10, trips: 10, tagsLanded: 5, tagsMissed: 5, dodges: 5, hitsTaken: 5 })).toBe(50);
@@ -413,5 +413,37 @@ describe('third skills', () => {
     (e as unknown as { nextEnemyAttack: () => void }).nextEnemyAttack();
     expect(e.hazards.length).toBe(0);
     expect(en.staggered).toBe(false);
+  });
+});
+
+describe('run structure', () => {
+  it('offers mutators after a boss from wave 10, and they raise the score', () => {
+    const e = newRun();
+    e.wave = 10;
+    e.enemies.forEach((en) => (en.hp = 1));
+    e.action('BASIC'); e.input('RED');
+    runUntil(e, () => e.gameState === 'WIN');
+    expect(e.mutatorChoices?.length).toBe(3);
+    e.enterShop();
+    expect(e.gameState).toBe('WIN'); // must choose first
+    const pick = e.mutatorChoices![0];
+    e.chooseMutator(pick);
+    expect(e.mutators).toEqual([pick]);
+  });
+
+  it('swag rises with clean play, falls on hits, and its tier multiplies style points', async () => {
+    const { applySwag, swagTier } = await import('./runmods');
+    let s = 0, pts = 0;
+    for (let i = 0; i < 25; i++) { const r = applySwag(s, 'perfect'); s = r.swag; pts += r.points; }
+    expect(swagTier(s).label).toBe('SS');
+    expect(pts).toBeGreaterThan(25 * 30);
+    expect(applySwag(s, 'hit').swag).toBe(s - 15);
+  });
+
+  it('rig alert warns before special waves', async () => {
+    const { rigAlert } = await import('./runmods');
+    expect(rigAlert(10, 'KING')).toMatch(/Bouncer King/);
+    expect(rigAlert(8, 'BOSS')).toMatch(/Bouncer/);
+    expect(rigAlert(7, 'BOSS')).toBeNull();
   });
 });

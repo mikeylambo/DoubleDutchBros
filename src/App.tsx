@@ -3,7 +3,7 @@ import type { Engine } from './game/engine';
 import { bootPlatform, type Platform } from './platform';
 import { attachInput } from './platform/input';
 import { Controller, Hud, PadButton, Playfield, SyncBar } from './ui/Battle';
-import { GameOver, LevelUp, Pause, Shop, Title, TutorialDone, WaveClear } from './ui/Overlays';
+import { GameOver, LevelUp, MutatorPick, Pause, Shop, Title, TutorialDone, WaveClear } from './ui/Overlays';
 import { EngineContext, useEngine } from './ui/useEngine';
 import { PlatformContext } from './ui/usePlatform';
 import { Toasts } from './ui/Toasts';
@@ -43,7 +43,8 @@ const Game = () => {
       )}
       {snap.gameState === 'PAUSE' && <Pause />}
       {snap.gameState === 'SHOP' && <Shop />}
-      {snap.gameState === 'WIN' && !snap.levelUp && <WaveClear />}
+      {snap.gameState === 'WIN' && !snap.levelUp && !snap.mutatorChoices && <WaveClear />}
+      {snap.gameState === 'WIN' && <MutatorPick />}
       {snap.gameState === 'GAMEOVER' && <GameOver />}
       {snap.gameState === 'TUTORIAL_DONE' && <TutorialDone />}
       <LevelUp />

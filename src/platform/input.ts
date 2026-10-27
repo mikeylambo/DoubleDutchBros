@@ -101,7 +101,7 @@ export const dispatch = (engine: Engine, action: Action, at: number, pad = false
   if (action === 'hop') return engine.input('RED', at);
   if (action === 'skip') return engine.input('BLUE', at);
   const menu = MENU[action];
-  if (menu) engine.action(menu);
+  if (menu) engine.action(menu, at);
 };
 
 /** Wire keyboard (event-timed) and gamepads (polled) to the engine. Returns a detach function. */

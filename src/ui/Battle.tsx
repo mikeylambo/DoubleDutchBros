@@ -1,10 +1,27 @@
 import { useEffect, useRef } from 'react';
 import { ITEM_DATA, MOVE_REGISTRY, type BroId, type ItemId, type MoveId } from '../data/config';
 import { audio } from '../game/audio';
+import { MUTATORS } from '../game/runmods';
 import { draw } from '../game/renderer';
 import { computeView, screenToWorldX, type View } from '../game/view';
 import { calculateDerived } from '../game/stats';
 import { useEngine } from './useEngine';
+
+const SWAG_COLOR: Record<string, string> = { D: '#94a3b8', C: '#cbd5e1', B: '#60a5fa', A: '#4ade80', S: '#facc15', SS: '#f0abfc' };
+
+/** Live style rank: clean play raises it and multiplies style points. */
+const SwagMeter = ({ compact }: { compact: boolean }) => {
+  const { snap } = useEngine();
+  const color = SWAG_COLOR[snap.swagTier] ?? '#fff';
+  return (
+    <div className="flex items-center gap-2" aria-label={`Style ${snap.swagTier}`}>
+      <div className={`font-black italic leading-none ${compact ? 'text-xl' : 'text-3xl'}`} style={{ color, textShadow: `0 0 16px ${color}` }}>{snap.swagTier}</div>
+      <div className={`${compact ? 'w-10' : 'w-14'} h-1.5 rounded-full bg-white/10 overflow-hidden`}>
+        <div className="h-full transition-all duration-300" style={{ width: `${snap.swag}%`, backgroundColor: color }} />
+      </div>
+    </div>
+  );
+};
 
 export const Hud = ({ compact = false }: { compact?: boolean }) => {
   const { engine, snap } = useEngine();
@@ -27,10 +44,12 @@ export const Hud = ({ compact = false }: { compact?: boolean }) => {
           );
         })}
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        <SwagMeter compact={compact} />
         <div className="text-right hidden sm:block leading-none whitespace-nowrap">
           <div className="text-[10px] font-black text-cyan-400 uppercase italic">Wave {snap.wave}</div>
           <div className={`font-black italic mt-1 ${compact ? 'text-sm' : 'text-xl'}`}>{snap.rp} RP</div>
+          {snap.mutators.length > 0 && <div className="text-xs mt-1 tracking-tight" title="Active mutators">{snap.mutators.map((m) => MUTATORS[m].icon).join('')}</div>}
         </div>
         <button aria-label="Pause" onPointerDown={(e) => { e.preventDefault(); engine.pause(); }} className={`ml-4 ${compact ? 'w-8 h-8' : 'w-10 h-10 md:w-12 md:h-12'} bg-white/10 rounded-xl flex items-center justify-center active:scale-95 border border-white/20`}>⏸</button>
       </div>
@@ -125,10 +144,10 @@ export const ActionBar = () => {
       <div className="flex flex-col items-center w-full max-w-2xl">
         <div className="text-[10px] font-black text-cyan-400 mb-3 tracking-[0.8em] uppercase [@media(max-height:700px)]:hidden">[{snap.bros[turn === 'RED' ? 'red' : 'blue'].name} ready]</div>
         <div className="bg-black/90 p-2 md:p-3 rounded-[2rem] border border-white/10 flex gap-2 md:gap-4 w-full">
-          <button data-nav onPointerDown={() => engine.action('BASIC')} className={`${btn} bg-white text-black`}>Attack</button>
-          <button data-nav onPointerDown={() => engine.action('TECH')} className={`${btn} bg-purple-600 ${sync < 20 ? 'opacity-40 grayscale' : ''}`}>Skill</button>
+          <button data-nav onPointerDown={(e) => engine.action('BASIC', audio.fromEventTime(e.timeStamp))} className={`${btn} bg-white text-black`}>Attack</button>
+          <button data-nav onPointerDown={(e) => engine.action('TECH', audio.fromEventTime(e.timeStamp))} className={`${btn} bg-purple-600 ${sync < 20 ? 'opacity-40 grayscale' : ''}`}>Skill</button>
           <button data-nav onPointerDown={() => engine.action('ITEMS')} className={`${btn} bg-slate-800`}>Items</button>
-          <button data-nav onPointerDown={() => engine.action('ULT')} className={`${btn} ${sync >= 100 ? 'bg-yellow-400 text-black shadow-[0_0_30px_gold]' : 'bg-white/5 text-white/20'}`}>Ult</button>
+          <button data-nav onPointerDown={(e) => engine.action('ULT', audio.fromEventTime(e.timeStamp))} className={`${btn} ${sync >= 100 ? 'bg-yellow-400 text-black shadow-[0_0_30px_gold]' : 'bg-white/5 text-white/20'}`}>Ult</button>
         </div>
       </div>
     );
@@ -140,7 +159,7 @@ export const ActionBar = () => {
         {techs.map((id) => {
           const m = MOVE_REGISTRY[id];
           return (
-            <button data-nav key={id} onPointerDown={() => engine.action(id as 'TECH1')} className={`flex-1 p-4 bg-white/5 rounded-2xl flex flex-col items-center active:scale-95 text-center leading-none ${sync < m.cost ? 'opacity-40' : ''}`}>
+            <button data-nav key={id} onPointerDown={(e) => engine.action(id as 'TECH1', audio.fromEventTime(e.timeStamp))} className={`flex-1 p-4 bg-white/5 rounded-2xl flex flex-col items-center active:scale-95 text-center leading-none ${sync < m.cost ? 'opacity-40' : ''}`}>
               <span className="text-xl">{m.icon}</span>
               <div className="text-[10px] font-black uppercase text-yellow-400">{m.name}</div>
               <SyncCost cost={m.cost} />

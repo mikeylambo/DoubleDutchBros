@@ -9,7 +9,8 @@ import {
   type JumpJudgment
 } from './combat';
 import { PATTERN_CALL, SHOCK_WINDOW, SILENCE, buildPattern, hazardDone, hazardX, pickPattern } from './enemyScripts';
-import { AFFIXES, attackersPerTurn, composeWave } from './encounters';
+import { AFFIXES, attackersPerTurn, composeWave, type AffixId } from './encounters';
+import { MUTATOR_IDS, applySwag, mutatorScore, offersMutator, rigAlert, swagTier, type MutatorId, type SwagEvent } from './runmods';
 import { music, type BeatClock } from './music';
 import { defaultSettings, freshProgress, type GameSettings, type Progress } from './save';
 import { calculateDerived, makeBro } from './stats';
@@ -45,12 +46,12 @@ export interface RngStreams { waves: () => number; combat: () => number; rewards
 
 const freshRunStats = (): RunStats => ({
   perfects: 0, trips: 0, tagsLanded: 0, tagsMissed: 0, dodges: 0, hitsTaken: 0, enemiesDefeated: 0,
-  bossesDefeated: 0, damageDealt: 0, maxCombo: 0, wavesCleared: 0, ultsLanded: 0
+  bossesDefeated: 0, damageDealt: 0, maxCombo: 0, wavesCleared: 0, ultsLanded: 0, stylePoints: 0
 });
 
 /** Score for leaderboards: progress first, then how well it was played. */
 export const scoreRun = (s: RunStats) =>
-  s.wavesCleared * 1000 + s.damageDealt + s.maxCombo * 100 + s.perfects * 25 + s.dodges * 20 + s.bossesDefeated * 2500;
+  s.wavesCleared * 1000 + s.damageDealt + s.maxCombo * 100 + s.perfects * 25 + s.dodges * 20 + s.bossesDefeated * 2500 + s.stylePoints;
 
 /** 0..100 execution quality (timing, tags, dodges); feeds the letter rank. */
 export const performanceOf = (s: RunStats) => {
@@ -108,6 +109,15 @@ export class Engine {
   moveType: MoveId = 'BASIC';
   /** Hop's Heat stacks: perfect jumps build it, a trip or a hit clears it. */
   heat = 0;
+  /** Live style meter 0..100; its tier multiplies style points. */
+  swag = 0;
+  /** Ascension mutators active this run. */
+  mutators: MutatorId[] = [];
+  /** Offered after a boss from wave 10; null when no choice is pending. */
+  mutatorChoices: MutatorId[] | null = null;
+  /** Set when a move was chosen on the beat: its first hit deals +10%. */
+  private onBeatBonus = false;
+  private actionTime = 0;
   targetIdx = 0;
   comboCount = 0;
   activeAttacker: BroId | null = null;
@@ -223,6 +233,9 @@ export class Engine {
     this.runStats = freshRunStats();
     this.lastRun = null;
     this.perfectStreak = 0;
+    this.swag = 0;
+    this.mutators = [];
+    this.mutatorChoices = null;
     this.emit({ type: 'run.start', mode: this.mode, seedKey: this.seedKey });
     this.startMusic();
     this.progress.runs += 1;
@@ -273,9 +286,10 @@ export class Engine {
   resume() { if (this.gameState === 'PAUSE') { this.gameState = 'BATTLE'; music.duck(false); this.touch(); } }
 
 
-  action(a: MenuAction) {
+  action(a: MenuAction, atTime = audio.now()) {
     if (this.gameState !== 'BATTLE') return;
     audio.unlock();
+    this.actionTime = atTime;
     const p = this.phase;
     if (a === 'BACK') {
       if (p === 'TECH_SELECT' || p === 'ITEMS' || p === 'TARGET' || p === 'ITEMS_TARGETING') { this.activeItem = null; this.setPhase('MENU'); }
@@ -291,6 +305,13 @@ export class Engine {
     if (this.sync < move.cost) return;
     this.moveType = a;
     audio.play('ui');
+    // Choosing a move right on the beat earns a small damage bonus.
+    const b = this.heardBeat(this.actionTime);
+    if (!this.tutorial && Math.abs(b - Math.round(b)) < 0.15) {
+      this.onBeatBonus = true;
+      this.addSwag('onbeat');
+      this.text(this.body[keyOf(this.turn)].x + 16, GROUND_Y - 160, 'ON BEAT', '#67e8f9', 0.7);
+    }
     this.setPhase('TARGET');
   }
 
@@ -339,6 +360,7 @@ export class Engine {
         if (judgment === 'PERFECT') {
           this.windup++;
           this.runStats.perfects++;
+          this.addSwag('perfect');
           this.emit({ type: 'jump.perfect', streak: ++this.perfectStreak });
           if (btn === 'RED') {
             if (this.heat < HOP_HEAT_MAX) this.text(body.x + 16, GROUND_Y - 150, `HEAT ${this.heat + 1}`, '#fb923c', 0.7);
@@ -355,6 +377,7 @@ export class Engine {
         } else {
           this.missLocked = true;
           this.runStats.trips++;
+          this.addSwag('trip');
           this.perfectStreak = 0;
           if (btn === 'RED') this.heat = 0;
           this.emit({ type: 'jump.trip' });
@@ -369,7 +392,7 @@ export class Engine {
             this.text(body.x + 16, GROUND_Y - 140, 'TRY AGAIN!', '#67e8f9', 0.8);
           } else {
             const trip = (bro.perks.includes('trip_shield') ? 15 : 30) * (btn === 'RED' ? HOP_TRIP_MULT : 1);
-            this.damageBro(key, Math.round(trip));
+            this.damageBro(key, this.mutators.includes('GLASS_WIRE') ? bro.hp : Math.round(trip));
             this.missTimer = 48; // ~0.8s, ticks with the sim so pausing can't desync it
           }
         }
@@ -379,10 +402,12 @@ export class Engine {
         const needed = other(this.activeAttacker!);
         if (btn !== needed || bro.hp <= 0 || this.actionSuccess) return;
         const progress = 1 - this.impactTimer / this.impactTotal;
-        const [from, to] = TAG_WINDOW[needed];
+        const widen = this.mutators.includes('ECHO_CHAMBER') ? 0.1 : 0;
+        const [from, to] = [TAG_WINDOW[needed][0] - widen, TAG_WINDOW[needed][1] + widen];
         if (progress > from && progress < to) {
           this.actionSuccess = true;
           this.runStats.tagsLanded++;
+          this.addSwag('tag');
           this.emit({ type: 'tag.sync', combo: this.comboCount + 1 });
           this.camera.shake = 12;
           this.flash = 0.25; this.flashColor = '#00d2ff';
@@ -417,7 +442,23 @@ export class Engine {
     this.touch();
   }
 
-  enterShop() { if (this.gameState === 'WIN' && this.levelQueue.length === 0) { this.gameState = 'SHOP'; this.touch(); } }
+  enterShop() { if (this.gameState === 'WIN' && this.levelQueue.length === 0 && !this.mutatorChoices) { this.gameState = 'SHOP'; this.touch(); } }
+
+  chooseMutator(id: MutatorId) {
+    if (!this.mutatorChoices?.includes(id)) return;
+    this.mutators.push(id);
+    this.mutatorChoices = null;
+    audio.play('perfect');
+    this.touch();
+  }
+
+  private addSwag(e: SwagEvent) {
+    const r = applySwag(this.swag, e);
+    const before = swagTier(this.swag).label;
+    this.swag = r.swag;
+    this.runStats.stylePoints += r.points;
+    if (swagTier(this.swag).label !== before) this.touch();
+  }
 
   nextWave() {
     if (this.gameState !== 'SHOP') return;
@@ -502,6 +543,9 @@ export class Engine {
         ? tutorialHint(this.tutorial, this.phase, this.turn, (id) => this.bros[keyOf(id)].name,
             this.windupLimit() - this.windup)
         : null,
+      swag: this.swag, swagTier: swagTier(this.swag).label, mutators: [...this.mutators],
+      mutatorChoices: this.mutatorChoices ? [...this.mutatorChoices] : null,
+      rigAlert: this.gameState === 'SHOP' ? rigAlert(this.wave + 1, this.bossFor(this.wave + 1)) : null,
       levelUp: this.levelQueue.length && this.levelChoices.length ? { bro: this.levelQueue[0], choices: this.levelChoices } : null
     };
   }
@@ -547,7 +591,9 @@ export class Engine {
   /** Perfect jumps needed to launch the current skill. A living Rope-Biter adds one. */
   windupLimit() {
     const base = MOVE_REGISTRY[this.moveType].limit?.(this.turn) ?? 3;
-    return base + (this.enemies.some((e) => e.type === 'RAT' && e.hp > 0) ? 1 : 0);
+    const rat = this.enemies.some((e) => e.type === 'RAT' && e.hp > 0) ? 1 : 0;
+    const heavy = this.mutators.includes('HEAVY_ROPE') && this.moveType !== 'BASIC' && this.moveType !== 'ULT' ? 1 : 0;
+    return base + rat + heavy;
   }
 
   /** The boss for a boss wave. */
@@ -557,6 +603,21 @@ export class Engine {
     if (fixed[wave]) return fixed[wave];
     const rotation: EnemyTypeId[] = wave > 50 ? ['BOSS', 'KING', 'GLITCH', 'GIGA_GLITCH'] : ['BOSS', 'KING', 'GLITCH'];
     return rotation[(wave / 5) % rotation.length];
+  }
+
+  /** Mixtape mutator: a random perk for a random rabbit, and a random elite, every wave. */
+  private applyMixtape() {
+    const keys = (['red', 'blue'] as BroKey[]).filter((k) => this.bros[k].hp > 0);
+    const k = keys[Math.floor(this.rng.rewards() * keys.length)];
+    const perk = PERKS_DATA.find((p) => k && !this.bros[k].perks.includes(p.id as PerkId));
+    if (k && perk) { this.bros[k].perks.push(perk.id as PerkId); this.text(this.homes[k] + 16, GROUND_Y - 150, perk.name.toUpperCase(), '#facc15', 0.8); }
+    const targets = this.enemies.filter((e) => !e.isBoss && !e.affix && e.type !== 'MIMIC');
+    const t = targets[Math.floor(this.rng.waves() * targets.length)];
+    if (t) {
+      const affixes = Object.keys(AFFIXES) as AffixId[];
+      t.affix = affixes[Math.floor(this.rng.waves() * affixes.length)];
+      t.shield = t.affix === 'SHIELDED';
+    }
   }
 
   /** Swap Hop and Skip's spots on the court (Glitch bosses). Buttons stay the same. */
@@ -596,6 +657,7 @@ export class Engine {
     this.comboCount = 0;
     this.waveHurt = false;
     this.waveDodgeMark = this.runStats.dodges;
+    if (this.mutators.includes('MIXTAPE')) this.applyMixtape();
     for (const en of this.enemies) this.emit({ type: 'enemy.seen', enemy: en.type });
     for (const en of this.enemies) {
       if (en.affix) this.text(en.x + 20, GROUND_Y + en.y - 120, AFFIXES[en.affix].name.toUpperCase(), AFFIXES[en.affix].color, 0.9);
@@ -606,6 +668,7 @@ export class Engine {
 
   private resetTempo() {
     this.ropeRate = 1; this.tightness = 0; this.windup = 0; this.actionSuccess = false; this.missLocked = false; this.missTimer = 0; this.tripRecover = 0;
+    this.onBeatBonus = false;
     this.moveType = 'BASIC'; this.activeAttacker = null; this.hazards = []; this.expectedTap = null; this.activeItem = null;
     this.touch();
   }
@@ -708,9 +771,9 @@ export class Engine {
     const pattern = this.tutorial ? 'WAVE' : pickPattern(this.patternsFor(enemy), this.rng.waves);
     const crowBuff = enemy.type !== 'CROW' && this.enemies.some((e) => e.type === 'CROW' && e.hp > 0);
     // Attacks start on a whole beat with one beat of breathing room (none if Hasty).
-    const start = Math.ceil(this.beat) + (enemy.affix === 'HASTY' ? 0 : 1);
+    const start = Math.ceil(this.beat) + (enemy.affix === 'HASTY' || this.mutators.includes('RUSH_HOUR') ? 0 : 1);
     // Remixed and late bosses echo their attacks a bar later.
-    const echo = enemy.affix === 'ECHO' || (enemy.isBoss && enemy.phase >= 2 && (this.wave >= 20 || enemy.type === 'GIGA_GLITCH'));
+    const echo = enemy.affix === 'ECHO' || this.mutators.includes('ECHO_CHAMBER') || (enemy.isBoss && enemy.phase >= 2 && (this.wave >= 20 || enemy.type === 'GIGA_GLITCH'));
     this.hazards = buildPattern(pattern, start, { mirror: enemy.affix === 'MIRRORED', echo, extra: crowBuff });
     const silence = SILENCE[pattern];
     this.silence = silence ? [start + silence[0], start + silence[1]] : null;
@@ -768,7 +831,8 @@ export class Engine {
     music.duck(true);
     this.lastRun = {
       mode: this.mode, seedKey: this.seedKey, wave: this.wave, stats: { ...this.runStats },
-      score: scoreRun(this.runStats), performance: performanceOf(this.runStats)
+      score: Math.round(scoreRun(this.runStats) * mutatorScore(this.mutators)), performance: performanceOf(this.runStats),
+      mutators: [...this.mutators]
     };
     this.emit({ type: 'run.end', summary: this.lastRun });
     this.gameState = 'GAMEOVER';
@@ -781,7 +845,13 @@ export class Engine {
     this.runStats.wavesCleared++;
     this.emit({ type: 'wave.clear', wave: this.wave, flawless: !this.waveHurt && this.runStats.dodges > this.waveDodgeMark });
     const hasRpBoost = this.bros.red.perks.includes('rp_boost') || this.bros.blue.perks.includes('rp_boost');
-    this.rp += Math.round(waveRp(this.wave) * (hasRpBoost ? 1.25 : 1));
+    this.rp += Math.round(waveRp(this.wave) * (hasRpBoost ? 1.25 : 1) * (this.mutators.includes('SPOTLIGHT') ? 2 : 1));
+    if (offersMutator(this.wave)) {
+      const pool = MUTATOR_IDS.filter((m) => !this.mutators.includes(m));
+      const shuffled = pool.map((m) => [this.rng.rewards(), m] as const).sort((x, y) => x[0] - y[0]).map(([, m]) => m);
+      this.mutatorChoices = shuffled.slice(0, 3);
+      if (!this.mutatorChoices.length) this.mutatorChoices = null;
+    }
     this.progress.legacy += this.wave * 10;
     this.progress.bestWave = Math.max(this.progress.bestWave, this.wave);
     this.persistProgress();
@@ -898,6 +968,10 @@ export class Engine {
     const move: MoveId = this.comboCount === 0 ? this.moveType : 'BASIC';
     const hit = resolveHit({ move, attacker: this.activeAttacker, stats, perks: bro.perks, comboCount: this.comboCount, targetAerial: aerial, roll: this.rng.combat(), heat: this.activeAttacker === 'RED' ? this.heat : 0 });
 
+    // Run modifiers on the raw hit, before enemy defenses.
+    if (this.mutators.includes('GLASS_WIRE')) hit.dmg *= 2;
+    if (this.mutators.includes('HEAVY_ROPE') && move !== 'BASIC' && move !== 'ULT') hit.dmg = Math.round(hit.dmg * 1.4);
+    if (this.onBeatBonus) { hit.dmg = Math.round(hit.dmg * 1.1); this.onBeatBonus = false; }
     const def = applyDefenses(hit.dmg, move, hit.crit, target.affix, target.shield);
     hit.dmg = def.dmg;
     if (def.shieldBroken) { target.shield = false; this.text(target.x + 20, GROUND_Y + target.y - 150, 'SHIELD BREAK!', '#67e8f9', 1.2); }
@@ -920,6 +994,7 @@ export class Engine {
     if (move === 'ULT') { this.flash = 0.8; this.flashColor = '#ffffff'; }
     if (target.hp === 0) {
       this.runStats.enemiesDefeated++;
+      this.addSwag('ko');
       if (target.isBoss) this.runStats.bossesDefeated++;
       this.emit({ type: 'enemy.ko', enemy: target.type, boss: target.isBoss });
       audio.play('ko');
@@ -1015,7 +1090,7 @@ export class Engine {
           // Shockwave: anyone off the ground during its window is hit; staying down is a dodge.
           const passed = this.beat > h.arrive + SHOCK_WINDOW;
           if (passed) {
-            if (!h.cleared.includes(k)) { h.cleared.push(k); this.runStats.dodges++; }
+            if (!h.cleared.includes(k)) { h.cleared.push(k); this.runStats.dodges++; this.addSwag('dodge'); }
             return;
           }
           struck = Math.abs(this.beat - h.arrive) <= SHOCK_WINDOW && b.y < -8;
@@ -1023,7 +1098,7 @@ export class Engine {
           const passed = h.dir === 1 ? h.x > b.x + 32 : h.x + h.w < b.x;
           if (passed) {
             // The hit has passed this bro untouched: a dodge.
-            if (!h.cleared.includes(k)) { h.cleared.push(k); this.runStats.dodges++; }
+            if (!h.cleared.includes(k)) { h.cleared.push(k); this.runStats.dodges++; this.addSwag('dodge'); }
             return;
           }
           const top = GROUND_Y + b.y - 68, bottom = GROUND_Y + b.y;
@@ -1033,9 +1108,10 @@ export class Engine {
           if (k === 'red') this.heat = 0;
           h.hit.push(k);
           this.runStats.hitsTaken++;
+          this.addSwag('hit');
           this.waveHurt = true;
           this.emit({ type: 'bro.hurt' });
-          this.damageBro(k, enemy?.dmg ?? 15);
+          this.damageBro(k, (enemy?.dmg ?? 15) * (this.mutators.includes('SPOTLIGHT') ? 2 : 1));
           if (enemy?.affix === 'SYNC_THIEF' || enemy?.type === 'GIGA_GLITCH') { this.sync = Math.max(0, this.sync - 15); this.text(b.x, GROUND_Y - 110, '-15 SYNC', '#c084fc', 0.9); }
           this.camera.shake = 25;
           this.flash = 0.3; this.flashColor = '#ef4444';

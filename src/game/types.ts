@@ -1,4 +1,5 @@
 import type { AffixId } from './encounters';
+import type { MutatorId } from './runmods';
 import type { BroKey, EnemyTypeId, GearSlot, ItemId, MoveId, PatternId, PerkId, StatKey, BroId } from '../data/config';
 
 export type Phase =
@@ -103,6 +104,8 @@ export interface RunStats {
   perfects: number; trips: number; tagsLanded: number; tagsMissed: number;
   dodges: number; hitsTaken: number; enemiesDefeated: number; bossesDefeated: number;
   damageDealt: number; maxCombo: number; wavesCleared: number; ultsLanded: number;
+  /** Style points earned from the Swag meter. */
+  stylePoints: number;
 }
 
 export interface RunSummary {
@@ -114,6 +117,7 @@ export interface RunSummary {
   /** 0..100 execution quality: timing, tags, dodges. */
   performance: number;
   stats: RunStats;
+  mutators: MutatorId[];
 }
 
 export interface Snapshot {
@@ -135,5 +139,10 @@ export interface Snapshot {
   levelUp: { bro: BroKey; choices: LevelChoice[] } | null;
   moveType: MoveId;
   tutorialHint: string | null;
+  swag: number;
+  swagTier: string;
+  mutators: MutatorId[];
+  mutatorChoices: MutatorId[] | null;
+  rigAlert: string | null;
   tutorialDone: boolean;
 }
