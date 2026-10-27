@@ -76,3 +76,13 @@ export const judgeJump = (angle: number, threshold: number): JumpJudgment => {
 
 /** |sin(ropeAngle)| above this counts as a perfect jump. Higher Rhythm widens the window. */
 export const perfectThreshold = (rhythmStat: number) => Math.max(0.55, 0.85 - rhythmStat * 0.0025);
+
+/** Elite defenses. Shields block everything except skills, the Ult and crits (which break them). */
+export const applyDefenses = (dmg: number, move: MoveId, crit: boolean, affix: string | undefined, shieldUp: boolean) => {
+  if (affix === 'SHIELDED' && shieldUp) {
+    const breaks = move !== 'BASIC' || crit;
+    return breaks ? { dmg, shieldBroken: true, blocked: false } : { dmg: 0, shieldBroken: false, blocked: true };
+  }
+  if (affix === 'ARMORED' && move === 'BASIC') return { dmg: Math.max(1, Math.round(dmg * 0.5)), shieldBroken: false, blocked: false };
+  return { dmg, shieldBroken: false, blocked: false };
+};

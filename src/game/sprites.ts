@@ -244,6 +244,155 @@ export const drawEnemyShape = (ctx: CanvasRenderingContext2D, type: EnemyTypeId,
       ellipse(ctx, 2, 70, 5, 3); ellipse(ctx, 34, 70, 5, 3);
       break;
     }
+    case 'MOTH': {
+      // Wings glow brightest on the off-beat: its tell.
+      const off = Math.pow(1 - ((beat + 0.25) - Math.floor(beat + 0.25)), 3);
+      const flap = Math.sin(beat * Math.PI * 4) * 0.5;
+      ctx.globalAlpha = 0.55 + 0.45 * off;
+      for (const side of [-1, 1]) {
+        ctx.save(); ctx.translate(20, 50); ctx.scale(side, 1); ctx.rotate(-0.3 + flap * 0.4);
+        ellipse(ctx, 14, -6, 15, 10, -0.5); ellipse(ctx, 10, 8, 9, 7, 0.4);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#4a044e';
+      ellipse(ctx, 20, 52, 5, 13);
+      ctx.strokeStyle = '#f5d0fe'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(18, 40); ctx.quadraticCurveTo(12, 30, 8, 30); ctx.moveTo(22, 40); ctx.quadraticCurveTo(28, 30, 32, 30); ctx.stroke();
+      ctx.fillStyle = '#fef08a'; ellipse(ctx, 18, 45, 1.5, 1.5); ellipse(ctx, 22, 45, 1.5, 1.5);
+      break;
+    }
+    case 'PIGEON': {
+      const bob = (i: number) => Math.abs(Math.sin((beat + i * 0.5) * Math.PI)) * -3;
+      for (const [x, i] of [[8, 0], [30, 1]] as const) {
+        ctx.save(); ctx.translate(x, bob(i));
+        ctx.fillStyle = hurt ? '#ffffff' : color;
+        ellipse(ctx, 0, 56, 11, 9);           // body
+        ellipse(ctx, -6, 44, 6, 6);           // head
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#6ee7b7'; ellipse(ctx, -3, 50, 4, 3); // neck sheen
+        ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.moveTo(-11, 44); ctx.lineTo(-16, 45); ctx.lineTo(-11, 47); ctx.fill();
+        ctx.fillStyle = '#fff'; ellipse(ctx, -8, 43, 1.8, 1.8);
+        ctx.fillStyle = i === 0 ? '#ef4444' : '#3b82f6'; // tiny caps
+        ctx.beginPath(); ctx.arc(-6, 40, 5, Math.PI, 0); ctx.fill(); ctx.fillRect(-13, 39, 6, 2);
+        ctx.strokeStyle = '#f97316'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(-2, 64); ctx.lineTo(-2, 70); ctx.moveTo(3, 64); ctx.lineTo(3, 70); ctx.stroke();
+        ctx.restore();
+      }
+      break;
+    }
+    case 'RAT': {
+      ellipse(ctx, 22, 58, 16, 10);            // body
+      ellipse(ctx, 6, 54, 9, 7);               // head
+      ellipse(ctx, 8, 46, 4, 4); ellipse(ctx, 14, 47, 4, 4); // ears
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#fda4af'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(38, 60); ctx.quadraticCurveTo(50, 50, 46, 68); ctx.stroke(); // tail
+      ctx.fillStyle = '#0f172a'; ellipse(ctx, 3, 52, 1.6, 1.6);
+      ctx.fillStyle = '#fda4af'; ellipse(ctx, -3, 56, 2, 1.6);
+      // Frayed rope in its teeth.
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(-2, 58); ctx.quadraticCurveTo(-12, 66 + Math.sin(beat * Math.PI * 2) * 3, -20, 60); ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(-20, 60); ctx.lineTo(-24, 57); ctx.moveTo(-20, 60); ctx.lineTo(-25, 62); ctx.stroke();
+      break;
+    }
+    case 'CRAB': {
+      const side = Math.sin(beat * Math.PI) * 2;
+      ctx.translate(side, 0);
+      ellipse(ctx, 20, 60, 18, 10);            // shell
+      for (const lx of [6, 12, 28, 34]) { ctx.fillRect(lx, 64, 2, 7); }
+      ctx.beginPath(); ctx.arc(-2, 50, 7, 0, Math.PI * 2); ctx.fill();   // claws
+      ctx.beginPath(); ctx.arc(42, 50, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      // Boombox on its back, speakers thumping on the beat.
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(8, 34, 24, 15);
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(14, 31, 12, 3);
+      ctx.fillStyle = '#fb7185';
+      ellipse(ctx, 14, 42, 3.5 + pulse * 1.5, 3.5 + pulse * 1.5); ellipse(ctx, 26, 42, 3.5 + pulse * 1.5, 3.5 + pulse * 1.5);
+      ctx.fillStyle = '#fff'; ellipse(ctx, 14, 55, 2.5, 2.5); ellipse(ctx, 24, 55, 2.5, 2.5);
+      ctx.fillStyle = '#0f172a'; ellipse(ctx, 14, 55, 1.2, 1.2); ellipse(ctx, 24, 55, 1.2, 1.2);
+      break;
+    }
+    case 'CROW': {
+      const flap = Math.sin(beat * Math.PI * 2);
+      ctx.fillStyle = hurt ? '#ffffff' : '#1f2937';
+      ctx.beginPath(); ctx.moveTo(20, 52); ctx.quadraticCurveTo(-4, 40 + flap * 12, -14, 50 + flap * 6); ctx.quadraticCurveTo(2, 54, 20, 58);
+      ctx.moveTo(20, 52); ctx.quadraticCurveTo(44, 40 + flap * 12, 54, 50 + flap * 6); ctx.quadraticCurveTo(38, 54, 20, 58); ctx.fill();
+      ellipse(ctx, 20, 55, 10, 9); ellipse(ctx, 10, 46, 7, 6);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.moveTo(4, 45); ctx.lineTo(-4, 47); ctx.lineTo(4, 49); ctx.fill();
+      ctx.fillStyle = '#fef08a'; ellipse(ctx, 8, 44, 1.6, 1.6);
+      // Gold chain.
+      ctx.strokeStyle = color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(16, 54, 7, 0.2, Math.PI - 0.2); ctx.stroke();
+      ctx.fillStyle = color; ellipse(ctx, 16, 62, 2.5, 2.5);
+      break;
+    }
+    case 'MIMIC': {
+      ctx.fillStyle = hurt ? '#ffffff' : '#0e7490';
+      ctx.fillRect(2, 10, 36, 60);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#082f49'; ctx.fillRect(6, 16, 20, 30);
+      const items = ['#f87171', '#fbbf24', '#4ade80', '#60a5fa'];
+      items.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(8 + (i % 2) * 9, 19 + Math.floor(i / 2) * 13, 6, 9); });
+      ctx.fillStyle = color; ctx.fillRect(29, 18, 6, 4); ctx.fillRect(29, 26, 6, 4);
+      // The slot is a mouth with teeth, chewing on the beat.
+      const open = 3 + pulse * 4;
+      ctx.fillStyle = '#020617'; ctx.fillRect(6, 52, 28, open + 4);
+      ctx.fillStyle = '#f8fafc';
+      for (let tx = 7; tx < 33; tx += 5) { ctx.beginPath(); ctx.moveTo(tx, 52); ctx.lineTo(tx + 2.5, 56); ctx.lineTo(tx + 5, 52); ctx.fill(); }
+      ctx.fillStyle = '#fde047'; ellipse(ctx, 12, 8, 3, 3); ellipse(ctx, 28, 8, 3, 3);
+      break;
+    }
+    case 'BOUNCER': {
+      ctx.beginPath(); ctx.roundRect(2, 26, 36, 36, 10); ctx.fill();   // torso
+      ellipse(ctx, 20, 22, 11, 10);                                    // head
+      ellipse(ctx, -4, 50, 7, 12); ellipse(ctx, 44, 50, 7, 12);        // arms
+      ctx.fillRect(8, 60, 9, 10); ctx.fillRect(23, 60, 9, 10);         // legs
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(10, 18, 20, 5);          // shades
+      ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 7px system-ui'; ctx.textAlign = 'center'; ctx.fillText('STAFF', 20, 42);
+      break;
+    }
+  }
+  ctx.restore();
+};
+
+/** Elite marker drawn around an enemy, distinct by shape (not just color). */
+export const drawAffix = (ctx: CanvasRenderingContext2D, affix: string, color: string, beat: number, shieldUp: boolean) => {
+  const p = Math.pow(1 - (beat - Math.floor(beat)), 3);
+  ctx.save();
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2; ctx.shadowColor = color; ctx.shadowBlur = 10;
+  switch (affix) {
+    case 'SHIELDED':
+      if (!shieldUp) break;
+      ctx.globalAlpha = 0.5 + 0.3 * p;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; ctx.lineTo(20 + Math.cos(a) * 34, 44 + Math.sin(a) * 34); }
+      ctx.closePath(); ctx.stroke();
+      break;
+    case 'ARMORED':
+      for (const [x, y] of [[4, 40], [36, 40], [4, 64], [36, 64]]) { ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill(); }
+      ctx.strokeRect(0, 34, 40, 36);
+      break;
+    case 'HASTY':
+      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(48 + i * 3, 40 + i * 10); ctx.lineTo(62 + i * 3, 40 + i * 10); ctx.stroke(); }
+      break;
+    case 'MIRRORED':
+      ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(20, 74); ctx.setLineDash([3, 3]); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(12, 4); ctx.lineTo(4, 8); ctx.lineTo(12, 12); ctx.moveTo(28, 4); ctx.lineTo(36, 8); ctx.lineTo(28, 12); ctx.stroke();
+      break;
+    case 'ECHO':
+      ctx.globalAlpha = 0.25 + 0.25 * p;
+      ctx.beginPath(); ctx.ellipse(20, 44, 30 + p * 8, 34 + p * 8, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(20, 44, 22 + p * 4, 26 + p * 4, 0, 0, Math.PI * 2); ctx.stroke();
+      break;
+    case 'SYNC_THIEF':
+      for (const x of [6, 20, 34]) { ctx.beginPath(); ctx.moveTo(x, 72); ctx.quadraticCurveTo(x + 3, 78 + p * 4, x, 82 + p * 4); ctx.quadraticCurveTo(x - 3, 78 + p * 4, x, 72); ctx.fill(); }
+      break;
   }
   ctx.restore();
 };

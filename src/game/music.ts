@@ -91,6 +91,13 @@ class MusicPlayer implements BeatClock {
     this.gain.gain.setTargetAtTime(on ? this.volume * 0.6 : this.volume, t, 0.08);
   }
 
+  /** Cut the music to silence (Boombox Crab's drop) and bring it back. The beat clock keeps running. */
+  silence(on: boolean) {
+    const ctx = audio.context;
+    if (!ctx || !this.gain) return;
+    this.gain.gain.setTargetAtTime(on ? 0 : this.volume, ctx.currentTime, on ? 0.02 : 0.05);
+  }
+
   setVolume(v: number) {
     this.volume = v;
     if (this.gain && audio.context) this.gain.gain.setTargetAtTime(v, audio.context.currentTime, 0.05);

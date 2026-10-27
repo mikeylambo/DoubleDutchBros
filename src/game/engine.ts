@@ -5,10 +5,11 @@ import {
 } from '../data/config';
 import { audio } from './audio';
 import {
-  HOP_HEAT_MAX, HOP_TRIP_MULT, SKIP_PERFECT_SYNC, SKIP_WINDOW_BONUS, TAG_WINDOW, impactWindow, judgeJump, perfectThreshold, resolveHit,
+  HOP_HEAT_MAX, HOP_TRIP_MULT, applyDefenses, SKIP_PERFECT_SYNC, SKIP_WINDOW_BONUS, TAG_WINDOW, impactWindow, judgeJump, perfectThreshold, resolveHit,
   type JumpJudgment
 } from './combat';
-import { PATTERN_CALL, SHOCK_WINDOW, buildPattern, hazardDone, hazardX, pickPattern } from './enemyScripts';
+import { PATTERN_CALL, SHOCK_WINDOW, SILENCE, buildPattern, hazardDone, hazardX, pickPattern } from './enemyScripts';
+import { AFFIXES, attackersPerTurn, composeWave } from './encounters';
 import { music, type BeatClock } from './music';
 import { defaultSettings, freshProgress, type GameSettings, type Progress } from './save';
 import { calculateDerived, makeBro } from './stats';
@@ -94,6 +95,9 @@ export class Engine {
   private waveHurt = false;
   /** Dodges at the start of the wave, to tell a flawless wave from one with no attacks. */
   private waveDodgeMark = 0;
+  private enemyTurnCount = 0;
+  private silence: [number, number] | null = null;
+  private silent = false;
   private rng: RngStreams;
   private readonly defaultRng: RngStreams;
   /** Non-null while the guided first fight is running. */
@@ -344,8 +348,7 @@ export class Engine {
           audio.buzz(12);
           this.burst(body.x + 16, GROUND_Y, '#facc15', 10, 4);
           this.text(body.x + 16, GROUND_Y - 80, 'PERFECT!', '#facc15', 1.2);
-          const move = MOVE_REGISTRY[this.moveType];
-          if (this.windup >= (move.limit?.(this.turn) ?? 3)) this.launch(this.turn, -14, 20);
+          if (this.windup >= this.windupLimit()) this.launch(this.turn, -14, 20);
         } else {
           this.missLocked = true;
           this.runStats.trips++;
@@ -494,7 +497,7 @@ export class Engine {
       tutorialDone: this.progress.tutorialDone,
       tutorialHint: this.tutorial
         ? tutorialHint(this.tutorial, this.phase, this.turn, (id) => this.bros[keyOf(id)].name,
-            (MOVE_REGISTRY[this.moveType].limit?.(this.turn) ?? 3) - this.windup)
+            this.windupLimit() - this.windup)
         : null,
       levelUp: this.levelQueue.length && this.levelChoices.length ? { bro: this.levelQueue[0], choices: this.levelChoices } : null
     };
@@ -532,20 +535,28 @@ export class Engine {
     }
   }
 
+  /** Perfect jumps needed to launch the current skill. A living Rope-Biter adds one. */
+  windupLimit() {
+    const base = MOVE_REGISTRY[this.moveType].limit?.(this.turn) ?? 3;
+    return base + (this.enemies.some((e) => e.type === 'RAT' && e.hp > 0) ? 1 : 0);
+  }
+
+  /** The boss for a boss wave. */
+  protected bossFor(_wave: number): EnemyTypeId { return 'BOSS'; }
+
   private initWave() {
     const tier = Math.floor(this.wave / 5);
     const hpMult = 1 + tier * 0.4;
-    const isBoss = this.wave % 5 === 0;
-    const count = isBoss ? 1 : Math.min(3, Math.floor(this.wave / 3) + 1);
-    const pool: EnemyTypeId[] = ['SLIME', 'BAT', 'SHELL'];
-    this.enemies = Array.from({ length: count }, (_, i) => {
-      const type: EnemyTypeId = isBoss ? 'BOSS' : pool[Math.floor(this.rng.waves() * pool.length)];
-      const d = ENEMY_TYPES[type];
-      const x = isBoss ? 200 : 100 + i * 150;
-      const hp = Math.round(d.hp * hpMult);
+    const spawns = composeWave(this.wave, this.rng.waves, this.bossFor(this.wave));
+    const spacing = spawns.length > 3 ? 115 : 150;
+    this.enemies = spawns.map((spawn, i) => {
+      const d = ENEMY_TYPES[spawn.type];
+      const x = d.isBoss ? 200 : 70 + i * spacing;
+      const hp = Math.round(d.hp * hpMult * (spawn.affix ? 1.3 : 1));
       return {
-        id: Date.now() + i, type, name: d.name, hp, maxHp: hp, dmg: d.dmg, color: d.color, ropeRate: d.ropeRate, tightness: d.tightness,
+        id: Date.now() + i, type: spawn.type, name: d.name, hp, maxHp: hp, dmg: d.dmg, color: d.color, ropeRate: d.ropeRate, tightness: d.tightness,
         patterns: d.patterns, scale: d.scale, float: d.float, isBoss: !!d.isBoss, hurt: 0, phase: 1,
+        affix: spawn.affix, shield: spawn.affix === 'SHIELDED', turns: 0,
         x, y: d.float, vy: 0, jumping: false, targetX: x
       };
     });
@@ -560,6 +571,9 @@ export class Engine {
     this.waveHurt = false;
     this.waveDodgeMark = this.runStats.dodges;
     for (const en of this.enemies) this.emit({ type: 'enemy.seen', enemy: en.type });
+    for (const en of this.enemies) {
+      if (en.affix) this.text(en.x + 20, GROUND_Y + en.y - 120, AFFIXES[en.affix].name.toUpperCase(), AFFIXES[en.affix].color, 0.9);
+    }
     this.turn = this.livingTurn(this.turn);
     this.setPhase('MENU');
   }
@@ -635,20 +649,37 @@ export class Engine {
     this.missLocked = false;
     const living = this.enemies.filter((e) => e.hp > 0).map((e) => e.id);
     if (living.length === 0) return this.setPhase('MENU');
-    const limit = this.wave <= 5 ? 1 : this.wave <= 10 ? 2 : living.length;
-    this.enemyQueue = living.slice(0, limit);
+    // Attackers rotate so every enemy gets turns, not just the first in line.
+    const n = attackersPerTurn(this.wave, living.length);
+    const offset = this.enemyTurnCount++ % living.length;
+    this.enemyQueue = [...living.slice(offset), ...living.slice(0, offset)].slice(0, n);
     this.setPhase('ENEMY_TURN');
     this.nextEnemyAttack();
   }
 
-  private nextEnemyAttack() {
+  private nextEnemyAttack(): void {
     const id = this.enemyQueue.shift();
     if (id === undefined) return this.endEnemyTurn();
     this.currentEnemyId = id;
     const enemy = this.enemies.find((e) => e.id === id)!;
+    enemy.turns++;
+    if (enemy.type === 'MIMIC') {
+      // Treasure never fights back; it runs after three turns.
+      if (enemy.turns >= 3) {
+        this.text(enemy.x + 20, GROUND_Y + enemy.y - 110, 'FLED!', enemy.color, 1.2);
+        this.enemies = this.enemies.filter((e) => e !== enemy);
+        this.targetIdx = 0;
+        if (!this.enemies.length) { this.hazards = []; this.setPhase('RETURN'); return; }
+      }
+      return this.nextEnemyAttack();
+    }
     const pattern = this.tutorial ? 'WAVE' : pickPattern(this.patternsFor(enemy), this.rng.waves);
-    // Attacks start on a whole beat with one beat of breathing room.
-    this.hazards = buildPattern(pattern, Math.ceil(this.beat) + 1);
+    const crowBuff = enemy.type !== 'CROW' && this.enemies.some((e) => e.type === 'CROW' && e.hp > 0);
+    // Attacks start on a whole beat with one beat of breathing room (none if Hasty).
+    const start = Math.ceil(this.beat) + (enemy.affix === 'HASTY' ? 0 : 1);
+    this.hazards = buildPattern(pattern, start, { mirror: enemy.affix === 'MIRRORED', echo: enemy.affix === 'ECHO', extra: crowBuff });
+    const silence = SILENCE[pattern];
+    this.silence = silence ? [start + silence[0], start + silence[1]] : null;
     this.text(enemy.x + 20, GROUND_Y + enemy.y - 110, PATTERN_CALL[pattern], enemy.color, 1.1);
   }
 
@@ -671,6 +702,7 @@ export class Engine {
 
   private endEnemyTurn() {
     this.hazards = [];
+    this.silence = null;
     this.currentEnemyId = null;
     if (this.bros.red.hp <= 0 && this.bros.blue.hp <= 0) return this.gameOver();
     this.turn = this.livingTurn(other(this.turn));
@@ -745,6 +777,9 @@ export class Engine {
     if (this.freeze > 0) { this.freeze--; return; }
 
     this.beat = this.heardBeat(audio.now());
+    // Boombox Crab's drop: the music cuts out while its hits land.
+    const silent = !!this.silence && this.phase === 'ENEMY_TURN' && this.beat >= this.silence[0] && this.beat < this.silence[1];
+    if (silent !== this.silent) { this.silent = silent; music.silence(silent); }
     this.ropeAngle = this.ropeAngleAt(this.beat);
     this.scheduleBeat();
 
@@ -812,6 +847,10 @@ export class Engine {
     const move: MoveId = this.comboCount === 0 ? this.moveType : 'BASIC';
     const hit = resolveHit({ move, attacker: this.activeAttacker, stats, perks: bro.perks, comboCount: this.comboCount, targetAerial: aerial, roll: this.rng.combat(), heat: this.activeAttacker === 'RED' ? this.heat : 0 });
 
+    const def = applyDefenses(hit.dmg, move, hit.crit, target.affix, target.shield);
+    hit.dmg = def.dmg;
+    if (def.shieldBroken) { target.shield = false; this.text(target.x + 20, GROUND_Y + target.y - 150, 'SHIELD BREAK!', '#67e8f9', 1.2); }
+    if (def.blocked) this.text(target.x + 20, GROUND_Y + target.y - 150, 'BLOCKED', '#67e8f9', 1);
     target.hp = Math.max(0, target.hp - hit.dmg);
     target.hurt = 6;
     this.runStats.damageDealt += hit.dmg;
@@ -834,6 +873,13 @@ export class Engine {
       audio.play('ko');
       this.burst(cx, cy, target.color, 40, 11);
       this.text(target.x + 20, ty - 130, 'K.O.', target.color, 1.6);
+      if (target.type === 'MIMIC') {
+        // Jackpot: RP and a free item.
+        const item: ItemId = this.rng.rewards() < 0.5 ? 'coffee' : 'soda';
+        this.rp += 300;
+        this.inventory[item] += 1;
+        this.text(target.x + 20, ty - 170, `+300 RP ${ITEM_DATA[item].icon}`, '#22d3ee', 1.3);
+      }
     }
     audio.play(hit.crit ? 'crit' : 'hit');
     audio.buzz(hit.crit || move === 'ULT' ? 35 : 18);
@@ -855,6 +901,18 @@ export class Engine {
     if (this.impactTimer > 0 && target?.hp > 0) return;
     if (this.expectedTap && !this.actionSuccess && target?.hp > 0) this.runStats.tagsMissed++;
     this.expectedTap = null;
+    if (this.actionSuccess && target?.hp > 0 && target.type === 'BOUNCER' && this.comboCount >= 2) {
+      // Greed check: the Bouncer counters a fourth hit in a row.
+      const next = other(this.activeAttacker!);
+      this.damageBro(keyOf(next), Math.round(target.dmg * 0.8));
+      this.body[keyOf(next)].hurtT = 24;
+      this.camera.shake = 28;
+      this.flash = 0.35; this.flashColor = '#a78bfa';
+      audio.play('hurt');
+      this.text(target.x + 30, GROUND_Y + target.y - 150, 'COUNTER!', '#a78bfa', 1.5);
+      this.setPhase('RETURN');
+      return;
+    }
     if (this.actionSuccess && target?.hp > 0) {
       this.comboCount++;
       this.runStats.maxCombo = Math.max(this.runStats.maxCombo, this.comboCount + 1);
@@ -925,6 +983,7 @@ export class Engine {
           this.waveHurt = true;
           this.emit({ type: 'bro.hurt' });
           this.damageBro(k, enemy?.dmg ?? 15);
+          if (enemy?.affix === 'SYNC_THIEF') { this.sync = Math.max(0, this.sync - 15); this.text(b.x, GROUND_Y - 110, '-15 SYNC', '#c084fc', 0.9); }
           this.camera.shake = 25;
           this.flash = 0.3; this.flashColor = '#ef4444';
           b.squash = 0.8;

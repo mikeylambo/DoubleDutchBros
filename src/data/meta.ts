@@ -19,5 +19,12 @@ export const BESTIARY: CodexEntry[] = [
   { id: 'SLIME', category: 'enemy', title: 'Slime', body: 'Sends low waves along the court. Jump on the beat. Watch for a second wave.' },
   { id: 'BAT', category: 'enemy', title: 'Turbo Bat', body: 'Dives the high lane. Stay grounded, and do not flinch at the dashed feint.' },
   { id: 'SHELL', category: 'enemy', title: 'Stone Shell', body: 'Slow, heavy rope. Clear its wall with a full jump right on the beat.' },
+  { id: 'MOTH', category: 'enemy', title: 'Neon Moth', body: 'Everything lands off-beat. Its wings flare on the "e": jump then.' },
+  { id: 'PIGEON', category: 'enemy', title: 'Pigeon Pair', body: 'Hits from both sides at once. Hop and Skip often need different answers.' },
+  { id: 'RAT', category: 'enemy', title: 'Rope-Biter', body: 'While it lives, every skill needs one more jump. Take it out first.' },
+  { id: 'CRAB', category: 'enemy', title: 'Boombox Crab', body: 'Drops the music, then attacks in the silence. Keep counting; the court line still pulses.' },
+  { id: 'CROW', category: 'enemy', title: 'Hype Crow', body: 'Hypes the crew: every other enemy attacks one extra time while it lives.' },
+  { id: 'MIMIC', category: 'enemy', title: 'Vending Mimic', body: 'Never fights. Runs after three turns. Break it for RP and a free item.' },
+  { id: 'BOUNCER', category: 'enemy', title: 'Bouncer', body: 'Counters a fourth hit in a row. Know when to stop the combo.' },
   { id: 'BOSS', category: 'enemy', title: 'Giga Slime', body: 'Mixes every pattern. Anti-air does nothing here; save Sync for heavy hits.' }
 ];

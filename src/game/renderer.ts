@@ -1,8 +1,9 @@
-import { CANVAS_WIDTH, GROUND_Y, HOME_X, MOVE_REGISTRY, type BroKey } from '../data/config';
+import { CANVAS_WIDTH, GROUND_Y, HOME_X, type BroKey } from '../data/config';
 import type { Engine } from './engine';
 import { Animator, CONTACT_FRAME, ENEMY_CLIPS, RABBIT_CLIPS, SPRITE_ID, airProgress, enemySpriteId, frameIndex, rabbitClip, sprites, type EnemyClip } from './anim';
-import { BACKDROP_RES, CLIP_POSE, RABBITS, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
+import { BACKDROP_RES, CLIP_POSE, RABBITS, drawAffix, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
 import type { Enemy } from './types';
+import { AFFIXES } from './encounters';
 import { applyView, type View } from './view';
 
 /** Draws the current engine state. Read-only: never mutates the sim. */
@@ -244,7 +245,7 @@ const drawWindupPips = (ctx: CanvasRenderingContext2D, e: Engine) => {
   const k: BroKey = e.turn === 'RED' ? 'red' : 'blue';
   const b = e.body[k];
   const threshold = e.perfectThresholdFor(k === 'red' ? 'RED' : 'BLUE');
-  const limit = MOVE_REGISTRY[e.moveType].limit?.(e.turn) ?? 3;
+  const limit = e.windupLimit();
   ctx.save();
   ctx.fillStyle = '#fff';
   ctx.shadowColor = '#fff';
@@ -314,6 +315,7 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine) => {
     }
     ctx.translate(-20, -70);
     ctx.globalAlpha = 1;
+    if (en.affix && en.hp > 0) drawAffix(ctx, en.affix, AFFIXES[en.affix].color, e.beat, en.shield);
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 12, 40, 5);
     ctx.fillStyle = '#ef4444';

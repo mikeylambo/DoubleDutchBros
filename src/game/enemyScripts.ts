@@ -52,12 +52,44 @@ const PATTERNS: Record<PatternId, Hit[]> = {
   BURST: [{ lane: 'burst', beats: 3, speed: 2 }],
   STOMP: [{ lane: 'shock', beats: 4, at: 0 }],
   CROSSFIRE: [{ lane: 'low', beats: 4 }, { lane: 'high', beats: 4, fromRight: true }],
-  PANIC: [{ lane: 'low', beats: 3 }, { lane: 'low', beats: 4 }, { lane: 'low', beats: 5 }, { lane: 'wall', beats: 7 }]
+  PANIC: [{ lane: 'low', beats: 3 }, { lane: 'low', beats: 4 }, { lane: 'low', beats: 5 }, { lane: 'wall', beats: 7 }],
+  // Neon Moth: everything off-beat.
+  FLUTTER: [{ lane: 'low', beats: 4, at: 0.75 }],
+  SPIRAL: [{ lane: 'low', beats: 3, at: 0.75 }, { lane: 'high', beats: 5, at: 0.25 }],
+  // Pigeon Pair: two at once from both sides.
+  PECK_PAIR: [{ lane: 'low', beats: 4 }, { lane: 'low', beats: 4, fromRight: true }],
+  SPLIT: [{ lane: 'low', beats: 4 }, { lane: 'high', beats: 4, fromRight: true }],
+  // Rope-Biter.
+  NIBBLE: [{ lane: 'burst', beats: 3, speed: 2 }, { lane: 'low', beats: 5 }],
+  // Boombox Crab: DROP silences the music; the hits land inside the silence.
+  DROP: [{ lane: 'low', beats: 2 }, { lane: 'low', beats: 3 }],
+  BASS: [{ lane: 'wall', beats: 4 }],
+  // Hype Crow.
+  PECK: [{ lane: 'burst', beats: 3, speed: 2 }],
+  // Bouncer.
+  BOUNCE: [{ lane: 'wall', beats: 4 }, { lane: 'low', beats: 5 }],
+  // Vending Mimic never attacks.
+  NONE: []
 };
 
+/** Patterns that cut the music: [from, to) in beats after the attack start. */
+export const SILENCE: Partial<Record<PatternId, [number, number]>> = { DROP: [0, 4] };
+
+export interface PatternMods {
+  /** Flip every hit to the other side (Mirrored elites). */
+  mirror?: boolean;
+  /** Repeat every hit one bar (4 beats) later (Echo elites). */
+  echo?: boolean;
+  /** Add one more copy of the last hit, a beat later (Hype Crow buff). */
+  extra?: boolean;
+}
+
 /** Build hazards for an attack starting on beat `start` (a whole beat). */
-export const buildPattern = (pattern: PatternId, start: number): Hazard[] =>
-  PATTERNS[pattern].map((hit) => {
+export const buildPattern = (pattern: PatternId, start: number, mods: PatternMods = {}): Hazard[] => {
+  let hits = PATTERNS[pattern].map((h) => ({ ...h, fromRight: mods.mirror ? !h.fromRight : h.fromRight }));
+  if (mods.extra && hits.length) hits = [...hits, { ...hits[hits.length - 1], beats: hits[hits.length - 1].beats + 1 }];
+  if (mods.echo) hits = [...hits, ...hits.map((h) => ({ ...h, beats: h.beats + 4 }))];
+  return hits.map((hit) => {
     const lane = LANES[hit.lane];
     return {
       x: -1000, y: lane.y, w: lane.w, h: lane.h,
@@ -71,6 +103,7 @@ export const buildPattern = (pattern: PatternId, start: number): Hazard[] =>
       cleared: []
     };
   });
+};
 
 /**
  * Left edge of a hazard at a beat. Left-to-right hits are timed to Hop, right-to-left hits to
@@ -91,7 +124,9 @@ export const SHOCK_WINDOW = 0.12;
 /** Telegraph text shown while the hazard winds up. */
 export const PATTERN_CALL: Record<PatternId, string> = {
   WAVE: 'JUMP!', DOUBLE_WAVE: 'DOUBLE!', DELAYED: 'OFFBEAT!', DIVE: 'STAY LOW!', FEINT_DIVE: 'FEINT?', AIR_SLASH: 'BEHIND!',
-  CHARGE: 'BIG JUMP!', BURST: 'QUICK!', STOMP: 'STAY DOWN!', CROSSFIRE: 'CROSSFIRE!', PANIC: 'RAPID!'
+  CHARGE: 'BIG JUMP!', BURST: 'QUICK!', STOMP: 'STAY DOWN!', CROSSFIRE: 'CROSSFIRE!', PANIC: 'RAPID!',
+  FLUTTER: 'OFFBEAT!', SPIRAL: 'SPIRAL!', PECK_PAIR: 'BOTH SIDES!', SPLIT: 'SPLIT!', NIBBLE: 'QUICK!', DROP: 'DROP!',
+  BASS: 'BIG JUMP!', PECK: 'QUICK!', BOUNCE: 'BOUNCE!', NONE: '...'
 };
 
 export const pickPattern = (patterns: PatternId[], rng: () => number) => patterns[Math.floor(rng() * patterns.length)];

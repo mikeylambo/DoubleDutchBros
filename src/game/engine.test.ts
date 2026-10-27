@@ -165,6 +165,7 @@ describe('engine', () => {
     const e = newRun();
     const clock = clocks.get(e)!;
     e.sync = 100;
+    e.enemies[0].ropeRate = 0.5; // a Shell-speed rope: peaks every other beat
     e.action('TECH3'); e.input('RED');
     expect(e.phase).toBe('WINDUP');
     clock.b = Math.round(clock.b / 2) * 2 + 1; // Shell → rope every 2 beats; odd beats are off
@@ -324,5 +325,46 @@ describe('new attacks', () => {
     (e as unknown as { nextEnemyAttack: () => void }).nextEnemyAttack();
     expect(boss.phase).toBe(3);
     expect(e.hazards.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('encounters', () => {
+  it('introduces each enemy on its debut wave and bosses every 5th', async () => {
+    const { composeWave, DEBUT, isEliteWave } = await import('./encounters');
+    for (const [type, wave] of Object.entries(DEBUT)) {
+      expect(composeWave(wave!, Math.random, 'BOSS').some((s) => s.type === type)).toBe(true);
+    }
+    expect(composeWave(10, Math.random, 'BOSS')).toEqual([{ type: 'BOSS' }]);
+    expect(composeWave(8, Math.random, 'BOSS').some((s) => s.type === 'BOUNCER')).toBe(true);
+    const elite = composeWave(12, () => 0.3, 'BOSS');
+    expect(isEliteWave(12)).toBe(true);
+    expect(elite.some((s) => s.affix)).toBe(true);
+  });
+
+  it('shields block basic hits until a skill or crit breaks them; armor halves basics', async () => {
+    const { applyDefenses } = await import('./combat');
+    expect(applyDefenses(40, 'BASIC', false, 'SHIELDED', true)).toMatchObject({ dmg: 0, blocked: true });
+    expect(applyDefenses(40, 'TECH1', false, 'SHIELDED', true)).toMatchObject({ dmg: 40, shieldBroken: true });
+    expect(applyDefenses(40, 'BASIC', true, 'SHIELDED', true)).toMatchObject({ shieldBroken: true });
+    expect(applyDefenses(40, 'BASIC', false, 'ARMORED', false).dmg).toBe(20);
+  });
+
+  it('a living Rope-Biter adds a jump to every skill', () => {
+    const e = newRun();
+    e.moveType = 'TECH1';
+    const base = e.windupLimit();
+    e.enemies.push({ ...e.enemies[0], id: 99, type: 'RAT', hp: 10 });
+    expect(e.windupLimit()).toBe(base + 1);
+  });
+
+  it('the Vending Mimic never attacks and flees after three turns', () => {
+    const e = newRun();
+    const m = { ...e.enemies[0], id: 77, type: 'MIMIC' as const, patterns: ['NONE' as const], hp: 50, turns: 2 };
+    e.enemies = [m];
+    e.phase = 'ENEMY_TURN';
+    (e as unknown as { enemyQueue: number[] }).enemyQueue = [77];
+    (e as unknown as { nextEnemyAttack: () => void }).nextEnemyAttack();
+    expect(e.hazards.length).toBe(0);
+    expect(e.enemies.length).toBe(0);
   });
 });

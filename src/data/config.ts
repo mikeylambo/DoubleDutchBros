@@ -17,8 +17,8 @@ export type GearSlot = 'rope' | 'shoes' | 'hat' | 'accessory';
 export type ItemId = 'coffee' | 'soda';
 export type PerkId = 'rp_boost' | 'crit_heal' | 'trip_shield' | 'sync_plus';
 export type PatternId = 'WAVE' | 'DOUBLE_WAVE' | 'DELAYED' | 'DIVE' | 'FEINT_DIVE' | 'AIR_SLASH' | 'CHARGE' | 'BURST' | 'STOMP'
-  | 'CROSSFIRE' | 'PANIC';
-export type EnemyTypeId = 'SLIME' | 'BAT' | 'SHELL' | 'BOSS';
+  | 'CROSSFIRE' | 'PANIC' | 'FLUTTER' | 'SPIRAL' | 'PECK_PAIR' | 'SPLIT' | 'NIBBLE' | 'DROP' | 'BASS' | 'PECK' | 'BOUNCE' | 'NONE';
+export type EnemyTypeId = 'SLIME' | 'BAT' | 'SHELL' | 'MOTH' | 'PIGEON' | 'RAT' | 'CRAB' | 'CROW' | 'MIMIC' | 'BOUNCER' | 'BOSS';
 
 export interface MoveDef {
   name: string;
@@ -64,6 +64,13 @@ export const ENEMY_TYPES: Record<EnemyTypeId, EnemyDef> = {
   SLIME: { name: 'SLIME', hp: 60, dmg: 18, color: '#4ade80', ropeRate: 1, tightness: 0, patterns: ['WAVE', 'DOUBLE_WAVE', 'DELAYED'], xp: 50, scale: 1, float: 0 },
   BAT: { name: 'TURBO BAT', hp: 55, dmg: 14, color: '#f87171', ropeRate: 1, tightness: 0.06, patterns: ['DIVE', 'FEINT_DIVE', 'AIR_SLASH'], xp: 60, scale: 0.9, float: -130 },
   SHELL: { name: 'STONE SHELL', hp: 180, dmg: 30, color: '#94a3b8', ropeRate: 0.5, tightness: 0, patterns: ['CHARGE', 'BURST', 'STOMP'], xp: 120, scale: 1.3, float: 0 },
+  MOTH: { name: 'NEON MOTH', hp: 70, dmg: 16, color: '#e879f9', ropeRate: 1, tightness: 0.03, patterns: ['FLUTTER', 'SPIRAL'], xp: 70, scale: 0.9, float: -100 },
+  PIGEON: { name: 'PIGEON PAIR', hp: 110, dmg: 15, color: '#a5b4fc', ropeRate: 1, tightness: 0, patterns: ['PECK_PAIR', 'SPLIT'], xp: 90, scale: 1, float: 0 },
+  RAT: { name: 'ROPE-BITER', hp: 80, dmg: 14, color: '#d6d3d1', ropeRate: 1, tightness: 0, patterns: ['NIBBLE', 'WAVE'], xp: 80, scale: 0.9, float: 0 },
+  CRAB: { name: 'BOOMBOX CRAB', hp: 140, dmg: 22, color: '#fb7185', ropeRate: 1, tightness: 0, patterns: ['DROP', 'BASS'], xp: 110, scale: 1.1, float: 0 },
+  CROW: { name: 'HYPE CROW', hp: 75, dmg: 12, color: '#fbbf24', ropeRate: 1, tightness: 0.04, patterns: ['PECK'], xp: 90, scale: 0.9, float: -120 },
+  MIMIC: { name: 'VENDING MIMIC', hp: 120, dmg: 0, color: '#22d3ee', ropeRate: 1, tightness: 0, patterns: ['NONE'], xp: 150, scale: 1.2, float: 0 },
+  BOUNCER: { name: 'BOUNCER', hp: 420, dmg: 34, color: '#a78bfa', ropeRate: 0.5, tightness: 0, patterns: ['BOUNCE', 'CHARGE'], xp: 400, scale: 1.5, float: 0 },
   BOSS: { name: 'GIGA SLIME', hp: 1500, dmg: 55, color: '#facc15', ropeRate: 1, tightness: 0.03, patterns: ['WAVE', 'DIVE', 'CHARGE'], xp: 2000, scale: 3.2, isBoss: true, float: 0 }
 };
 

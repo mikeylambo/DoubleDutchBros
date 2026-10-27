@@ -1,3 +1,4 @@
+import type { AffixId } from './encounters';
 import type { BroKey, EnemyTypeId, GearSlot, ItemId, MoveId, PatternId, PerkId, StatKey, BroId } from '../data/config';
 
 export type Phase =
@@ -50,6 +51,12 @@ export interface Enemy extends Body {
   hurt: number;
   /** Boss phase (1, 2, 3). */
   phase: number;
+  /** Elite modifier, if any. */
+  affix?: AffixId;
+  /** Shielded elites: shield still up. */
+  shield: boolean;
+  /** Enemy turns taken (Vending Mimic flees after 3). */
+  turns: number;
 }
 
 /**
