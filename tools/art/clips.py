@@ -22,6 +22,10 @@ PLAN = {
   'ko':       ('ko',        even(1, 112, 20),                    '1'),
   'victory':  ('victory',   even(1, 36.8, 24, loop=True),        '1y'),
 }
+# Per-character differences: Skip's idle is steady end to end; his spin kick connects on 18 of 40.
+if CHAR == 'skip':
+    PLAN['idle'] = ('idle', even(1, 45.6, 32, loop=True), '1y')
+    PLAN['attack'] = ('attack', contact(6, 18, 40, 14), '1')
 cfg = json.loads(RIG)  # {"az":45,"rim":"EF4444","ortho":1.08,"refz":0.33}
 S = os.path.dirname(os.path.abspath(__file__))
 def render(item):
