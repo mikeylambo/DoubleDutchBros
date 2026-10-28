@@ -377,5 +377,13 @@ if os.environ.get('HQ') == '1':
 else:
     sc.render.engine = 'BLENDER_EEVEE'; sc.eevee.taa_render_samples = 32
 sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Punchy'
+# Parallax: LAYER=far|mid|near renders one depth band on its own (the others hidden, transparent
+# film for mid and near), so the game can slide the bands at different rates. Bands split on depth.
+LAYER = os.environ.get('LAYER')
+if LAYER and zone != 'subway':
+    lo, hi = {'far': (600, 1e9), 'mid': (240, 600), 'near': (-1e9, 240)}[LAYER]
+    for ob in sc.objects:
+        if ob.type == 'MESH': ob.hide_render = not (lo <= ob.matrix_world.translation.y < hi)
+    sc.render.film_transparent = LAYER != 'far'
 # Glow is added after rendering (tools/art/glow.py), where it can be tuned without re-rendering.
 sc.render.filepath = out; bpy.ops.render.render(write_still=True); print('DONE', zone, tod)

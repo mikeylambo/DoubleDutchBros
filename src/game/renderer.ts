@@ -1,7 +1,7 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH, GROUND_Y, type BroKey } from '../data/config';
 import type { Engine } from './engine';
 import { Animator, CONTACT_FRAME, ENEMY_CLIPS, RABBIT_CLIPS, SPRITE_ID, airProgress, enemySpriteId, frameIndex, rabbitClip, sprites, type EnemyClip } from './anim';
-import { BACKDROP_RES, CLIP_POSE, timeForWave, zoneForWave, DISPLAY_FONT, RABBITS, drawAffix, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
+import { BACKDROP_RES, CLIP_POSE, timeForWave, zoneForWave, DISPLAY_FONT, RABBITS, drawAffix, drawEnemyShape, drawRabbit, drawShadow, getBackdrop, getSceneLayers } from './sprites';
 import type { Enemy } from './types';
 import { AFFIXES } from './encounters';
 import { applyView, type View } from './view';
@@ -31,6 +31,7 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
   ctx.scale(zoom, zoom);
   ctx.translate(-v.w / 2, -cy);
   const cam = followCamera(e, v, motion);
+  parallax = followCam.x + Math.sin(performance.now() / 9000) * 18 * motion;
   ctx.translate(v.w / 2, cy);
   ctx.scale(cam.zoom, cam.zoom);
   ctx.translate(-v.w / 2 - cam.pan, -cy);
@@ -60,21 +61,20 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
 /**
  * Tall screens can't fit the whole line-up at a readable size, so, like Mario & Luigi, the
  * camera leans in on the bro's attack and pulls back out for enemy turns, where the player
- * needs to see everything coming. Wide screens keep the fixed stage.
+ * needs to see everything coming. Wide screens get a gentler lean of the same move.
  */
 const ATTACK_PHASES = new Set(['TARGET', 'WINDUP', 'LAUNCH', 'IMPACT']);
-const followCam = { zoom: 1, x: 400 };
+const followCam = { zoom: 1, x: 0 };
 const followCamera = (e: Engine, v: View, motion: number) => {
   const tall = v.h > v.w * 1.1;
   const target = e.enemies[e.targetIdx];
-  const acting = ATTACK_PHASES.has(e.phase) && target && tall && motion > 0;
+  const acting = ATTACK_PHASES.has(e.phase) && target && motion > 0;
   const bro = e.body[e.turn === 'RED' ? 'red' : 'blue'];
-  const goalZoom = acting ? 1.35 : 1;
-  const goalX = acting ? (bro.x + 16 + target.x + 20 * target.scale) / 2 : 400;
+  const goalZoom = acting ? (tall ? 1.35 : 1.06) : 1;
+  const goalX = acting ? ((bro.x + 16 + target.x + 20 * target.scale) / 2 - 400) * (tall ? 1 : 0.35) : 0;
   followCam.zoom += (goalZoom - followCam.zoom) * 0.08;
   followCam.x += (goalX - followCam.x) * 0.08;
-  const t = (followCam.zoom - 1) / 0.35;
-  return { zoom: followCam.zoom, pan: (followCam.x - 400) * v.scale * t };
+  return { zoom: followCam.zoom, pan: followCam.x * v.scale };
 };
 
 /** Every other ground enemy stands a step back, so a full line-up reads as a crowd, not a queue. */
@@ -180,8 +180,14 @@ const drawStars = (ctx: CanvasRenderingContext2D, v: View) => {
   ctx.restore();
 };
 
+/** Camera offset (world units) the backdrop layers parallax against: the camera's pan plus a slow sway. */
+let parallax = 0;
+/** How far each layer sits from the court: 0 moves with the fighters, 1 hangs in the sky. */
+const DEPTH = { far: 0.85, mid: 0.5, near: 0.15 } as const;
+
 const drawStage = (ctx: CanvasRenderingContext2D, e: Engine) => {
-  const img = getBackdrop(zoneForWave(e.wave), timeForWave(e.wave));
+  const zone = zoneForWave(e.wave), tod = timeForWave(e.wave);
+  const img = getBackdrop(zone, tod);
   const w = img.width / BACKDROP_RES, h = img.height / BACKDROP_RES;
   // The backdrop ends at the bottom of the court; open-air sets carry extra sky above.
   const top = CANVAS_HEIGHT + 100 - h;
@@ -192,6 +198,13 @@ const drawStage = (ctx: CanvasRenderingContext2D, e: Engine) => {
   ctx.fillStyle = g;
   ctx.fillRect(-400, top - 1500, w, 1500);
   ctx.drawImage(img, -400, top, w, h);
+  // Parallax: the painted layers slide over the flattened set, distant ones further with the camera.
+  const layers = getSceneLayers(zone, tod);
+  if (!layers) return;
+  const lh = layers.far.height * w / layers.far.width;
+  for (const k of ['far', 'mid', 'near'] as const) {
+    ctx.drawImage(layers[k], -400 + parallax * DEPTH[k], GROUND_Y - lh, w, lh);
+  }
 };
 
 /** 1 exactly on a beat, decaying to 0 before the next. */
