@@ -108,7 +108,19 @@ def brick(name, c1, c2, scale_=1.2):
     b.inputs['Scale'].default_value = scale_
     b.inputs['Color1'].default_value = (*[min(1, c * k) for c in c1], 1); b.inputs['Color2'].default_value = (*[min(1, c * k) for c in c2], 1)
     b.inputs['Mortar'].default_value = (0.04 * k, 0.02 * k, 0.05 * k, 1); b.inputs['Mortar Size'].default_value = 0.02
-    nt.links.new(tc.outputs['Object'], b.inputs['Vector']); nt.links.new(b.outputs['Color'], p.inputs['Base Color'])
+    nt.links.new(tc.outputs['Object'], b.inputs['Vector'])
+    # Grime: soot that collects low on the wall plus noise blotches; bump from the mortar lines.
+    geo = nt.nodes.new('ShaderNodeNewGeometry'); sp = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(geo.outputs['Position'], sp.inputs[0])
+    low = nt.nodes.new('ShaderNodeMapRange'); low.inputs['From Max'].default_value = 8; low.inputs['To Min'].default_value = 0.6; low.inputs['To Max'].default_value = 0
+    nt.links.new(sp.outputs['Z'], low.inputs['Value'])
+    n = nt.nodes.new('ShaderNodeTexNoise'); n.inputs['Scale'].default_value = 0.5; n.inputs['Detail'].default_value = 8; nt.links.new(geo.outputs['Position'], n.inputs['Vector'])
+    bl = nt.nodes.new('ShaderNodeMapRange'); bl.inputs['From Min'].default_value = 0.5; bl.inputs['From Max'].default_value = 0.8; bl.inputs['To Max'].default_value = 0.4
+    nt.links.new(n.outputs['Fac'], bl.inputs['Value'])
+    ad = nt.nodes.new('ShaderNodeMath'); ad.operation = 'ADD'; ad.use_clamp = True; nt.links.new(low.outputs['Result'], ad.inputs[0]); nt.links.new(bl.outputs['Result'], ad.inputs[1])
+    mx = nt.nodes.new('ShaderNodeMix'); mx.data_type = 'RGBA'; nt.links.new(ad.outputs[0], mx.inputs[0])
+    nt.links.new(b.outputs['Color'], mx.inputs[6]); mx.inputs[7].default_value = (0.02, 0.015, 0.02, 1)
+    nt.links.new(mx.outputs[2], p.inputs['Base Color'])
+    bump = nt.nodes.new('ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.6; nt.links.new(b.outputs['Fac'], bump.inputs['Height']); nt.links.new(bump.outputs['Normal'], p.inputs['Normal'])
     p.inputs['Roughness'].default_value = 0.85; nt.links.new(p.outputs[0], out.inputs[0]); return m
 
 def graffiti(name):
@@ -213,6 +225,39 @@ def neon_fill(points):
         p = bpy.data.objects.new('nf', bpy.data.lights.new('nf', 'POINT')); p.data.energy = e * TOD['neon_k']; p.data.color = ZN['neon'][i]
         p.location = (px, py, pz); sc.collection.objects.link(p)
 
+def alley_clutter():
+    """Street-level dressing at the court's edges: dumpster, bags, crates, drainpipes, power lines."""
+    k = 2.5 if tod == 'day' else 1.0
+    green = hazed('dumpster', (0.06 * k, 0.16 * k, 0.1 * k), rough=0.5)
+    box(-16, 22, 12, 7, 6, green); box(-16.3, 21.8, 12.6, 0.8, 6.4, green, z=7)          # dumpster and lid
+    bag = hazed('bag', (0.02 * k, 0.02 * k, 0.025 * k), rough=0.25)
+    for (bx, bz, r) in ((-2.5, 2.0, 2.4), (1.0, 1.6, 1.9), (-0.8, 4.0, 1.7), (91.5, 1.8, 2.2)):
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=r, location=(bx, 24, bz)); o = bpy.context.object; o.scale = (1, 0.8, 0.85); o.data.materials.append(bag)
+    wood = hazed('crate', (0.22 * k, 0.13 * k, 0.07 * k), rough=0.8)
+    for (cx, cz, cs) in ((94, 0, 4.6), (99, 0, 3.8), (95.5, 4.6, 3.4)): box(cx, 25, cs, cs, cs, wood, z=cz)
+    pipe = hazed('pipe', (0.1 * k, 0.09 * k, 0.1 * k), rough=0.35)
+    for px in (-17.5, 99.2): cyl(px, 29.6, 20, 0.35, 40, pipe, 10)
+    # Power lines sagging across the sky between the walls.
+    for i, z_ in enumerate((38, 40.5)):
+        pts = 24
+        for j in range(pts):
+            x_ = -16 + j * (116 / pts); sag = 3.5 * math.sin(math.pi * j / pts)
+            cyl(x_ + 116 / pts / 2, 31 + i, z_ - sag, 0.14, 116 / pts * 1.02, metal, 6).rotation_euler = (0, math.pi / 2, 0)
+    # Warm light pools from the street lamps fall on the clutter so it reads at night.
+    for lx in (-8, 94):
+        l = bpy.data.objects.new('pool', bpy.data.lights.new('pool', 'SPOT')); l.data.energy = 9000 * max(0.15, TOD['neon_k'])
+        l.data.spot_size = 1.3; l.data.color = (1, 0.78, 0.5); l.location = (lx, 18, 14); sc.collection.objects.link(l)
+
+def rooftop_clutter():
+    k = 2.2 if tod == 'day' else 1.0
+    vent = hazed('vent', (0.3 * k, 0.3 * k, 0.32 * k), rough=0.35)
+    for vx in (8, 14, 76): cyl(vx, 33, 4.5, 0.8, 3, vent, 16); cyl(vx, 33, 6.2, 1.1, 0.4, vent, 16)
+    for (x_, w_) in ((-6, 30), (70, 26)): box(x_, 31.5, w_, 1.2, 1.2, vent, z=3.4)            # ducting along the parapet
+    hut = hazed('hut', (0.16 * k, 0.12 * k, 0.14 * k), rough=0.7)
+    box(108, 34, 10, 9, 8, hut, z=0); box(110.5, 33.9, 3.2, 6, 0.2, hazed('door', (0.08 * k, 0.07 * k, 0.09 * k)), z=0)
+    box(109.5, 33.8, 1.6, 0.6, 0.2, neon(2, 0.6), z=7)                                        # exit light
+    sky_m = hazed('skylight', (0.3, 0.45, 0.6), rough=0.1); box(40, 36, 12, 2, 6, sky_m, z=3)
+
 # ---------- zones ----------
 if zone == 'alley':
     row(420, 18, 40, 4, 9, 0.16, 0.8, True)
@@ -232,6 +277,7 @@ if zone == 'alley':
     speakers(104, 24)                       # a speaker stack at the right tower's foot
     box(103, 29.6, 3, 14, 0.4, neon(1), z=20)  # blade sign on the right tower
     for lx in (-6, 88): street_lamp(lx)
+    alley_clutter()
     neon_fill([(-30, 24, 30, 0, 9000), (104, 24, 30, 1, 9000), (106, 18, 6, 1, 2500)])
 
 elif zone == 'rooftop':
@@ -250,7 +296,8 @@ elif zone == 'rooftop':
     box(30, 60, 30, 0.6, 0.6, metal, z=16); box(30, 60, 0.6, 16, 0.6, metal); box(59.4, 60, 0.6, 16, 0.6, metal)
     box(30.5, 60.4, 29, 9, 0.3, hazed('board', (0.06, 0.04, 0.1)), z=17)
     for i, (x_, z_) in enumerate(((31, 17.2), (31, 25.6))): box(x_, 60.1, 28, 0.35, 0.3, neon(i), z=z_)   # billboard tubes
-    speakers(104, 30, 3)
+    speakers(96, 30, 3)
+    rooftop_clutter()
     neon_fill([(45, 50, 22, 0, 9000), (104, 26, 12, 1, 4000)])
 
 elif zone == 'subway':
@@ -284,7 +331,16 @@ cam = bpy.data.objects.new('cam', bpy.data.cameras.new('cam')); sc.collection.ob
 cam.data.type = 'ORTHO'; cam.data.ortho_scale = X1 - X0; cam.data.clip_end = 2000
 cam.location = ((X0 + X1) / 2, -20, TOP / 2); cam.rotation_euler = (math.pi / 2, 0, 0)
 sc.render.resolution_x = int(3200 * scale); sc.render.resolution_y = int(960 * scale)
-sc.render.engine = 'BLENDER_EEVEE'; sc.eevee.taa_render_samples = 32
+import os
+if os.environ.get('HQ') == '1':
+    # Path traced: bounce light from neon onto brick, soft shadows. Lights tuned for EEVEE run a bit
+    # hot in Cycles, so point/area energy comes down.
+    sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = int(os.environ.get('SAMPLES', '64'))
+    sc.cycles.use_denoising = True; sc.cycles.max_bounces = 6
+    for l in bpy.data.lights:
+        if l.type in ('POINT', 'AREA', 'SPOT'): l.energy *= 0.5
+else:
+    sc.render.engine = 'BLENDER_EEVEE'; sc.eevee.taa_render_samples = 32
 sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Punchy'
 # Glow is added after rendering (tools/art/glow.py), where it can be tuned without re-rendering.
 sc.render.filepath = out; bpy.ops.render.render(write_still=True); print('DONE', zone, tod)
