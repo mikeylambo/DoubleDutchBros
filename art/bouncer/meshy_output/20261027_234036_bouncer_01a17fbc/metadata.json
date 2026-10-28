@@ -4,7 +4,7 @@
   "folder": "20261027_234036_bouncer_01a17fbc",
   "root_task_id": "01a17fbc-afa3-7521-bd87-b3016082ce40",
   "created_at": "2026-10-27T23:40:36.429Z",
-  "updated_at": "2026-10-28T00:26:50.365Z",
+  "updated_at": "2026-10-28T03:01:31.589Z",
   "tasks": [
     {
       "task_id": "01a17fbc-afa3-7521-bd87-b3016082ce40",
@@ -61,6 +61,76 @@
       "operation_id": "5de415ae-afb0-4ad1-98c3-1d31e3c7c419",
       "created_at": "2026-10-28T00:25:25.492Z",
       "updated_at": "2026-10-28T00:26:50.365Z"
+    },
+    {
+      "task_id": "01a18073-93b8-73c2-9df1-9fda30b64bc9",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-idle",
+      "parent_task_id": "01a17fe5-a804-7378-bcb8-96e580e1434e",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a18073-93b8-73c2-9df1-9fda30b64bc9.json",
+      "operation_id": "7123f97c-4e8b-4c17-93ff-0789b815f09c",
+      "created_at": "2026-10-28T03:00:20.875Z",
+      "updated_at": "2026-10-28T03:01:31.589Z"
+    },
+    {
+      "task_id": "01a18073-932f-713c-b112-a890bde98c5f",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-defeat",
+      "parent_task_id": "01a17fe5-a804-7378-bcb8-96e580e1434e",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a18073-932f-713c-b112-a890bde98c5f.json",
+      "operation_id": "ef19bad3-2af2-4c2a-b018-4b62c4b2da1f",
+      "created_at": "2026-10-28T03:00:20.906Z",
+      "updated_at": "2026-10-28T03:01:12.004Z"
+    },
+    {
+      "task_id": "01a18073-9445-736c-8060-523ccdc27e7e",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-attack",
+      "parent_task_id": "01a17fe5-a804-7378-bcb8-96e580e1434e",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a18073-9445-736c-8060-523ccdc27e7e.json",
+      "operation_id": "ce48e4a7-eabe-4b8a-80c3-fa897741c07d",
+      "created_at": "2026-10-28T03:00:20.969Z",
+      "updated_at": "2026-10-28T03:01:12.879Z"
+    },
+    {
+      "task_id": "01a18073-933f-70dd-8431-b397d4dc3bdf",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-hurt",
+      "parent_task_id": "01a17fe5-a804-7378-bcb8-96e580e1434e",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a18073-933f-70dd-8431-b397d4dc3bdf.json",
+      "operation_id": "3a91fa24-f75b-41b2-81d1-9c89b5d930e3",
+      "created_at": "2026-10-28T03:00:21.042Z",
+      "updated_at": "2026-10-28T03:01:12.147Z"
+    },
+    {
+      "task_id": "01a18073-945f-72c6-bb16-94106037301a",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-telegraph",
+      "parent_task_id": "01a17fe5-a804-7378-bcb8-96e580e1434e",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a18073-945f-72c6-bb16-94106037301a.json",
+      "operation_id": "e5709412-48f7-4d8f-b9d5-67e58b426b6e",
+      "created_at": "2026-10-28T03:00:21.108Z",
+      "updated_at": "2026-10-28T03:01:12.743Z"
     }
   ]
 }
