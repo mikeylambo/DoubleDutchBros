@@ -451,7 +451,7 @@ const rand = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) 
 export const SIGN = { x: 70, y: GROUND_Y - 132, text: 'HOP & SKIP' };
 export const DISPLAY_FONT = "'Archivo Variable', system-ui, sans-serif";
 // The sign is baked into the backdrop: rebuild once the display font has arrived.
-if (typeof document !== 'undefined') void document.fonts?.load(`900 22px ${DISPLAY_FONT}`).then(() => { backdrop = null; });
+if (typeof document !== 'undefined') void document.fonts?.load(`italic 900 22px ${DISPLAY_FONT}`).then(() => { backdrop = null; });
 
 const LEFT = -400, SPAN = CANVAS_WIDTH + 800, TOP = -100;
 
