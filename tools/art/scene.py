@@ -1,8 +1,9 @@
 """Scenery: a scripted 3D set per zone and time of day, rendered to the game's backdrop.
 args: zone tod out.png [scale]      zone: alley | rooftop | subway     tod: day | dusk | night
-Maps onto the backdrop region above the court: world x -400..1200, y -100..380 (ground),
-1 Blender unit = 10 world units, rendered at 2 px per world unit (3200 x 960)."""
-import bpy, sys, math, random
+Maps onto the backdrop region above the court: world x -400..1200, y -500..380 (ground),
+1 Blender unit = 10 world units, rendered at 2 px per world unit (3200 x 1760). Open-air zones
+are framed tall so phones in portrait see sky, not a smeared edge; the game reads the height."""
+import bpy, sys, math, random, os
 a = sys.argv[sys.argv.index('--') + 1:]
 zone, tod, out = a[0], a[1], a[2]; scale = float(a[3]) if len(a) > 3 else 1.0
 R = random.Random({'alley': 7, 'rooftop': 11, 'subway': 23}[zone])
@@ -26,6 +27,7 @@ ZN = {
 bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene
 X0, X1, TOP = -40.0, 120.0, 48.0
+FRAME = TOP + 40.0   # rendered height in BU: the set plus open sky above it
 mats = {}
 
 # ---------- materials ----------
@@ -151,10 +153,39 @@ s = bpy.data.objects.new('sun', bpy.data.lights.new('sun', 'SUN')); s.data.energ
 s.rotation_euler = (math.radians(90 - elev), 0, math.radians(25)); sc.collection.objects.link(s)
 if TOD['moon'] and zone != 'subway':
     moon = hazed('moon', (1, 0.9, 0.95), emit=(1.0, 0.86, 0.94), emit_strength=6)
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=3.0, location=(62.0, 900, (380 - 90) / 10)); bpy.context.object.data.materials.append(moon)
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=3.0, location=(62.0, 900, 52.0)); bpy.context.object.data.materials.append(moon)
 if tod == 'dusk' and zone != 'subway':
     sunm = hazed('sundisc', (1, 0.6, 0.3), emit=(1.0, 0.55, 0.25), emit_strength=8, haze=False)
     bpy.ops.mesh.primitive_uv_sphere_add(radius=4.5, location=(20.0, 950, 6.0)); bpy.context.object.data.materials.append(sunm)
+
+def clouds(n=9):
+    """Soft, flattened puffs far back, lit by the time of day: they fill the tall sky."""
+    # Self-lit in the sky's own palette: the sun sits behind the set, so a lit surface would read as grey.
+    tint = {'day': (0.95, 0.97, 1.0), 'dusk': (1.0, 0.5, 0.45), 'night': (0.16, 0.07, 0.24)}[tod]
+    cm, nt, out = node_mat('cloud'); em = nt.nodes.new('ShaderNodeEmission')
+    em.inputs['Color'].default_value = (*tint, 1); em.inputs['Strength'].default_value = {'day': 1.1, 'dusk': 0.7, 'night': 0.9}[tod]
+    nt.links.new(em.outputs[0], out.inputs[0])
+    for _ in range(n):
+        cx, cz = R.uniform(X0 - 10, X1 + 10), R.uniform(TOP + 4, FRAME - 6)
+        for _ in range(R.randint(3, 6)):
+            bpy.ops.mesh.primitive_uv_sphere_add(radius=1, location=(cx + R.uniform(-9, 9), 800, cz + R.uniform(-1.2, 1.2)))
+            o = bpy.context.object; o.scale = (R.uniform(5, 10), 1, R.uniform(1.4, 2.6)); o.data.materials.append(cm)
+
+def landmark(x, y=650, h=62):
+    """A broadcast tower on the far skyline: tapering lattice legs, an antenna, a blinking red light."""
+    body = hazed('tower', tuple(c * 1.3 for c in TOD['body']))
+    for k in range(5):
+        w = 6 - k * 1.1; box(x - w / 2, y, w, h / 5, w, body, z=k * h / 5)
+    box(x - 2.4, y, 4.8, 1.6, 4.8, hazed('deck', tuple(c * 1.6 for c in TOD['body']), emit=ZN['win'][0], emit_strength=0.6 * TOD['win_k']), z=h * 0.62)
+    box(x - 0.15, y, 0.3, 14, 0.3, body, z=h)
+    cyl(x, y, h + 14.4, 0.5, 0.6, hazed('beacon', (1, 0.1, 0.1), emit=(1.0, 0.1, 0.08), emit_strength=20, haze=False), 12)
+
+def image_mat(name, path, emit=0.0):
+    m, nt, out = node_mat(name)
+    p = nt.nodes.new('ShaderNodeBsdfPrincipled'); t = nt.nodes.new('ShaderNodeTexImage'); t.image = bpy.data.images.load(os.path.abspath(path))
+    nt.links.new(t.outputs['Color'], p.inputs['Base Color'])
+    if emit: nt.links.new(t.outputs['Color'], p.inputs['Emission Color']); p.inputs['Emission Strength'].default_value = emit
+    nt.links.new(p.outputs[0], out.inputs[0]); return m
 
 # ---------- shared pieces ----------
 def row(depth, hmin, hmax, wmin, wmax, lit, cell, props, gap=None, z0=0.0):
@@ -249,7 +280,7 @@ def alley_clutter():
         l.data.spot_size = 1.3; l.data.color = (1, 0.78, 0.5); l.location = (lx, 18, 14); sc.collection.objects.link(l)
 
 def rooftop_clutter():
-    k = 2.2 if tod == 'day' else 1.0
+    k = 1.3 if tod == 'day' else 1.0
     vent = hazed('vent', (0.3 * k, 0.3 * k, 0.32 * k), rough=0.35)
     for vx in (8, 14, 76): cyl(vx, 33, 4.5, 0.8, 3, vent, 16); cyl(vx, 33, 6.2, 1.1, 0.4, vent, 16)
     for (x_, w_) in ((-6, 30), (70, 26)): box(x_, 31.5, w_, 1.2, 1.2, vent, z=3.4)            # ducting along the parapet
@@ -273,6 +304,7 @@ if zone == 'alley':
         zz = 16 + k * 8; box(-38, 28.5, 16, 0.3, 1.6, metal, z=zz)
         for xx in (-38, -22.3): box(xx, 28.5, 0.25, 2.2, 0.25, metal, z=zz)
         box(-37 + (k % 2) * 6, 28.8, 8, 0.25, 0.25, metal, z=zz + 2.2)
+    clouds(6)
     fence(40)
     speakers(104, 24)                       # a speaker stack at the right tower's foot
     box(103, 29.6, 3, 14, 0.4, neon(1), z=20)  # blade sign on the right tower
@@ -285,7 +317,9 @@ elif zone == 'rooftop':
     row(500, 10, 26, 5, 10, 0.16, 0.8, True, z0=-6)
     row(320, 8, 20, 6, 12, 0.2, 0.9, True, z0=-8)
     row(200, 4, 14, 7, 14, 0.12, 1.0, True, z0=-10)
-    roof = hazed('roof', tuple(c * 2.2 for c in TOD['body']), rough=0.7)
+    # Daylight's body colour is already pale: lifting it as much as at night blew the parapet out to white.
+    roof = hazed('roof', tuple(c * (1.15 if tod == 'day' else 2.2) for c in TOD['body']), rough=0.7)
+    clouds(); landmark(88)
     box(X0 - 10, 30, X1 - X0 + 20, 3.0, 4, roof)                     # parapet behind the court
     for xx in range(-36, 120, 9): box(xx, 29.6, 0.6, 3.4, 0.6, roof)  # parapet caps
     # Rooftop furniture: a water tower, AC units, a satellite dish, a billboard frame.
@@ -295,6 +329,10 @@ elif zone == 'rooftop':
     bpy.ops.mesh.primitive_uv_sphere_add(radius=2.5, location=(98, 36, 8)); d = bpy.context.object; d.scale = (1, 0.3, 1); d.data.materials.append(metal)
     box(30, 60, 30, 0.6, 0.6, metal, z=16); box(30, 60, 0.6, 16, 0.6, metal); box(59.4, 60, 0.6, 16, 0.6, metal)
     box(30.5, 60.4, 29, 9, 0.3, hazed('board', (0.06, 0.04, 0.1)), z=17)
+    # The Hop & Skip poster on the board, lit from within at dusk and night.
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(45, 60.3, 21.5)); bb = bpy.context.object
+    bb.rotation_euler = (math.pi / 2, 0, 0); bb.scale = (28, 8.4, 1)
+    bb.data.materials.append(image_mat('billboard', 'art/scenes/posters/billboard.png', emit=0.3 + 1.2 * TOD['neon_k']))
     for i, (x_, z_) in enumerate(((31, 17.2), (31, 25.6))): box(x_, 60.1, 28, 0.35, 0.3, neon(i), z=z_)   # billboard tubes
     speakers(96, 30, 3)
     rooftop_clutter()
@@ -329,9 +367,9 @@ elif zone == 'subway':
 # ---------- camera + render ----------
 cam = bpy.data.objects.new('cam', bpy.data.cameras.new('cam')); sc.collection.objects.link(cam); sc.camera = cam
 cam.data.type = 'ORTHO'; cam.data.ortho_scale = X1 - X0; cam.data.clip_end = 2000
-cam.location = ((X0 + X1) / 2, -20, TOP / 2); cam.rotation_euler = (math.pi / 2, 0, 0)
-sc.render.resolution_x = int(3200 * scale); sc.render.resolution_y = int(960 * scale)
-import os
+if zone == 'subway': FRAME = TOP
+cam.location = ((X0 + X1) / 2, -20, FRAME / 2); cam.rotation_euler = (math.pi / 2, 0, 0)
+sc.render.resolution_x = int(3200 * scale); sc.render.resolution_y = int(960 * FRAME / TOP * scale)
 if os.environ.get('HQ') == '1':
     # Path traced: bounce light from neon onto brick, soft shadows. Lights tuned for EEVEE run a bit
     # hot in Cycles, so point/area energy comes down.

@@ -48,3 +48,16 @@ d.rectangle([10, 10, 1590, 190], outline=(230, 200, 120), width=8)
 d.text((800, 100), 'DOUBLE DUTCH  ST', font=font(120), fill=(240, 235, 220), anchor='mm')
 im.save(f'{OUT}/station.png')
 print('posters ok')
+# 5. Rooftop billboard: wide red/blue split with the bros in their victory poses.
+im = Image.new('RGB', (1400, 420)); d = ImageDraw.Draw(im)
+d.polygon([(0, 0), (820, 0), (580, 420), (0, 420)], fill=(200, 40, 60)); d.polygon([(820, 0), (1400, 0), (1400, 420), (580, 420)], fill=(40, 90, 220))
+for k, x in (('hop', 150), ('skip', 1250)):
+    strip = Image.open(f'public/assets/sprites/{k}/victory.png').convert('RGBA')
+    n = __import__('json').load(open('public/assets/sprites/manifest.json'))[k]['victory']['frames']
+    fr = strip.crop((0, 0, strip.width // n, strip.height)); fr = fr.crop(fr.getbbox())
+    fr = fr.resize((int(fr.width * 380 / fr.height), 380), Image.LANCZOS)
+    im.paste(fr, (x - fr.width // 2, 420 - fr.height + 10), fr)
+d.text((700, 165), 'HOP & SKIP', font=font(130), fill='white', anchor='mm', stroke_width=6, stroke_fill=(20, 10, 30))
+d.text((700, 300), 'LIVE ON THE COURT', font=font(52), fill=(255, 220, 60), anchor='mm', stroke_width=4, stroke_fill=(20, 10, 30))
+wear(im).save(f'{OUT}/billboard.png')
+print('billboard ok')

@@ -583,15 +583,17 @@ export const getBackdrop = (zone: Zone = 'alley', tod: TimeOfDay = 'night') => {
   // Extends 400 world units past each side so wide screens still see skyline.
   // Rendered at 2x so it stays crisp on high-density phone screens.
   c.width = SPAN * BACKDROP_RES;
-  c.height = (CANVAS_HEIGHT + 200) * BACKDROP_RES;
+  // Open-air sets are rendered tall (extra sky above TOP) so portrait screens see real sky.
+  const extra = hasSet ? Math.max(0, Math.round(set!.naturalHeight * SPAN / set!.naturalWidth) - (GROUND_Y - TOP)) : 0;
+  c.height = (CANVAS_HEIGHT + 200 + extra) * BACKDROP_RES;
   const ctx = c.getContext('2d')!;
   ctx.scale(BACKDROP_RES, BACKDROP_RES);
-  ctx.translate(400, 100);
+  ctx.translate(400, 100 + extra);
   const r = rand(7);
 
   if (hasSet) {
     // The rendered set covers everything above the court; the floor below is still drawn here.
-    ctx.drawImage(set!, LEFT, TOP, SPAN, GROUND_Y - TOP);
+    ctx.drawImage(set!, LEFT, TOP - extra, SPAN, GROUND_Y - TOP + extra);
   } else {
   const sky = ctx.createLinearGradient(0, TOP, 0, GROUND_Y);
   sky.addColorStop(0, '#05030f');
@@ -695,7 +697,7 @@ export const getBackdrop = (zone: Zone = 'alley', tod: TimeOfDay = 'night') => {
   }
 
   // Wet court: mirror everything above the ground line, then darken with distance.
-  const groundPx = (GROUND_Y + 100) * BACKDROP_RES;
+  const groundPx = (GROUND_Y + 100 + extra) * BACKDROP_RES;
   const depth = c.height - groundPx;
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);

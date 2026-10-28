@@ -1,4 +1,4 @@
-import { CANVAS_WIDTH, GROUND_Y, type BroKey } from '../data/config';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, GROUND_Y, type BroKey } from '../data/config';
 import type { Engine } from './engine';
 import { Animator, CONTACT_FRAME, ENEMY_CLIPS, RABBIT_CLIPS, SPRITE_ID, airProgress, enemySpriteId, frameIndex, rabbitClip, sprites, type EnemyClip } from './anim';
 import { BACKDROP_RES, CLIP_POSE, timeForWave, zoneForWave, DISPLAY_FONT, RABBITS, drawAffix, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
@@ -182,14 +182,16 @@ const drawStars = (ctx: CanvasRenderingContext2D, v: View) => {
 
 const drawStage = (ctx: CanvasRenderingContext2D, e: Engine) => {
   const img = getBackdrop(zoneForWave(e.wave), timeForWave(e.wave));
-  const w = img.width / BACKDROP_RES;
-  // Tall screens see past the top of the set: stretch its top edge upward and fade it into the night.
-  ctx.drawImage(img, 0, 0, img.width, 6, -400, -1600, w, 1502);
-  const g = ctx.createLinearGradient(0, -100, 0, -700);
+  const w = img.width / BACKDROP_RES, h = img.height / BACKDROP_RES;
+  // The backdrop ends at the bottom of the court; open-air sets carry extra sky above.
+  const top = CANVAS_HEIGHT + 100 - h;
+  // Screens taller still see past it: stretch its top edge upward and fade it into the night.
+  ctx.drawImage(img, 0, 0, img.width, 6, -400, top - 1500, w, 1502);
+  const g = ctx.createLinearGradient(0, top, 0, top - 600);
   g.addColorStop(0, 'rgba(5, 3, 15, 0)'); g.addColorStop(1, 'rgba(5, 3, 15, 1)');
   ctx.fillStyle = g;
-  ctx.fillRect(-400, -1600, w, 1500);
-  ctx.drawImage(img, -400, -100, w, img.height / BACKDROP_RES);
+  ctx.fillRect(-400, top - 1500, w, 1500);
+  ctx.drawImage(img, -400, top, w, h);
 };
 
 /** 1 exactly on a beat, decaying to 0 before the next. */
