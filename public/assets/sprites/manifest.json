@@ -790,5 +790,192 @@
     "telegraph": {
       "frames": 12
     }
+  },
+  "slime": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
+  },
+  "bat": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
+  },
+  "shell": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
+  },
+  "moth": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
+  },
+  "pigeon": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
+  },
+  "rat": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
+  },
+  "crab": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
+  },
+  "crow": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
+  },
+  "mimic": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
+  },
+  "boss": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
+  },
+  "glitch": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
   }
 }

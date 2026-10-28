@@ -6,7 +6,7 @@ import bpy, sys, math, os
 from mathutils import Vector, Matrix
 name, clip, out = sys.argv[sys.argv.index('--') + 1:][:3]
 FLYERS = {'bat', 'moth', 'crow', 'glitch_pigeon'}
-BASES = {'rat', 'pigeon'}          # display bases baked into the model: cut them off
+BASES = {'rat': 0.13, 'pigeon': 0.075}  # display bases baked into the model: cut below this share of height
 FRAMES = {'idle': 16, 'telegraph': 12, 'attack': 10, 'hurt': 6, 'defeat': 16}
 AZ = -45                            # mirror of the rabbits' 45: front faces screen-right
 
@@ -22,7 +22,7 @@ def bbox(objs):
 
 if name in BASES:
     import bmesh
-    lo, hi = bbox(meshes); cut = lo.z + (hi.z - lo.z) * 0.075
+    lo, hi = bbox(meshes); cut = lo.z + (hi.z - lo.z) * BASES[name]
     for o in meshes:
         bm = bmesh.new(); bm.from_mesh(o.data); mw = o.matrix_world
         bmesh.ops.delete(bm, geom=[v for v in bm.verts if (mw @ v.co).z < cut], context='VERTS')
