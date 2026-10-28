@@ -64,7 +64,7 @@ def mat_tiles(name, c1, grout, size=(0.6, 0.3)):
     b.inputs['Mortar Smooth'].default_value = 0.6
     b.inputs['Color1'].default_value = (*c1, 1); b.inputs['Color2'].default_value = (*[c * 0.93 for c in c1], 1); b.inputs['Mortar'].default_value = (*grout, 1)
     link(nt, mp.outputs[0], b.inputs['Vector'])
-    p = grime(nt, b.outputs['Color'], 0.18, z_dirt=9, scale_=0.35)
+    p = grime(nt, b.outputs['Color'], 0.18, z_dirt=4, streaks=False, scale_=0.35)
     bump = nt.nodes.new('ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.5; link(nt, b.outputs['Fac'], bump.inputs['Height'])
     link(nt, bump.outputs['Normal'], p.inputs['Normal']); link(nt, p.outputs[0], o.inputs[0]); return m
 
@@ -94,9 +94,9 @@ def cyl(x, y, z, r, h, mat, verts=24, rot=(0, 0, 0)):
     ob = bpy.context.object; ob.data.materials.append(mat); return ob
 
 XL, XR = -120, 200          # the set runs well past the frame: perspective shows more far away
-TOP = 40
+TOP = 34
 # ---------- materials ----------
-tile = mat_tiles('tile', (0.78, 0.8, 0.74), (0.18, 0.18, 0.16))
+tile = mat_tiles('tile', (0.92, 0.93, 0.88), (0.3, 0.3, 0.27))
 tile_band = mat_tiles('tileband', (0.12, 0.42, 0.33), (0.1, 0.1, 0.08), (0.3, 0.3))
 concrete = mat_simple('concrete', (0.32, 0.31, 0.3), 0.85, z_dirt=2)
 platform = mat_simple('platform', (0.42, 0.4, 0.38), 0.35, z_dirt=0.5)    # polished, a little wet
@@ -104,7 +104,7 @@ steel = mat_simple('steel', (0.10, 0.22, 0.17), 0.45, metal=0.6, z_dirt=10)   # 
 dark = mat_simple('dark', (0.03, 0.03, 0.035), 0.8, dirty=False)
 yellow = mat_simple('edge', (0.95, 0.72, 0.08), 0.55, z_dirt=0.3)
 rail = mat_simple('rail', (0.5, 0.48, 0.45), 0.25, metal=1.0, dirty=False)
-fluo = mat_emit('fluo', (0.85, 1.0, 0.92), 18)
+fluo = mat_emit('fluo', (0.85, 1.0, 0.92), 40)
 fixture = mat_simple('fixture', (0.75, 0.75, 0.72), 0.5, dirty=False)
 
 # ---------- architecture ----------
@@ -147,7 +147,7 @@ for k in range(4): box(-75 + k * 4, 20, 0.8, 4, 4, rail); box(-74 + k * 4, 21.5,
 
 # ---------- the train ----------
 body = mat_simple('train', (0.62, 0.64, 0.66), 0.3, metal=0.85, z_dirt=3)
-interior = mat_emit('interior', (1.0, 0.92, 0.75), 3.2)
+interior = mat_emit('interior', (1.0, 0.82, 0.55), 1.3)  # warm, not blown out
 for cx in (-70, -16, 38, 92, 146):
     box(cx, 46, 52, 13, 8, body, z=-2, bevel=0.4)
     for k in range(16): box(cx + 0.5 + k * 3.2, 45.85, 0.25, 9, 0.2, body, z=-1)    # ribbing
@@ -156,14 +156,42 @@ for cx in (-70, -16, 38, 92, 146):
     box(cx + 22, 45.8, 7, 9.5, 0.1, mat_simple('door', (0.5, 0.52, 0.55), 0.35, metal=0.8, dirty=False), z=-1)
 box(-14, 45.6, 6, 1.4, 0.1, mat_emit('route', (1.0, 0.55, 0.1), 6), z=9.6)        # route LED sign
 
-# Signal light in the tunnel mouth (right), a hint of steam.
-cyl(178, 40, 6, 0.6, 0.4, mat_emit('signal', (1, 0.15, 0.1), 40), 16, (math.pi / 2, 0, 0))
+# The station ends in tunnel mouths at both sides: dark arches the tracks vanish into.
+for (x0, sgn) in ((-62, -1), (142, 1)):
+    wx = x0 if sgn > 0 else x0 - 30
+    box(wx, 36, 30, TOP, 32, concrete)                       # end wall
+    bpy.ops.mesh.primitive_cylinder_add(radius=9, depth=34, vertices=40, location=(x0 + sgn * 15, 52, 6), rotation=(math.pi / 2, 0, 0))
+    hole = bpy.context.object; hole.scale = (1.15, 1, 1)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(x0 + sgn * 15, 52, -2)); low = bpy.context.object; low.scale = (20.7, 34, 16)
+    for cut in (hole, low):
+        mo = bpy.context.scene.objects[-1] if False else None
+    end = [o for o in bpy.context.scene.objects if o.type == 'MESH'][-3]
+    for cut in (hole, low):
+        bo = end.modifiers.new('cut', 'BOOLEAN'); bo.object = cut; bo.operation = 'DIFFERENCE'; cut.hide_render = True
+    box(x0 + sgn * 15 - 12, 70, 24, 20, 1, mat_emit('void', (0, 0, 0), 0), z=-4)   # darkness inside
+    cyl(x0 + sgn * 3, 36.5, 13, 0.55, 0.4, mat_emit(f'signal{sgn}', (1, 0.12, 0.08) if sgn > 0 else (0.1, 1, 0.3), 60), 16, (math.pi / 2, 0, 0))
+# A vending machine glowing on the platform, and a token booth with a pink neon sign.
+box(100, 22, 5, 9, 3.5, mat_simple('vend', (0.05, 0.25, 0.45), 0.4, metal=0.3), z=0, bevel=0.2)
+box(100.5, 21.9, 3.2, 6.5, 0.1, mat_emit('vendfront', (0.4, 0.85, 1.0), 4), z=1.8)
+vl = bpy.data.objects.new('vl', bpy.data.lights.new('vl', 'POINT')); vl.data.energy = 4000; vl.data.color = (0.4, 0.85, 1.0)
+vl.location = (102.5, 19, 5); sc.collection.objects.link(vl)
+box(-52, 18, 12, 9, 6, mat_simple('booth', (0.25, 0.08, 0.12), 0.5), z=0, bevel=0.2)
+box(-51, 17.9, 10, 1.6, 0.15, mat_emit('tokens', (1.0, 0.2, 0.6), 12), z=10.2)
+tl = bpy.data.objects.new('tl', bpy.data.lights.new('tl', 'POINT')); tl.data.energy = 5000; tl.data.color = (1.0, 0.25, 0.6)
+tl.location = (-46, 14, 9); sc.collection.objects.link(tl)
 
 # ---------- light ----------
 w = bpy.data.worlds.new('w'); w.use_nodes = True; sc.world = w
 w.node_tree.nodes['Background'].inputs['Color'].default_value = (0.01, 0.012, 0.015, 1)
-fill = bpy.data.objects.new('fill', bpy.data.lights.new('fill', 'AREA')); fill.data.energy = 30000; fill.data.size = 200
+fill = bpy.data.objects.new('fill', bpy.data.lights.new('fill', 'AREA')); fill.data.energy = 90000; fill.data.size = 200
 fill.data.color = (0.85, 1.0, 0.92); fill.location = (40, 10, TOP - 4); sc.collection.objects.link(fill)
+# Each fluorescent row also casts real light down onto the wall and platform.
+for yy in (-20, 0, 18):
+    l = bpy.data.objects.new('row', bpy.data.lights.new('row', 'AREA')); l.data.shape = 'RECTANGLE'
+    l.data.size = 260; l.data.size_y = 2; l.data.energy = 40000; l.data.color = (0.88, 1.0, 0.93)
+    l.location = (40, yy, TOP - 2.6); sc.collection.objects.link(l)
+wl = bpy.data.objects.new('wall', bpy.data.lights.new('wall', 'AREA')); wl.data.shape = 'RECTANGLE'; wl.data.size = 260; wl.data.size_y = 3
+wl.data.energy = 50000; wl.data.color = (0.95, 1.0, 0.95); wl.location = (40, 58, TOP - 4); wl.rotation_euler = (math.radians(-35), 0, 0); sc.collection.objects.link(wl)
 # Faint haze through the station so the fluorescents bloom into the air.
 bpy.ops.mesh.primitive_cube_add(size=1, location=(40, 10, TOP / 2)); vol = bpy.context.object; vol.scale = (320, 130, TOP)
 vm, vnt, vo = node_mat('haze'); vs = vnt.nodes.new('ShaderNodeVolumeScatter'); vs.inputs['Density'].default_value = 0.0018
