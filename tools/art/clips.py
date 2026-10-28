@@ -51,7 +51,7 @@ def render(item):
     env = dict(os.environ)
     if os.environ.get('ANCHORS') == '1' and clip not in HANDS: return clip, True, 0
     r = subprocess.run(['/home/user/blender-venv/bin/python', f'{S}/sprite.py', '--', f'art/{CHAR}/anim/{act}.glb', out,
-        ','.join(map(str, frames)), str(cfg['az']), cfg['rim'], str(cfg['ortho']), '0', lock, str(cfg['refz'])], capture_output=True, text=True, env=env)
+        ','.join(map(str, frames)), str(cfg['az']), cfg['rim'], str(cfg['ortho']), str(cfg.get('ground', 0)), lock, str(cfg['refz'])], capture_output=True, text=True, env=env)
     return clip, 'DONE' in r.stdout, len(frames)
 with ThreadPoolExecutor(int(sys.argv[4]) if len(sys.argv) > 4 else 4) as ex:
     for res in ex.map(render, PLAN.items()): print(*res, flush=True)

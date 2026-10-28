@@ -68,5 +68,39 @@
     "land": {
       "frames": 6
     }
+  },
+  "bouncer": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
+  },
+  "king": {
+    "attack": {
+      "frames": 10
+    },
+    "defeat": {
+      "frames": 16
+    },
+    "hurt": {
+      "frames": 6
+    },
+    "idle": {
+      "frames": 16
+    },
+    "telegraph": {
+      "frames": 12
+    }
   }
 }
