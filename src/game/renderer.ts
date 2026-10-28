@@ -279,49 +279,104 @@ const drawHeat = (ctx: CanvasRenderingContext2D, e: Engine) => {
   ctx.restore();
 };
 
-const ROPE_CENTER = GROUND_Y - 45; // midpoint of the swing: halfway between overhead and the feet
-const ROPE_AMP = 50;
-const HAND_Y = GROUND_Y - 35;
+const ROPE_CENTER = GROUND_Y - 55; // midpoint of the swing: halfway between overhead and the feet
+const ROPE_AMP = 62;                // clears the ears on top, brushes the court below
+const HAND_Y = GROUND_Y - 35;       // fallback grip height when a rabbit has no sprite art
+
+/** Where each rabbit's hands were in the frame drawn last tick (world units), if the clip records them. */
+const heldHands: Partial<Record<BroKey, [number, number, number, number]>> = {};
+
+const ropeColor = (e: Engine, k: BroKey) => {
+  const style = e.progress.ropeStyle;
+  return style === 'style_gold' ? '#facc15'
+    : style === 'style_rainbow' ? `hsl(${(e.beat * 90 + (k === 'blue' ? 180 : 0)) % 360}, 90%, 62%)`
+    : e.bros[k].color;
+};
 
 /**
  * Two ropes turning in opposite phase — actual double dutch. At every beat peak one rope is
  * sweeping under the feet, so "jump when a rope hits the floor" is literally the timing rule.
- * The half of the swing above the waist draws behind the bro, the lower half in front.
+ * Each rabbit holds its rope in its own hands (positions recorded per sprite frame). The half of
+ * the swing below the waist draws in front, thicker and brighter; a short trail sells the speed,
+ * and the court flashes where the rope slaps down on the beat.
  */
 const drawRopes = (ctx: CanvasRenderingContext2D, e: Engine, layer: 'back' | 'front') => {
   if (e.phase === 'ENEMY_TURN') return;
-  const s = Math.sin(e.ropeAngle);
   (['red', 'blue'] as BroKey[]).forEach((k) => {
     if (e.bros[k].hp <= 0) return;
-    // Anchored at home: the rope is held by the turners, the bro leaps out of it to attack.
-    const b = { x: e.homes[k] };
-    [s, -s].forEach((phase, i) => {
-      const mid = ROPE_CENTER + ROPE_AMP * phase;
-      if ((mid > ROPE_CENTER) !== (layer === 'front')) return;
-      ctx.save();
-      ctx.globalAlpha = i === 0 ? 1 : 0.65;
-      ctx.lineWidth = 3.5;
-      const style = e.progress.ropeStyle;
-      const color = style === 'style_gold' ? '#facc15'
-        : style === 'style_rainbow' ? `hsl(${(e.beat * 90 + (k === 'blue' ? 180 : 0)) % 360}, 90%, 62%)`
-        : e.bros[k].color;
-      ctx.strokeStyle = color;
-      ctx.shadowColor = color;
-      ctx.shadowBlur = 14;
-      const path = () => {
-        ctx.beginPath();
-        ctx.moveTo(b.x - 28, HAND_Y);
-        ctx.quadraticCurveTo(b.x + 16, 2 * mid - HAND_Y, b.x + 60, HAND_Y);
-        ctx.stroke();
-      };
-      path();
-      // Hot core makes the rope read as a lit tube.
-      ctx.shadowBlur = 0;
-      ctx.lineWidth = 1.2;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-      path();
-      ctx.restore();
+    const hands = heldHands[k];
+    // Art without hand data (attacking, hurt...): the rabbit has let go, so no rope.
+    if (!hands && sprites.get(SPRITE_ID[k], 'windup')) return;
+    const x = e.homes[k];
+    const [lx, ly, rx, ry] = hands ?? [x - 28, HAND_Y, x + 60, HAND_Y];
+    const gx = (lx + rx) / 2, gy = (ly + ry) / 2;
+    const color = ropeColor(e, k);
+    const curve = (mid: number) => {
+      ctx.beginPath();
+      ctx.moveTo(lx, ly);
+      ctx.quadraticCurveTo(gx, 2 * mid - gy, rx, ry);
+      ctx.stroke();
+    };
+    [1, -1].forEach((sign, i) => {
+      // Trail first (older positions, fainter), then the rope itself.
+      for (let t = 3; t >= 0; t--) {
+        const ph = sign * Math.sin(e.ropeAngle - t * 0.16);
+        const mid = ROPE_CENTER + ROPE_AMP * ph;
+        const front = mid > ROPE_CENTER;
+        if (front !== (layer === 'front')) continue;
+        ctx.save();
+        const depth = front ? 1 : 0.55;
+        ctx.globalAlpha = (i === 0 ? 1 : 0.7) * depth * (t === 0 ? 1 : 0.22 / t);
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = t === 0 ? 14 : 0;
+        ctx.lineWidth = (front ? 4.2 : 2.6) * (t === 0 ? 1 : 0.8);
+        curve(mid);
+        if (t === 0) {
+          // Hot core: reads as a lit tube.
+          ctx.shadowBlur = 0;
+          ctx.lineWidth = front ? 1.4 : 0.9;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+          curve(mid);
+        }
+        ctx.restore();
+      }
     });
+    if (layer !== 'front') return;
+    // Handles in the rabbit's grip.
+    if (hands) {
+      ctx.save();
+      for (const [hx, hy] of [[lx, ly], [rx, ry]]) {
+        ctx.fillStyle = '#0e081e';
+        ctx.beginPath(); ctx.roundRect(hx - 2.2, hy - 5, 4.4, 10, 2.2); ctx.fill();
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(hx, hy - 5, 1.6, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+    // Floor slap: the rope hits the court on the beat.
+    const slap = Math.max(0, Math.abs(Math.sin(e.ropeAngle)) - 0.86) / 0.14;
+    if (slap > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(gx, GROUND_Y, 0, gx, GROUND_Y, 46);
+      g.addColorStop(0, color);
+      g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.globalAlpha = 0.55 * slap;
+      ctx.translate(gx, GROUND_Y); ctx.scale(1, 0.16); ctx.translate(-gx, -GROUND_Y);
+      ctx.fillStyle = g; ctx.fillRect(gx - 46, GROUND_Y - 46, 92, 92);
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = slap;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = 1.2;
+      for (let j = -2; j <= 2; j++) {
+        const sx = gx + j * 9;
+        ctx.beginPath(); ctx.moveTo(sx, GROUND_Y - 1); ctx.lineTo(sx + j * 3, GROUND_Y - 5 - slap * 4 * (3 - Math.abs(j))); ctx.stroke();
+      }
+      ctx.restore();
+    }
   });
 };
 
@@ -397,7 +452,7 @@ const drawSprite = (ctx: CanvasRenderingContext2D, char: string, clip: string, s
   const f = frameIndex(spec, s.frames, s.fps, anim.elapsed(now), { now, beat, airProgress: air });
   const [cw, ch] = s.cell;
   ctx.drawImage(s.img, f * cw, 0, cw, ch, -s.pivot[0] / s.scale, -s.pivot[1] / s.scale, cw / s.scale, ch / s.scale);
-  return true;
+  return { f, sprite: s };
 };
 
 const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine, reflection = false) => {
@@ -466,7 +521,14 @@ const drawBro = (ctx: CanvasRenderingContext2D, e: Engine, k: BroKey) => {
   ctx.save();
   ctx.translate(b.x + 16, GROUND_Y + b.y);
   const air = b.jumping ? airProgress(b.vy, b.launchVy) : 0;
-  if (!drawSprite(ctx, SPRITE_ID[k], clip, RABBIT_CLIPS[clip], anim, now, e.beat, air)) {
+  const drawn = drawSprite(ctx, SPRITE_ID[k], clip, RABBIT_CLIPS[clip], anim, now, e.beat, air);
+  // Remember the grip so the rope can be strung between the rabbit's real hands.
+  const h = drawn && drawn.sprite.hands[drawn.f];
+  heldHands[k] = h ? [
+    b.x + 16 + (h[0] - drawn.sprite.pivot[0]) / drawn.sprite.scale, GROUND_Y + b.y + (h[1] - drawn.sprite.pivot[1]) / drawn.sprite.scale,
+    b.x + 16 + (h[2] - drawn.sprite.pivot[0]) / drawn.sprite.scale, GROUND_Y + b.y + (h[3] - drawn.sprite.pivot[1]) / drawn.sprite.scale
+  ] : undefined;
+  if (!drawn) {
     drawRabbit(ctx, RABBITS[k], {
       vy: b.vy, squash: b.squash ?? 0, airborne: b.jumping, down: e.bros[k].hp <= 0,
       t: now, seed: k === 'red' ? 0 : 1.7, beat: e.beat, ...CLIP_POSE[clip]

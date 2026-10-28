@@ -131,6 +131,9 @@ procedural fallback, so clips can ship one at a time.
 }
 ```
 
+`hands` (rope clips only, written by `tools/art/stitch.py`): per frame, `[leftX, leftY, rightX,
+rightY]` in cell pixels. The game strings the rope between the rabbit's real hands.
+
 Fields: `frames` (required), `fps` (default 24, for time-driven clips), `cell` (default
 `[256,256]`), `pivot` (default `[128,248]`), `scale` (px per world unit, default 2).
 
@@ -155,7 +158,7 @@ The current track runs at **88.7 BPM → 1 beat ≈ 0.68 s ≈ 16 frames at 24 f
 | Clip | Frames | Loop | Drive | Notes |
 |---|---:|:-:|---|---|
 | `idle` | 32 | ✓ | beats ×2 | Personality idle. Hop bouncy, Skip cool. Body dips on each beat. |
-| `windup` | 16 | ✓ | beats ×1 | Ready stance between rope jumps while charging a skill. |
+| `windup` | 16 | ✓ | beats ×1 | Skipping in place, holding the rope; plays whenever the rope is out. Airborne on frame 0 (the beat). Records `hands`. |
 | `jump` | 16 | | airtime | Rope jump. Tuck legs at apex. Ears trail on the way up, lift on the way down. |
 | `land` | 6 | | time | Squash and settle. |
 | `trip` | 18 | | time | Rope catches feet: stumble, flail, recover. Make it funny. |

@@ -21,5 +21,7 @@ for clip in sorted(os.listdir(f'{src}/{char}')):
     subprocess.run(['pngquant', '--force', '--skip-if-larger', '--quality', '75-95', '--speed', '1',
                     '--output', f'{out}/{clip}.png', f'{out}/{clip}.png'], check=False)
     clips[clip] = {'frames': len(fs)}
+    a = f'{src}/{char}/{clip}/anchors.json'
+    if os.path.exists(a): clips[clip]['hands'] = json.load(open(a))  # [lx, ly, rx, ry] px per frame
     print(clip, len(fs), os.path.getsize(f'{out}/{clip}.png') // 1024, 'KB')
 json.dump(manifest, open(mpath, 'w'), indent=2)

@@ -66,6 +66,8 @@ export interface ManifestClip {
   pivot?: [number, number];
   /** Pixels per world unit. Default 2 (art is authored at 2x). */
   scale?: number;
+  /** Per frame, where the hands are in the cell: [leftX, leftY, rightX, rightY] px. Rope clips only. */
+  hands?: number[][];
 }
 export type Manifest = Record<string, Record<string, ManifestClip>>;
 
@@ -87,7 +89,7 @@ class SpriteLibrary {
             const img = new Image();
             img.decoding = 'async';
             img.onload = () => this.clips.set(`${char}/${clip}`, {
-              frames: m.frames, fps: m.fps ?? 24, cell: m.cell ?? [256, 256], pivot: m.pivot ?? [128, 248], scale: m.scale ?? 2, img
+              frames: m.frames, fps: m.fps ?? 24, cell: m.cell ?? [256, 256], pivot: m.pivot ?? [128, 248], scale: m.scale ?? 2, hands: m.hands ?? [], img
             });
             img.src = `${base}/${char}/${clip}.png`;
           }
@@ -147,7 +149,8 @@ export const rabbitClip = (e: Engine, k: BroKey, prevClip: string): RabbitClip =
   if (body.jumping) return 'jump';
   if (prevClip === 'jump' || prevClip === 'launch') return 'land';
   if (prevClip === 'land' && (body.squash ?? 0) > 0.15) return 'land';
-  if (e.phase === 'WINDUP' && e.turn === id) return 'windup';
+  // While the rope is out, both rabbits skip it; the guard-up idle is for the enemy's turn.
+  if (e.phase !== 'ENEMY_TURN') return 'windup';
   return 'idle';
 };
 

@@ -48,6 +48,11 @@ sc.view_settings.view_transform = 'Standard'
 # Reference: the hips at the clip's first rendered frame, standing.
 ref = None
 os.makedirs(out, exist_ok=True)
+# ANCHORS=1: no rendering; record where each hand lands in the cell (px) for every frame, so the
+# game can attach the rope to the rabbit's real hands. Written to <out>/anchors.json.
+anchors_only = os.environ.get('ANCHORS') == '1'
+from bpy_extras.object_utils import world_to_camera_view
+anchors = []
 for i, f in enumerate(frames):
     end = arm.animation_data.action.frame_range[1]
     if f > end: f -= end
@@ -70,7 +75,18 @@ for i, f in enumerate(frames):
     target = Vector((c.x, c.y, ground + dz + ortho * (0.5 - 8 / 256)))
     cam.location = target + d * 20
     cam.rotation_euler = (target - cam.location).to_track_quat('-Z', 'Y').to_euler()
+    if anchors_only:
+        bpy.context.view_layer.update()
+        pts = []
+        for n in ('LeftHand', 'RightHand'):
+            v = world_to_camera_view(sc, cam, arm.matrix_world @ arm.pose.bones[n].head)
+            pts.append((round(v.x * 256, 1), round((1 - v.y) * 256, 1)))
+        pts.sort()  # screen-left hand first
+        anchors.append([*pts[0], *pts[1]])
+        continue
     sc.render.filepath = os.path.join(out, f'f{i:03d}.png')
     if os.path.exists(sc.render.filepath): continue  # resumable: keep frames already rendered
     bpy.ops.render.render(write_still=True)
+if anchors_only:
+    import json; json.dump(anchors, open(os.path.join(out, 'anchors.json'), 'w'))
 print('DONE', len(frames))

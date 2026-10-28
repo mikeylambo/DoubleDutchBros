@@ -15,7 +15,7 @@ CHAR, RIG = sys.argv[1], sys.argv[2]
 PLAN = {
   # clip:     (action glb,  frames,                              lock)
   'idle':     ('idle',      even(78, 108, 32, loop=True),        '1y'),  # the steady stretch, across the loop seam
-  'windup':   ('jumprope',  even(15, 40, 16, loop=True),         '1y'),
+  'windup':   ('jumprope',  even(33, 58, 16, loop=True),         '1y'),  # apex on frame 0 = the beat, when the rope passes under
   'jump':     ('jumprope',  even(3, 17, 16),                     'zy'),
   'land':     ('jumprope',  even(12, 18, 6),                     '1y'),
   'trip':     ('trip',      even(1, 140, 18),                    '1'),
@@ -33,13 +33,25 @@ if CHAR == 'hop':
 if CHAR == 'skip':
     PLAN['idle'] = ('idle', even(1, 45.6, 32, loop=True), '1y')
     PLAN['attack'] = ('attack', contact(6, 18, 40, 14), '1')
+# The humanoid gorillas use the enemy clip set (docs/ART_SPEC.md §7), facing the rabbits.
+if CHAR in ('bouncer', 'king'):
+    PLAN = {
+      'idle':      ('idle',      pingpong(1, 40, 16),                 '1'),
+      'telegraph': ('telegraph', pingpong(30, 70, 12),                '1'),  # the chest pound
+      'attack':    ('attack',    even(1, 24.8 if CHAR == 'bouncer' else 72, 10), '1'),
+      'hurt':      ('hurt',      even(1, 40, 6),                      '1'),
+      'defeat':    ('defeat',    even(1, 112, 16),                    '1'),
+    }
 cfg = json.loads(RIG)  # {"az":45,"rim":"EF4444","ortho":1.08,"refz":0.33}
 S = os.path.dirname(os.path.abspath(__file__))
+HANDS = ('windup', 'jump', 'land', 'trip')   # clips where the rabbit holds the rope
 def render(item):
     clip, (act, frames, lock) = item
     out = f"{sys.argv[3]}/{CHAR}/{clip}"
+    env = dict(os.environ)
+    if os.environ.get('ANCHORS') == '1' and clip not in HANDS: return clip, True, 0
     r = subprocess.run(['/home/user/blender-venv/bin/python', f'{S}/sprite.py', '--', f'art/{CHAR}/anim/{act}.glb', out,
-        ','.join(map(str, frames)), str(cfg['az']), cfg['rim'], str(cfg['ortho']), '0', lock, str(cfg['refz'])], capture_output=True, text=True)
+        ','.join(map(str, frames)), str(cfg['az']), cfg['rim'], str(cfg['ortho']), '0', lock, str(cfg['refz'])], capture_output=True, text=True, env=env)
     return clip, 'DONE' in r.stdout, len(frames)
 with ThreadPoolExecutor(int(sys.argv[4]) if len(sys.argv) > 4 else 4) as ex:
     for res in ex.map(render, PLAN.items()): print(*res, flush=True)
