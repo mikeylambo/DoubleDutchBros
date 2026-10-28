@@ -1,0 +1,101 @@
+{
+  "schema_version": "meshy.cli/v1",
+  "command": "download",
+  "ok": true,
+  "result": {
+    "source": {
+      "kind": "task-json",
+      "path": "/home/user/DoubleDutchBros/art/skip/meshy_output/20261027_233831_skip_01a17fba/task_01a17fe5-fb6f-758e-a8e4-5f2157545270.json",
+      "shape": "api",
+      "resource": "rigging",
+      "task_id": "01a17fe5-fb6f-758e-a8e4-5f2157545270"
+    },
+    "assets": [
+      {
+        "key": "result.rigged_character_fbx_url",
+        "kind": "rig",
+        "format": "fbx",
+        "model_format": "fbx",
+        "container_format": null,
+        "filename": "rigged_character.fbx",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "result.rigged_character_glb_url",
+        "kind": "rig",
+        "format": "glb",
+        "model_format": "glb",
+        "container_format": null,
+        "filename": "rigged_character.glb",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "result.basic_animations.walking_glb_url",
+        "kind": "animation",
+        "format": "glb",
+        "model_format": "glb",
+        "container_format": null,
+        "filename": "walking_glb.glb",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "result.basic_animations.walking_fbx_url",
+        "kind": "animation",
+        "format": "fbx",
+        "model_format": "fbx",
+        "container_format": null,
+        "filename": "walking_fbx.fbx",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "result.basic_animations.walking_armature_glb_url",
+        "kind": "animation",
+        "format": "glb",
+        "model_format": "glb",
+        "container_format": null,
+        "filename": "walking_armature_glb.glb",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "result.basic_animations.running_glb_url",
+        "kind": "animation",
+        "format": "glb",
+        "model_format": "glb",
+        "container_format": null,
+        "filename": "running_glb.glb",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "result.basic_animations.running_fbx_url",
+        "kind": "animation",
+        "format": "fbx",
+        "model_format": "fbx",
+        "container_format": null,
+        "filename": "running_fbx.fbx",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "result.basic_animations.running_armature_glb_url",
+        "kind": "animation",
+        "format": "glb",
+        "model_format": "glb",
+        "container_format": null,
+        "filename": "running_armature_glb.glb",
+        "dependencies": [],
+        "has_url": true
+      }
+    ],
+    "unknown_urls": [],
+    "product": null,
+    "saved_json": null
+  },
+  "error": null,
+  "warnings": []
+}

@@ -6,3 +6,5 @@ dist
 # Meshy models are 35-70 MB each: keep them out of plain git (use LFS or shared storage)
 art/**/model/*.glb
 art/**/model/*.fbx
+art/**/rig/*.glb
+art/**/rig/*.fbx

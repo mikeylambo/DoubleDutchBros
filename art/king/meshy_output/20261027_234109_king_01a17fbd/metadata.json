@@ -4,7 +4,7 @@
   "folder": "20261027_234109_king_01a17fbd",
   "root_task_id": "01a17fbd-3358-7368-8336-1b07b6a9e510",
   "created_at": "2026-10-27T23:41:09.863Z",
-  "updated_at": "2026-10-28T00:15:00.180Z",
+  "updated_at": "2026-10-28T00:27:14.798Z",
   "tasks": [
     {
       "task_id": "01a17fbd-3358-7368-8336-1b07b6a9e510",
@@ -33,6 +33,34 @@
       "operation_id": "0a7a04f4-a3cc-439c-9694-906ae4e13529",
       "created_at": "2026-10-28T00:13:22.643Z",
       "updated_at": "2026-10-28T00:15:00.180Z"
+    },
+    {
+      "task_id": "01a17fe3-b201-77d7-9d9c-9f263e0d6805",
+      "task_type": "remesh",
+      "resource": "remesh",
+      "endpoint": "/openapi/v1/remesh",
+      "stage": "remesh",
+      "parent_task_id": "01a17fda-b21f-77d1-9d41-fb7a07cb8d21",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fe3-b201-77d7-9d9c-9f263e0d6805.json",
+      "operation_id": "4143f808-d76b-4112-9661-76dfafc28ead",
+      "created_at": "2026-10-28T00:23:11.427Z",
+      "updated_at": "2026-10-28T00:25:37.613Z"
+    },
+    {
+      "task_id": "01a17fe5-f9a5-7561-8840-f6ffd5b47d8f",
+      "task_type": "rig",
+      "resource": "rigging",
+      "endpoint": "/openapi/v1/rigging",
+      "stage": "rigging",
+      "parent_task_id": "01a17fe3-b201-77d7-9d9c-9f263e0d6805",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fe5-f9a5-7561-8840-f6ffd5b47d8f.json",
+      "operation_id": "196472fb-f761-4cc1-9e3c-32266a4ce66f",
+      "created_at": "2026-10-28T00:25:47.323Z",
+      "updated_at": "2026-10-28T00:27:14.798Z"
     }
   ]
 }
