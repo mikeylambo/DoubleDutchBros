@@ -5,6 +5,7 @@ import { BACKDROP_RES, CLIP_POSE, timeForWave, zoneForWave, DISPLAY_FONT, RABBIT
 import type { Enemy } from './types';
 import { AFFIXES } from './encounters';
 import { applyView, type View } from './view';
+import { drawAmbience } from './ambience';
 
 /** Draws the current engine state. Read-only: never mutates the sim. */
 export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: number) => {
@@ -202,8 +203,13 @@ const drawStage = (ctx: CanvasRenderingContext2D, e: Engine) => {
   const layers = getSceneLayers(zone, tod);
   if (!layers) return;
   const lh = layers.far.height * w / layers.far.width;
+  const motion = e.settings.reducedMotion ? 0 : 1;
   for (const k of ['far', 'mid', 'near'] as const) {
-    ctx.drawImage(layers[k], -400 + parallax * DEPTH[k], GROUND_Y - lh, w, lh);
+    ctx.save();
+    ctx.translate(parallax * DEPTH[k], 0);
+    ctx.drawImage(layers[k], -400, GROUND_Y - lh, w, lh);
+    drawAmbience(ctx, zone, tod, k, layers[k], GROUND_Y - lh, w, e.beat, motion);
+    ctx.restore();
   }
 };
 
