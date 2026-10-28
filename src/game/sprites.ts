@@ -446,23 +446,28 @@ export const BACKDROP_RES = 2;
 
 /** City zones, each with its own rendered set (tools/art/scene.py). Waves pick the zone. */
 export type Zone = 'alley' | 'rooftop' | 'subway';
+export type TimeOfDay = 'day' | 'dusk' | 'night';
 export const zoneForWave = (wave: number): Zone => (wave <= 10 ? 'alley' : wave <= 20 ? 'rooftop' : 'subway');
+/** Each zone's ten waves run from day to night, so its boss arrives after dark. Underground is always night. */
+export const timeForWave = (wave: number): TimeOfDay => {
+  if (zoneForWave(wave) === 'subway') return 'night';
+  const w = (wave - 1) % 10;
+  return w < 3 ? 'day' : w < 6 ? 'dusk' : 'night';
+};
 
-const backdrops = new Map<Zone, HTMLCanvasElement>();
-const scenes = new Map<Zone, HTMLImageElement>();
-/** Start loading a zone's set; the backdrop rebuilds with it once it arrives. Missing art keeps the drawn city. */
-const loadScene = (zone: Zone) => {
-  if (scenes.has(zone) || typeof Image === 'undefined') return;
+const backdrops = new Map<string, HTMLCanvasElement>();
+const scenes = new Map<string, HTMLImageElement>();
+/** Start loading a set; the backdrop rebuilds with it once it arrives. Missing art keeps the drawn city. */
+const loadScene = (key: string) => {
+  if (scenes.has(key) || typeof Image === 'undefined') return;
   const img = new Image();
-  img.onload = () => backdrops.delete(zone);
-  img.src = `/assets/scenes/${zone}.jpg`;
-  scenes.set(zone, img);
+  img.onload = () => backdrops.delete(key);
+  img.src = `/assets/scenes/${key}.jpg`;
+  scenes.set(key, img);
 };
 
 const rand = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 
-/** Where the baked neon sign sits; the renderer flares the same text on the beat. */
-export const SIGN = { x: 70, y: GROUND_Y - 132, text: 'HOP & SKIP' };
 export const DISPLAY_FONT = "'Archivo Variable', system-ui, sans-serif";
 // The blade sign is baked into the backdrop: rebuild once the display font has arrived.
 if (typeof document !== 'undefined') void document.fonts?.load(`900 18px ${DISPLAY_FONT}`).then(() => backdrops.clear());
@@ -567,11 +572,12 @@ const neon = (ctx: CanvasRenderingContext2D, color: string, draw: (stroke: boole
  * Night alley, built for depth: sky and moon, three skyline layers fading into the horizon,
  * flanking towers with neon, street lamps, and a rain-wet court that mirrors the city.
  */
-export const getBackdrop = (zone: Zone = 'alley') => {
-  const cached = backdrops.get(zone);
+export const getBackdrop = (zone: Zone = 'alley', tod: TimeOfDay = 'night') => {
+  const key = `${zone}-${tod}`;
+  const cached = backdrops.get(key);
   if (cached) return cached;
-  loadScene(zone);
-  const set = scenes.get(zone);
+  loadScene(key);
+  const set = scenes.get(key);
   const hasSet = !!set && set.complete && set.naturalWidth > 0;
   const c = document.createElement('canvas');
   // Extends 400 world units past each side so wide screens still see skyline.
@@ -650,14 +656,9 @@ export const getBackdrop = (zone: Zone = 'alley') => {
   tower(-400, 230, 420);
   tower(1000, 200, 440);
 
-  // Neon: the crew's sign on the left wall, a vertical blade sign on the right tower.
+  // Neon: a vertical blade sign on the right tower.
   ctx.save();
   ctx.lineWidth = 2;
-  neon(ctx, '#f472b6', (core) => {
-    ctx.lineWidth = core ? 1 : 2.5;
-    ctx.beginPath(); ctx.roundRect(SIGN.x - 12, SIGN.y - 26, 158, 38, 8); ctx.stroke();
-  });
-  // The sign's lettering is drawn live by the renderer, so it always matches its beat flare.
   ctx.font = `900 18px ${DISPLAY_FONT}`;
   ctx.textAlign = 'center';
   neon(ctx, '#22d3ee', () => {
@@ -749,6 +750,6 @@ export const getBackdrop = (zone: Zone = 'alley') => {
   ctx.fillRect(LEFT, GROUND_Y - 0.4, SPAN, 0.8);
   ctx.restore();
 
-  backdrops.set(zone, c);
+  backdrops.set(key, c);
   return c;
 };

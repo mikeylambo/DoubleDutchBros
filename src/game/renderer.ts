@@ -1,7 +1,7 @@
 import { CANVAS_WIDTH, GROUND_Y, type BroKey } from '../data/config';
 import type { Engine } from './engine';
 import { Animator, CONTACT_FRAME, ENEMY_CLIPS, RABBIT_CLIPS, SPRITE_ID, airProgress, enemySpriteId, frameIndex, rabbitClip, sprites, type EnemyClip } from './anim';
-import { BACKDROP_RES, CLIP_POSE, zoneForWave, DISPLAY_FONT, RABBITS, SIGN, drawAffix, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
+import { BACKDROP_RES, CLIP_POSE, timeForWave, zoneForWave, DISPLAY_FONT, RABBITS, drawAffix, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
 import type { Enemy } from './types';
 import { AFFIXES } from './encounters';
 import { applyView, type View } from './view';
@@ -153,7 +153,7 @@ const drawStars = (ctx: CanvasRenderingContext2D, v: View) => {
 };
 
 const drawStage = (ctx: CanvasRenderingContext2D, e: Engine) => {
-  const img = getBackdrop(zoneForWave(e.wave));
+  const img = getBackdrop(zoneForWave(e.wave), timeForWave(e.wave));
   ctx.drawImage(img, -400, -100, img.width / BACKDROP_RES, img.height / BACKDROP_RES);
 };
 
@@ -171,21 +171,7 @@ const drawBeatWorld = (ctx: CanvasRenderingContext2D, e: Engine) => {
   halo.addColorStop(1, 'rgba(244, 114, 182, 0)');
   ctx.fillStyle = halo;
   ctx.fillRect(480, -50, 280, 280);
-  // Neon sign: the lettering is live (never baked), so the steady tube and its flare share one glyph run.
-  ctx.font = `italic 900 22px ${DISPLAY_FONT}`;
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = '#f472b6';
-  ctx.shadowColor = '#f472b6';
-  ctx.shadowBlur = 20;
-  ctx.fillText(SIGN.text, SIGN.x, SIGN.y);
   ctx.shadowBlur = 0;
-  ctx.fillStyle = 'rgba(255, 245, 251, 0.85)';
-  ctx.fillText(SIGN.text, SIGN.x, SIGN.y);
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.fillStyle = `rgba(244, 114, 182, ${0.6 * p})`;
-  ctx.shadowColor = '#f472b6';
-  ctx.shadowBlur = 30 * p;
-  ctx.fillText(SIGN.text, SIGN.x, SIGN.y);
   // A light pulse runs along the court line.
   ctx.shadowBlur = 0;
   const line = ctx.createLinearGradient(-400, 0, 1200, 0);

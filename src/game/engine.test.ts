@@ -526,3 +526,13 @@ describe('attack fairness', () => {
     expect(problems).toEqual([]);
   });
 });
+
+describe('zones and time of day', () => {
+  it('runs each zone from day to night, ending on its boss after dark', async () => {
+    const { zoneForWave, timeForWave } = await import('./sprites');
+    expect([1, 3, 4, 6, 7, 10].map(timeForWave)).toEqual(['day', 'day', 'dusk', 'dusk', 'night', 'night']);
+    expect([5, 10, 15, 20].map(timeForWave)).toEqual(['dusk', 'night', 'dusk', 'night']);
+    expect([1, 10, 11, 20, 21, 50].map(zoneForWave)).toEqual(['alley', 'alley', 'rooftop', 'rooftop', 'subway', 'subway']);
+    expect(timeForWave(25)).toBe('night');
+  });
+});
