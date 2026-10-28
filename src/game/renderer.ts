@@ -490,7 +490,7 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine, reflection = fals
     }
     if (e.currentEnemyId === en.id) {
       ctx.fillStyle = '#ef4444';
-      ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(26, 0); ctx.lineTo(20, 8); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(14, -22); ctx.lineTo(26, -22); ctx.lineTo(20, -14); ctx.fill();
     }
     ctx.restore();
   });
@@ -499,7 +499,7 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine, reflection = fals
 
 /** Slim pill bar on a dark plate, sized in screen terms so big bosses don't get chunky bars. */
 const drawEnemyHp = (ctx: CanvasRenderingContext2D, frac: number, scale: number) => {
-  const h = 4 / scale, y = 12;
+  const h = 4 / scale, y = -8; // above the 70-unit gameplay box, clear of the sprite
   ctx.save();
   ctx.fillStyle = 'rgba(5, 3, 15, 0.8)';
   ctx.beginPath(); ctx.roundRect(-1.5 / scale, y - 1.5 / scale, 40 + 3 / scale, h + 3 / scale, h); ctx.fill();
