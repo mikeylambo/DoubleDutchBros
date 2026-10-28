@@ -61,6 +61,12 @@
     },
     "windup": {
       "frames": 16
+    },
+    "idle": {
+      "frames": 32
+    },
+    "land": {
+      "frames": 6
     }
   }
 }
