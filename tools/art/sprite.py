@@ -40,10 +40,17 @@ bg = w.node_tree.nodes['Background']; bg.inputs[0].default_value = (0.35, 0.3, 0
 
 cam = bpy.data.objects.new('cam', bpy.data.cameras.new('cam')); sc.collection.objects.link(cam); sc.camera = cam
 cam.data.type = 'ORTHO'; cam.data.ortho_scale = ortho
-sc.render.engine = 'BLENDER_EEVEE'; sc.render.resolution_x = sc.render.resolution_y = 256
+# Supersampled: rendered at 2x (or SPRITE_RES) and scaled down in stitch.py for crisper edges and fur.
+RES = int(os.environ.get('SPRITE_RES', '512'))
+sc.render.engine = 'BLENDER_EEVEE'; sc.render.resolution_x = sc.render.resolution_y = RES
 sc.render.film_transparent = True; sc.render.image_settings.color_mode = 'RGBA'
 sc.eevee.taa_render_samples = 16
-sc.view_settings.view_transform = 'Standard'
+# AgX with a little extra punch reads closer to the concept renders than flat Standard.
+LOOK = os.environ.get('SPRITE_LOOK', 'agx')
+if LOOK == 'agx':
+    sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Punchy'; sc.view_settings.exposure = 0.3
+else:
+    sc.view_settings.view_transform = 'Standard'
 
 # Reference: the hips at the clip's first rendered frame, standing.
 ref = None
@@ -80,7 +87,7 @@ for i, f in enumerate(frames):
         pts = []
         for n in ('LeftHand', 'RightHand'):
             v = world_to_camera_view(sc, cam, arm.matrix_world @ arm.pose.bones[n].head)
-            pts.append((round(v.x * 256, 1), round((1 - v.y) * 256, 1)))
+            pts.append((round(v.x * 256, 1), round((1 - v.y) * 256, 1)))  # always in 256-cell px
         pts.sort()  # screen-left hand first
         anchors.append([*pts[0], *pts[1]])
         continue

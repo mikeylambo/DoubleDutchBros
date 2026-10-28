@@ -15,7 +15,10 @@ for clip in sorted(os.listdir(f'{src}/{char}')):
     fs = sorted(f for f in os.listdir(f'{src}/{char}/{clip}') if f.endswith('.png'))
     if not fs: continue
     strip = Image.new('RGBA', (256 * len(fs), 256), (0, 0, 0, 0))
-    for i, f in enumerate(fs): strip.alpha_composite(outline(Image.open(f'{src}/{char}/{clip}/{f}').convert('RGBA')), (i * 256, 0))
+    for i, f in enumerate(fs):
+        im = Image.open(f'{src}/{char}/{clip}/{f}').convert('RGBA')
+        if im.size != (256, 256): im = im.resize((256, 256), Image.LANCZOS)  # supersampled renders
+        strip.alpha_composite(outline(im), (i * 256, 0))
     strip.save(f'{out}/{clip}.png', optimize=True)
     # 256-color palette with alpha: ~70% smaller, visually identical at sprite size.
     subprocess.run(['pngquant', '--force', '--skip-if-larger', '--quality', '75-95', '--speed', '1',
