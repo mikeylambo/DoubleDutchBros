@@ -682,10 +682,10 @@ export class Engine {
     this.homes = { ...HOME_X };
     this.body.red.targetX = this.homes.red;
     this.body.blue.targetX = this.homes.blue;
-    const spacing = spawns.length > 3 ? 115 : 150;
+    const spacing = spawns.length > 3 ? 140 : 170;
     this.enemies = spawns.map((spawn, i) => {
       const d = ENEMY_TYPES[spawn.type];
-      const x = d.isBoss ? 200 : 70 + i * spacing;
+      const x = d.isBoss ? 200 : 30 + i * spacing;
       const hp = Math.round(d.hp * hpMult * (spawn.affix ? 1.3 : 1));
       return {
         id: Date.now() + i, type: spawn.type, name: d.name, hp, maxHp: hp, dmg: d.dmg, color: d.color, ropeRate: d.ropeRate, tightness: d.tightness,

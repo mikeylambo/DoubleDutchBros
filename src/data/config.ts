@@ -7,7 +7,7 @@ export const GRAVITY = 0.55;
 export const BASE_JUMP = -11;
 export const MIN_IMPACT_FRAMES = 12;
 export const SIM_HZ = 60;
-export const HOME_X = { red: 550, blue: 650 } as const;
+export const HOME_X = { red: 610, blue: 710 } as const;
 
 export type BroKey = 'red' | 'blue';
 export type BroId = 'RED' | 'BLUE';

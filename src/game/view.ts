@@ -5,7 +5,7 @@ import { GROUND_Y } from '../data/config';
 // court for the menu to sit on, landscape gets wider skyline.
 
 /** World span that must always be visible. */
-const VIEW_W = 720;
+const VIEW_W = 850;
 const VIEW_ABOVE = 260; // world units above the ground line (bat dives, damage text)
 const VIEW_BELOW = 45;
 const CENTER_X = 400;
