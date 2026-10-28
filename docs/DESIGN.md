@@ -217,6 +217,49 @@ favors, never hard-counters. Swaps only in the shop.
 
 ---
 
+## 9b. World & meta: DRAFT 🆕 (tentative, expected to change as the OST comes together)
+
+**Tone:** playful surreal, with graffiti. **Structure:** fixed district order.
+
+### The overlord: Tripp
+An evil jump-rope bunny who took the city's Crown and drained the rhythm from the streets. A
+*trip* is the player's fail state, so every stumble is a small win for him. Name undecided:
+**Hare Tripp** (the dark mirror of Hop and Skip), **Heir Tripp** (spoiled heir to an old rope
+dynasty), **Air Tripp** (rules the rooftops, punishes jumps). Possible: all three are the same
+character, spelled differently in graffiti across districts; the real name is revealed at the Crown.
+Final fight: a rabbit who plays the rope against you (timing tampering, beat theft). Some bosses
+(Glitch Pigeon, Giga Glitch) may be his experiments. No cutscenes needed.
+
+### The city map is the meta
+The title screen is a map of the city at night. Districts start dark and light up block by block
+as you play. Legacy Points may be reframed as **Rep**; tree unlocks are placed on the map.
+Graffiti tells the story: Tripp's propaganda gets tagged over by locals as your Rep grows.
+
+### Districts (draft; mood, tempo and rope twist follow the OST)
+| Waves | District | Bosses |
+|---|---|---|
+| 1–10 | The Block (home alley, laundromat) | Giga Slime (5) |
+| 11–20 | Arcade Row | Bouncer King (10), Giga Slime Remix (20) |
+| 21–35 | The Subway | Glitch Pigeon |
+| 36–50 | The Rooftops | Giga Glitch (50) |
+| 50+ | The Crown | Tripp; rotating rematches |
+
+Each district is meant to get its own track.
+
+### Meta goals
+- **District mastery:** per-district challenges; finishing them makes that district's lights steady.
+- **Crown ladder:** reaching the Crown unlocks Ascension levels, each a permanent mutator.
+- **Rabbit mastery:** separate Rep tracks for Hop and Skip.
+
+### Parked
+- Daily: revisit once the music is done.
+- Rival crews: cut.
+
+Implementation notes: new map/mastery save fields need a `SAVE_VERSION` bump and migration
+(existing Legacy carries over); district enemy pools use the seeded streams.
+
+---
+
 ## 10. Refinements to the original concept 🆕
 
 1. **Swagger is the theme.** With no story, *style* is the motivation. Results rank ✅ becomes a
