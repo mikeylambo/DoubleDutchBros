@@ -1,0 +1,16 @@
+{
+  "id": "01a1841c-b8d7-76e3-bffd-0876f6c28cf5",
+  "type": "image-to-image",
+  "ai_model": "gpt-image-2-5-sunburst",
+  "prompt": "Remove only the round sunglasses from this rabbit's face, showing his calm half-lidded icy blue eyes and the fur underneath. Keep everything else exactly the same: pose, proportions, slim arms, normal-sized hands, outfit, colors, lighting, background, framing.",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1793217837501,
+  "started_at": 1793217837514,
+  "finished_at": 1793217865941,
+  "expires_at": 1793477065941,
+  "image_urls": [
+    "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/uploads/image_01a1841c-b8d7-76e3-bffd-0876f6c28cf5_0.png?Expires=1793477065&Signature=ZK87Ipka1xgBB1Yf-FKdYE2qW7NqJPNHSNfn~puzrplwYhzW5ms8PII064OJMmRcD70POII~iHKLMdMY7cnZR5lP06UBOylfD9kJr7r8qA3xT4Dc83lrpzNqlU6xt4djKS9A60-9oYdAHWjExtg~fOEOGSYA2WUqPknFzXzOQ2BkOoBxDTiRDKC9D6RqHoif4AJXmGd1RCQb6BoP0L6bxqQZO0Mj8cwgW4HzIp0QepncIqPk8zICWnfHXtt7MRcB6n23Fb4JMl~IiXGQNrHxn0-ipg-4G1oa6RjexFUOhd6yahgqskaVoQUb1eu1yhYRZepsvUEarzXoozs8KbM2zQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  ],
+  "consumed_credits": 12
+}
