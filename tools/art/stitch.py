@@ -1,5 +1,5 @@
 """Frames -> outlined horizontal strips in public/assets/sprites/<char>/, plus manifest entries."""
-import json, os, sys
+import json, os, subprocess, sys
 from PIL import Image, ImageFilter
 char, src = sys.argv[1], sys.argv[2]
 out = f'public/assets/sprites/{char}'; os.makedirs(out, exist_ok=True)
@@ -17,6 +17,9 @@ for clip in sorted(os.listdir(f'{src}/{char}')):
     strip = Image.new('RGBA', (256 * len(fs), 256), (0, 0, 0, 0))
     for i, f in enumerate(fs): strip.alpha_composite(outline(Image.open(f'{src}/{char}/{clip}/{f}').convert('RGBA')), (i * 256, 0))
     strip.save(f'{out}/{clip}.png', optimize=True)
+    # 256-color palette with alpha: ~70% smaller, visually identical at sprite size.
+    subprocess.run(['pngquant', '--force', '--skip-if-larger', '--quality', '75-95', '--speed', '1',
+                    '--output', f'{out}/{clip}.png', f'{out}/{clip}.png'], check=False)
     clips[clip] = {'frames': len(fs)}
     print(clip, len(fs), os.path.getsize(f'{out}/{clip}.png') // 1024, 'KB')
 json.dump(manifest, open(mpath, 'w'), indent=2)

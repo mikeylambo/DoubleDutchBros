@@ -4,6 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 def even(a, b, n, loop=False):
     step = (b - a) / (n if loop else n - 1)
     return [round(a + i * step, 2) for i in range(n)]
+def pingpong(a, b, n):
+    """n frames a→b→a, seamless when looped (n even)."""
+    half = even(a, b, n // 2 + 1)
+    return half + half[-2:0:-1]
 def contact(a, c, b, n, at=4):
     """n frames from a to b with frame `at` landing exactly on action frame c."""
     return even(a, c, at + 1) + even(c, b, n - at)[1:]
@@ -23,6 +27,9 @@ PLAN = {
   'victory':  ('victory',   even(1, 36.8, 24, loop=True),        '1y'),
 }
 # Per-character differences: Skip's idle is steady end to end; his spin kick connects on 18 of 40.
+# Hop's idle: the guard-and-bounce from Boxing Practice (before the first jab), played there and back.
+if CHAR == 'hop':
+    PLAN['idle'] = ('idle_bounce', pingpong(1, 13, 32), '1y')
 if CHAR == 'skip':
     PLAN['idle'] = ('idle', even(1, 45.6, 32, loop=True), '1y')
     PLAN['attack'] = ('attack', contact(6, 18, 40, 14), '1')

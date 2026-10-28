@@ -18,6 +18,13 @@ sc = bpy.context.scene
 arm = next(o for o in sc.objects if o.type == 'ARMATURE')
 meshes = [o for o in sc.objects if o.type == 'MESH']
 hips = arm.pose.bones.get('Hips')
+# Per-character Blender fixes (tools/art/fix_<char>.py), applied before any frame renders.
+char = os.path.basename(os.path.dirname(os.path.dirname(os.path.abspath(glb))))
+fixer = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'fix_{char}.py')
+if os.path.exists(fixer):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('fix', fixer); mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod); mod.apply(arm, meshes)
 
 # Outline is added after rendering (stitch step), around the silhouette.
 
