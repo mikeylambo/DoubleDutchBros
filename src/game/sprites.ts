@@ -442,8 +442,22 @@ const eyes = (ctx: CanvasRenderingContext2D, x: number, y: number, gap: number) 
 
 // ---------------- Backdrop (pre-rendered once, it never changes) ----------------
 
-let backdrop: HTMLCanvasElement | null = null;
 export const BACKDROP_RES = 2;
+
+/** City zones, each with its own rendered set (tools/art/scene.py). Waves pick the zone. */
+export type Zone = 'alley' | 'rooftop' | 'subway';
+export const zoneForWave = (wave: number): Zone => (wave <= 10 ? 'alley' : wave <= 20 ? 'rooftop' : 'subway');
+
+const backdrops = new Map<Zone, HTMLCanvasElement>();
+const scenes = new Map<Zone, HTMLImageElement>();
+/** Start loading a zone's set; the backdrop rebuilds with it once it arrives. Missing art keeps the drawn city. */
+const loadScene = (zone: Zone) => {
+  if (scenes.has(zone) || typeof Image === 'undefined') return;
+  const img = new Image();
+  img.onload = () => backdrops.delete(zone);
+  img.src = `/assets/scenes/${zone}.jpg`;
+  scenes.set(zone, img);
+};
 
 const rand = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 
@@ -451,7 +465,7 @@ const rand = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) 
 export const SIGN = { x: 70, y: GROUND_Y - 132, text: 'HOP & SKIP' };
 export const DISPLAY_FONT = "'Archivo Variable', system-ui, sans-serif";
 // The blade sign is baked into the backdrop: rebuild once the display font has arrived.
-if (typeof document !== 'undefined') void document.fonts?.load(`900 18px ${DISPLAY_FONT}`).then(() => { backdrop = null; });
+if (typeof document !== 'undefined') void document.fonts?.load(`900 18px ${DISPLAY_FONT}`).then(() => backdrops.clear());
 
 const LEFT = -400, SPAN = CANVAS_WIDTH + 800, TOP = -100;
 
@@ -553,8 +567,12 @@ const neon = (ctx: CanvasRenderingContext2D, color: string, draw: (stroke: boole
  * Night alley, built for depth: sky and moon, three skyline layers fading into the horizon,
  * flanking towers with neon, street lamps, and a rain-wet court that mirrors the city.
  */
-export const getBackdrop = () => {
-  if (backdrop) return backdrop;
+export const getBackdrop = (zone: Zone = 'alley') => {
+  const cached = backdrops.get(zone);
+  if (cached) return cached;
+  loadScene(zone);
+  const set = scenes.get(zone);
+  const hasSet = !!set && set.complete && set.naturalWidth > 0;
   const c = document.createElement('canvas');
   // Extends 400 world units past each side so wide screens still see skyline.
   // Rendered at 2x so it stays crisp on high-density phone screens.
@@ -565,6 +583,10 @@ export const getBackdrop = () => {
   ctx.translate(400, 100);
   const r = rand(7);
 
+  if (hasSet) {
+    // The rendered set covers everything above the court; the floor below is still drawn here.
+    ctx.drawImage(set!, LEFT, TOP, SPAN, GROUND_Y - TOP);
+  } else {
   const sky = ctx.createLinearGradient(0, TOP, 0, GROUND_Y);
   sky.addColorStop(0, '#05030f');
   sky.addColorStop(0.45, '#120a2c');
@@ -669,6 +691,7 @@ export const getBackdrop = () => {
   };
   lamp(-60);
   lamp(880);
+  }
 
   // Wet court: mirror everything above the ground line, then darken with distance.
   const groundPx = (GROUND_Y + 100) * BACKDROP_RES;
@@ -726,6 +749,6 @@ export const getBackdrop = () => {
   ctx.fillRect(LEFT, GROUND_Y - 0.4, SPAN, 0.8);
   ctx.restore();
 
-  backdrop = c;
+  backdrops.set(zone, c);
   return c;
 };

@@ -1,7 +1,7 @@
 import { CANVAS_WIDTH, GROUND_Y, type BroKey } from '../data/config';
 import type { Engine } from './engine';
 import { Animator, CONTACT_FRAME, ENEMY_CLIPS, RABBIT_CLIPS, SPRITE_ID, airProgress, enemySpriteId, frameIndex, rabbitClip, sprites, type EnemyClip } from './anim';
-import { BACKDROP_RES, CLIP_POSE, DISPLAY_FONT, RABBITS, SIGN, drawAffix, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
+import { BACKDROP_RES, CLIP_POSE, zoneForWave, DISPLAY_FONT, RABBITS, SIGN, drawAffix, drawEnemyShape, drawRabbit, drawShadow, getBackdrop } from './sprites';
 import type { Enemy } from './types';
 import { AFFIXES } from './encounters';
 import { applyView, type View } from './view';
@@ -32,7 +32,7 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
   ctx.translate(-v.w / 2, -cy);
   applyView(ctx, v);
 
-  drawStage(ctx);
+  drawStage(ctx, e);
   drawBeatWorld(ctx, e);
   drawReflections(ctx, e);
   drawRimLights(ctx, e);
@@ -152,8 +152,8 @@ const drawStars = (ctx: CanvasRenderingContext2D, v: View) => {
   ctx.restore();
 };
 
-const drawStage = (ctx: CanvasRenderingContext2D) => {
-  const img = getBackdrop();
+const drawStage = (ctx: CanvasRenderingContext2D, e: Engine) => {
+  const img = getBackdrop(zoneForWave(e.wave));
   ctx.drawImage(img, -400, -100, img.width / BACKDROP_RES, img.height / BACKDROP_RES);
 };
 

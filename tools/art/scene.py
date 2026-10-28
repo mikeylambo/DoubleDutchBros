@@ -34,19 +34,27 @@ def hazed(name, base, rough=0.8, emit=None, emit_strength=0.0, windows=None):
     shader = p.outputs[0]
     if windows:
         # Lit windows: a brick pattern used as a window grid; random cells light up warm or cool.
-        tc = nt.nodes.new('ShaderNodeTexCoord'); br = nt.nodes.new('ShaderNodeTexBrick')
-        br.offset = 0; br.squash = 1; br.inputs['Scale'].default_value = windows['scale']
-        br.inputs['Mortar Size'].default_value = 0.35; br.inputs['Brick Width'].default_value = 0.6; br.inputs['Row Height'].default_value = 0.5
-        br.inputs['Color1'].default_value = (1, 1, 1, 1); br.inputs['Color2'].default_value = (0, 0, 0, 1); br.inputs['Mortar'].default_value = (0, 0, 0, 1)
-        nt.links.new(tc.outputs['Object'], br.inputs['Vector'])
-        wn = nt.nodes.new('ShaderNodeTexWhiteNoise'); wn.noise_dimensions = '3D'
-        mp = nt.nodes.new('ShaderNodeMapping'); mp.inputs['Scale'].default_value = (windows['scale'] / 0.6 * 0.5, 1, windows['scale'] / 0.5 * 0.5)
-        fl = nt.nodes.new('ShaderNodeVectorMath'); fl.operation = 'FLOOR'
-        nt.links.new(tc.outputs['Object'], mp.inputs[0]); nt.links.new(mp.outputs[0], fl.inputs[0]); nt.links.new(fl.outputs[0], wn.inputs['Vector'])
+        # World-space grid (object coords stretch with each building's scale): cells 1.0 x 1.3 BU,
+        # i.e. 10 x 13 world units, like the old backdrop's windows.
+        geo = nt.nodes.new('ShaderNodeNewGeometry'); cw, ch = windows['cell']
+        sxz = nt.nodes.new('ShaderNodeMapping'); sxz.inputs['Scale'].default_value = (1 / cw, 1, 1 / ch)
+        nt.links.new(geo.outputs['Position'], sxz.inputs[0])
+        sp = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(sxz.outputs[0], sp.inputs[0])
+        fx = nt.nodes.new('ShaderNodeMath'); fx.operation = 'FRACT'; nt.links.new(sp.outputs['X'], fx.inputs[0])
+        fz = nt.nodes.new('ShaderNodeMath'); fz.operation = 'FRACT'; nt.links.new(sp.outputs['Z'], fz.inputs[0])
+        # Window = inner part of each cell (0.25..0.7 across, 0.25..0.75 up).
+        def band(n, lo, hi):
+            g1 = nt.nodes.new('ShaderNodeMath'); g1.operation = 'GREATER_THAN'; g1.inputs[1].default_value = lo; nt.links.new(n.outputs[0], g1.inputs[0])
+            l1 = nt.nodes.new('ShaderNodeMath'); l1.operation = 'LESS_THAN'; l1.inputs[1].default_value = hi; nt.links.new(n.outputs[0], l1.inputs[0])
+            m = nt.nodes.new('ShaderNodeMath'); m.operation = 'MULTIPLY'; nt.links.new(g1.outputs[0], m.inputs[0]); nt.links.new(l1.outputs[0], m.inputs[1]); return m
+        bx, bz = band(fx, 0.25, 0.7), band(fz, 0.25, 0.75)
+        win = nt.nodes.new('ShaderNodeMath'); win.operation = 'MULTIPLY'; nt.links.new(bx.outputs[0], win.inputs[0]); nt.links.new(bz.outputs[0], win.inputs[1])
+        fl = nt.nodes.new('ShaderNodeVectorMath'); fl.operation = 'FLOOR'; nt.links.new(sxz.outputs[0], fl.inputs[0])
+        wn = nt.nodes.new('ShaderNodeTexWhiteNoise'); wn.noise_dimensions = '3D'; nt.links.new(fl.outputs[0], wn.inputs['Vector'])
         lit = nt.nodes.new('ShaderNodeMath'); lit.operation = 'LESS_THAN'; lit.inputs[1].default_value = windows['lit']
         nt.links.new(wn.outputs['Value'], lit.inputs[0])
         mask = nt.nodes.new('ShaderNodeMath'); mask.operation = 'MULTIPLY'
-        nt.links.new(br.outputs['Fac'], mask.inputs[0]); nt.links.new(lit.outputs[0], mask.inputs[1])
+        nt.links.new(win.outputs[0], mask.inputs[0]); nt.links.new(lit.outputs[0], mask.inputs[1])
         hue = nt.nodes.new('ShaderNodeMix'); hue.data_type = 'RGBA'
         hue.inputs[6].default_value = (*Z['win'][0], 1); hue.inputs[7].default_value = (*Z['win'][1], 1)
         pick = nt.nodes.new('ShaderNodeMath'); pick.operation = 'GREATER_THAN'; pick.inputs[1].default_value = 0.6
@@ -89,13 +97,13 @@ nt.links.new(ramp.outputs[0], bg.inputs['Color']); bg.inputs['Strength'].default
 mx, mz = 62.0, (380 - 90) / 10
 moon = hazed('moon', (1, 0.9, 0.95), emit=(1.0, 0.86, 0.94), emit_strength=6)
 bpy.ops.mesh.primitive_uv_sphere_add(radius=3.0, location=(mx, 900, mz)); bpy.context.object.data.materials.append(moon)
-bpy.context.object.scale = (3.4, 1, 3.4)
+bpy.context.object.scale = (1, 1, 1)
 halo = hazed('halo', (1, 0.5, 0.8), emit=(0.9, 0.3, 0.6), emit_strength=0.5)
 
 # ---------- skyline rows, far to near ----------
 def row(depth, hmin, hmax, wmin, wmax, lit, wscale, props, gap=None):
     body = tuple(c * (1 + depth / 600) for c in Z['body'])
-    mat = hazed(f'b{depth}', body, windows=dict(scale=wscale, lit=lit, strength=2.2 + R.random()))
+    mat = hazed(f'b{depth}', body, windows=dict(cell=(wscale, wscale * 1.3), lit=lit, strength=1.1 + 0.4 * R.random()))
     edge = hazed(f'e{depth}', (0.12, 0.08, 0.2))
     red = hazed(f'r{depth}', (1, 0.2, 0.2), emit=(1, 0.15, 0.15), emit_strength=8)
     x = X0 - 10 - R.random() * 8
@@ -120,11 +128,11 @@ def row(depth, hmin, hmax, wmin, wmax, lit, wscale, props, gap=None):
                 box(x + 1, depth + 1, 2.2, 1.2, 1.8, edge, z=bh); box(x + bw - 4, depth + 2, 2.6, 1.4, 2, edge, z=bh)
         x += bw
 
-row(420, 18, 40, 4, 9, 0.18, 2.6, True)
-row(260, 12, 30, 5, 11, 0.22, 2.2, True)
-row(150, 8, 22, 6, 12, 0.28, 1.9, True)
+row(420, 18, 40, 4, 9, 0.16, 0.8, True)
+row(260, 12, 30, 5, 11, 0.2, 0.9, True)
+row(150, 8, 22, 6, 12, 0.24, 1.0, True)
 # Near row frames the court; the middle stays open so the fight reads against the haze.
-row(70, 5, 14, 8, 13, 0.32, 1.6, False, gap=(14, 70))
+row(70, 5, 14, 8, 13, 0.1, 1.1, False, gap=(14, 70))  # behind the fighters: dim, so they pop
 
 # ---------- near alley set ----------
 brick_m, bnt, bout = node_mat('brick')
@@ -149,7 +157,7 @@ fc = fnt.nodes.new('ShaderNodeTexCoord'); fmp = fnt.nodes.new('ShaderNodeMapping
 fnt.links.new(fc.outputs['Generated'], fw.inputs['Vector']); fnt.links.new(fc.outputs['Generated'], fmp.inputs[0]); fnt.links.new(fmp.outputs[0], fw2.inputs['Vector'])
 fmax = fnt.nodes.new('ShaderNodeMath'); fmax.operation = 'MAXIMUM'
 fnt.links.new(fw.outputs['Fac'], fmax.inputs[0]); fnt.links.new(fw2.outputs['Fac'], fmax.inputs[1])
-fth = fnt.nodes.new('ShaderNodeMath'); fth.operation = 'GREATER_THAN'; fth.inputs[1].default_value = 0.93
+fth = fnt.nodes.new('ShaderNodeMath'); fth.operation = 'GREATER_THAN'; fth.inputs[1].default_value = 0.86
 fnt.links.new(fmax.outputs[0], fth.inputs[0])
 fpr = fnt.nodes.new('ShaderNodeBsdfPrincipled'); fpr.inputs['Base Color'].default_value = (0.35, 0.33, 0.45, 1); fpr.inputs['Metallic'].default_value = 0.9
 ftr = fnt.nodes.new('ShaderNodeBsdfTransparent'); fmix = fnt.nodes.new('ShaderNodeMixShader')
@@ -166,10 +174,18 @@ for i, col in enumerate(Z['neon']):
     if i == 0: box(-36, 29.6, 14, 0.35, 0.35, nm, z=33); box(-36, 29.6, 14, 0.35, 0.35, nm, z=36.5)  # stripes over the crew sign
     if i == 1: box(103, 29.6, 3, 14, 0.4, nm, z=20); box(103.4, 29.4, 2.2, 13.2, 0.2, hazed('blade', (0.02, 0.02, 0.05)), z=20.4)
     if i == 2: box(108, 29.6, 8, 0.4, 0.4, nm, z=12)
-    # Neon signs scattered on the mid buildings.
-    for _ in range(3):
-        sx = R.uniform(0, 95); sz = R.uniform(8, 16)
-        box(sx, 148, R.uniform(3, 6), 0.5, 0.4, nm, z=sz)
+
+# The crew's sign: a dark board with a pink neon tube border on two posts. The game draws the
+# lettering live on the beat at world (70, 248) (sprites.ts SIGN), so the board sits right there.
+board = hazed('board', (0.03, 0.02, 0.06), rough=0.5)
+pink = hazed('signtube', Z['neon'][0], emit=Z['neon'][0], emit_strength=16)
+bx0, bz0, bw, bh = 5.6, (380 - 260) / 10, 16.0, 4.0
+box(bx0, 45, bw, bh, 0.4, board, z=bz0)
+for (x, z, w, h) in ((bx0, bz0, bw, 0.25), (bx0, bz0 + bh - 0.25, bw, 0.25), (bx0, bz0, 0.25, bh), (bx0 + bw - 0.25, bz0, 0.25, bh)):
+    box(x, 44.7, w, h, 0.2, pink, z=z)
+for px in (bx0 + 2, bx0 + bw - 2.3): box(px, 45.2, 0.3, bz0, 0.3, metal)
+p2 = bpy.data.objects.new('signglow', bpy.data.lights.new('signglow', 'POINT')); p2.data.energy = 3000; p2.data.color = Z['neon'][0]
+p2.location = (bx0 + bw / 2, 40, bz0 + bh / 2); sc.collection.objects.link(p2)
 
 # Street lamps with warm light pools on the court.
 lamp_m = hazed('lamp', (1, 0.9, 0.7), emit=(1, 0.85, 0.6), emit_strength=20)
