@@ -52,6 +52,12 @@ def _clean_texture():
             new = (~known) & (cnt[..., 0] > 0)
             fill[new] = acc[new] / cnt[new]; known = known | new
         print('FIX texture: repainted', int(speck.sum()), 'px of specks in the headband')
+        # Fur: the concept is bright white; the model's fur came out a mid grey. Lift light, unsaturated
+        # pixels toward white, leaving coloured cloth and dark details alone.
+        mx = fill[..., :3].max(-1); mn = fill[..., :3].min(-1)
+        fur = (mx > 0.45) & (mx - mn < 0.12)
+        fill[fur, :3] = np.clip(fill[fur, :3] * 1.18 + 0.06, 0, 1)
+        print('FIX texture: brightened', int(fur.sum()), 'px of fur')
         im.pixels[:] = fill.ravel()
         print('FIX texture: repainted', int(mask.sum()), 'px')
 
@@ -66,7 +72,7 @@ def _mat(name, color, metal, rough, emit=0.0):
 
 # Shades, tuned against the concept (art/skip/concept/image_1.png): small round lenses perched
 # low on the muzzle, eyes peeking over the top, thin dark frames, blue-violet mirror lenses.
-SHADES = dict(height=0.115, radius=0.095, spread=1.15, frame=0.06, standoff=0.03)
+SHADES = dict(height=0.125, radius=0.108, spread=1.12, frame=0.055, standoff=0.03)
 
 def _lens_material():
     m = bpy.data.materials.new('lens'); m.use_nodes = True
@@ -140,7 +146,7 @@ def _solid_headband(arm, meshes):
     w, h = im.size; px = np.array(im.pixels[:], dtype=np.float32).reshape(h, w, 4)
     M = arm.matrix_world; B = arm.data.bones
     hp = M @ B['Head'].head_local; top = M @ B['head_end'].head_local
-    band = _mat('band', (0.86, 0.12, 0.14, 1), 0.0, 0.45)
+    band = _mat('band', (0.72, 0.02, 0.04, 1), 0.0, 0.4)  # true red under AgX (lighter values read pink)
     for o in meshes:
         me = o.data; uv = me.uv_layers.active.data; mw = o.matrix_world
         info = []
