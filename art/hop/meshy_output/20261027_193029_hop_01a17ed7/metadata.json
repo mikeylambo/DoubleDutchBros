@@ -4,7 +4,7 @@
   "folder": "20261027_193029_hop_01a17ed7",
   "root_task_id": "01a17ed7-a771-712f-84de-1329bb45a37d",
   "created_at": "2026-10-27T19:30:29.772Z",
-  "updated_at": "2026-10-28T00:44:02.549Z",
+  "updated_at": "2026-10-28T01:51:28.447Z",
   "tasks": [
     {
       "task_id": "01a17ed7-a771-712f-84de-1329bb45a37d",
@@ -215,6 +215,20 @@
       "operation_id": "0417822e-3bdf-44d9-805a-c9efdd0a962d",
       "created_at": "2026-10-28T00:42:52.751Z",
       "updated_at": "2026-10-28T00:43:43.391Z"
+    },
+    {
+      "task_id": "01a18033-75ba-7528-a476-3a104ddd57c9",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-idle_bounce",
+      "parent_task_id": "01a17fe5-fa4f-73ae-9adb-453256f60d62",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a18033-75ba-7528-a476-3a104ddd57c9.json",
+      "operation_id": "598c21db-1f18-45a3-9ae0-be0615717e97",
+      "created_at": "2026-10-28T01:50:19.224Z",
+      "updated_at": "2026-10-28T01:51:28.447Z"
     }
   ]
 }

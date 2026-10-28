@@ -9,3 +9,4 @@ art/**/model/*.fbx
 art/**/rig/*.glb
 art/**/rig/*.fbx
 art/**/anim/*.glb
+__pycache__/
