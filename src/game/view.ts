@@ -6,7 +6,7 @@ import { GROUND_Y } from '../data/config';
 
 /** World span that must always be visible. */
 const VIEW_W = 720;
-const VIEW_ABOVE = 300; // world units above the ground line (bat dives, damage text)
+const VIEW_ABOVE = 260; // world units above the ground line (bat dives, damage text)
 const VIEW_BELOW = 45;
 const CENTER_X = 400;
 
@@ -19,8 +19,9 @@ export interface View { w: number; h: number; scale: number; groundY: number }
  * under them, but the action stays clear of them.
  */
 export const computeView = (w: number, h: number, top = 0, bottom = 0): View => {
-  const reserve = Math.min(180, Math.max(120, (h - top - bottom) * 0.3));
-  const scale = Math.max(0.1, Math.min(w / VIEW_W, (h - top - bottom - reserve) / VIEW_ABOVE));
+  const reserve = Math.min(150, Math.max(110, (h - top - bottom) * 0.25));
+  // The HUD is thin, translucent bars: the sky above the fighters may run under most of it.
+  const scale = Math.max(0.1, Math.min(w / VIEW_W, (h - top * 0.35 - bottom - reserve) / VIEW_ABOVE));
   const floor = Math.max(reserve, VIEW_BELOW * scale);
   return { w, h, scale, groundY: h - bottom - floor };
 };
