@@ -450,8 +450,8 @@ const rand = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) 
 /** Where the baked neon sign sits; the renderer flares the same text on the beat. */
 export const SIGN = { x: 70, y: GROUND_Y - 132, text: 'HOP & SKIP' };
 export const DISPLAY_FONT = "'Archivo Variable', system-ui, sans-serif";
-// The sign is baked into the backdrop: rebuild once the display font has arrived.
-if (typeof document !== 'undefined') void document.fonts?.load(`italic 900 22px ${DISPLAY_FONT}`).then(() => { backdrop = null; });
+// The blade sign is baked into the backdrop: rebuild once the display font has arrived.
+if (typeof document !== 'undefined') void document.fonts?.load(`900 18px ${DISPLAY_FONT}`).then(() => { backdrop = null; });
 
 const LEFT = -400, SPAN = CANVAS_WIDTH + 800, TOP = -100;
 
@@ -635,8 +635,7 @@ export const getBackdrop = () => {
     ctx.lineWidth = core ? 1 : 2.5;
     ctx.beginPath(); ctx.roundRect(SIGN.x - 12, SIGN.y - 26, 158, 38, 8); ctx.stroke();
   });
-  ctx.font = `italic 900 22px ${DISPLAY_FONT}`;
-  neon(ctx, '#f472b6', () => ctx.fillText(SIGN.text, SIGN.x, SIGN.y));
+  // The sign's lettering is drawn live by the renderer, so it always matches its beat flare.
   ctx.font = `900 18px ${DISPLAY_FONT}`;
   ctx.textAlign = 'center';
   neon(ctx, '#22d3ee', () => {

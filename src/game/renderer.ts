@@ -171,8 +171,17 @@ const drawBeatWorld = (ctx: CanvasRenderingContext2D, e: Engine) => {
   halo.addColorStop(1, 'rgba(244, 114, 182, 0)');
   ctx.fillStyle = halo;
   ctx.fillRect(480, -50, 280, 280);
-  // Neon sign flares.
+  // Neon sign: the lettering is live (never baked), so the steady tube and its flare share one glyph run.
   ctx.font = `italic 900 22px ${DISPLAY_FONT}`;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#f472b6';
+  ctx.shadowColor = '#f472b6';
+  ctx.shadowBlur = 20;
+  ctx.fillText(SIGN.text, SIGN.x, SIGN.y);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(255, 245, 251, 0.85)';
+  ctx.fillText(SIGN.text, SIGN.x, SIGN.y);
+  ctx.globalCompositeOperation = 'lighter';
   ctx.fillStyle = `rgba(244, 114, 182, ${0.6 * p})`;
   ctx.shadowColor = '#f472b6';
   ctx.shadowBlur = 30 * p;
