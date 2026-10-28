@@ -30,6 +30,10 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
   ctx.translate(v.w / 2 + sx, cy + sy);
   ctx.scale(zoom, zoom);
   ctx.translate(-v.w / 2, -cy);
+  const cam = followCamera(e, v, motion);
+  ctx.translate(v.w / 2, cy);
+  ctx.scale(cam.zoom, cam.zoom);
+  ctx.translate(-v.w / 2 - cam.pan, -cy);
   applyView(ctx, v);
 
   drawStage(ctx, e);
@@ -52,6 +56,30 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
   drawFlash(ctx, e, v);
   drawPost(ctx, e, v);
 };
+
+/**
+ * Tall screens can't fit the whole line-up at a readable size, so, like Mario & Luigi, the
+ * camera leans in on the bro's attack and pulls back out for enemy turns, where the player
+ * needs to see everything coming. Wide screens keep the fixed stage.
+ */
+const ATTACK_PHASES = new Set(['TARGET', 'WINDUP', 'LAUNCH', 'IMPACT']);
+const followCam = { zoom: 1, x: 400 };
+const followCamera = (e: Engine, v: View, motion: number) => {
+  const tall = v.h > v.w * 1.1;
+  const target = e.enemies[e.targetIdx];
+  const acting = ATTACK_PHASES.has(e.phase) && target && tall && motion > 0;
+  const bro = e.body[e.turn === 'RED' ? 'red' : 'blue'];
+  const goalZoom = acting ? 1.35 : 1;
+  const goalX = acting ? (bro.x + 16 + target.x + 20 * target.scale) / 2 : 400;
+  followCam.zoom += (goalZoom - followCam.zoom) * 0.08;
+  followCam.x += (goalX - followCam.x) * 0.08;
+  const t = (followCam.zoom - 1) / 0.35;
+  return { zoom: followCam.zoom, pan: (followCam.x - 400) * v.scale * t };
+};
+
+/** Every other ground enemy stands a step back, so a full line-up reads as a crowd, not a queue. */
+const BACK_ROW = { lift: 24, scale: 0.86 };
+const backRow = (en: Enemy, i: number) => i % 2 === 1 && en.float >= 0 && !en.isBoss;
 
 /** The wet court mirrors the fighters, faintly. */
 const drawReflections = (ctx: CanvasRenderingContext2D, e: Engine) => {
@@ -154,7 +182,14 @@ const drawStars = (ctx: CanvasRenderingContext2D, v: View) => {
 
 const drawStage = (ctx: CanvasRenderingContext2D, e: Engine) => {
   const img = getBackdrop(zoneForWave(e.wave), timeForWave(e.wave));
-  ctx.drawImage(img, -400, -100, img.width / BACKDROP_RES, img.height / BACKDROP_RES);
+  const w = img.width / BACKDROP_RES;
+  // Tall screens see past the top of the set: stretch its top edge upward and fade it into the night.
+  ctx.drawImage(img, 0, 0, img.width, 6, -400, -1600, w, 1502);
+  const g = ctx.createLinearGradient(0, -100, 0, -700);
+  g.addColorStop(0, 'rgba(5, 3, 15, 0)'); g.addColorStop(1, 'rgba(5, 3, 15, 1)');
+  ctx.fillStyle = g;
+  ctx.fillRect(-400, -1600, w, 1500);
+  ctx.drawImage(img, -400, -100, w, img.height / BACKDROP_RES);
 };
 
 /** 1 exactly on a beat, decaying to 0 before the next. */
@@ -185,7 +220,14 @@ const drawBeatWorld = (ctx: CanvasRenderingContext2D, e: Engine) => {
 
 const drawShadows = (ctx: CanvasRenderingContext2D, e: Engine) => {
   (['red', 'blue'] as BroKey[]).forEach((k) => drawShadow(ctx, e.body[k].x + 16, -e.body[k].y, 18));
-  e.enemies.forEach((en) => { if (en.hp > 0) drawShadow(ctx, en.x + 20 * en.scale, -en.y, 20 * en.scale); });
+  e.enemies.forEach((en, i) => {
+    if (en.hp <= 0) return;
+    const back = backRow(en, i);
+    ctx.save();
+    if (back) ctx.translate(0, -BACK_ROW.lift);
+    drawShadow(ctx, en.x + 20 * en.scale, -en.y, 20 * en.scale * (back ? BACK_ROW.scale : 1));
+    ctx.restore();
+  });
 };
 
 const drawHazards = (ctx: CanvasRenderingContext2D, e: Engine) => {
@@ -444,7 +486,8 @@ const drawSprite = (ctx: CanvasRenderingContext2D, char: string, clip: string, s
 const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine, reflection = false) => {
   const now = performance.now() / 1000;
   const live = new Set<number>();
-  e.enemies.forEach((en, i) => {
+  const order = e.enemies.map((en, i) => [en, i] as const).sort(([a, i], [b, j]) => Number(backRow(b, j)) - Number(backRow(a, i)));
+  order.forEach(([en, i]) => {
     live.add(en.id);
     if (en.hp <= 0 && e.phase !== 'IMPACT' && e.phase !== 'LAUNCH') return;
     let anim = enemyAnimators.get(en.id);
@@ -454,9 +497,10 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine, reflection = fals
     // Ground enemies hop on the beat; flyers bob.
     const bob = en.hp > 0 ? -pulse(e.beat + i * 0.25) * (en.float < 0 ? 6 : 3) : 0;
     ctx.save();
-    ctx.translate(en.x + 20 * en.scale, GROUND_Y + en.y + bob);
+    const back = backRow(en, i);
+    ctx.translate(en.x + 20 * en.scale, GROUND_Y + en.y + bob - (back ? BACK_ROW.lift : 0));
     ctx.globalAlpha *= en.hp > 0 ? 1 : 0.3;
-    ctx.scale(en.scale, en.scale);
+    ctx.scale(en.scale * (back ? BACK_ROW.scale : 1), en.scale * (back ? BACK_ROW.scale : 1));
     if (!drawSprite(ctx, enemySpriteId(en.type), clip, ENEMY_CLIPS[clip], anim, now, e.beat, 0)) {
       ctx.save();
       ctx.translate(-20, -70);
