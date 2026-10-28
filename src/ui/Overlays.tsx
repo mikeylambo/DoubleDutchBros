@@ -45,6 +45,12 @@ const BigButton = ({ onPress, children, className = 'bg-gradient-to-b from-white
   <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }} className={`font-display font-black italic py-4 md:py-5 px-16 md:px-24 rounded-full text-xl md:text-2xl active:scale-95 transition-transform uppercase tracking-wide ${className}`}>{children}</button>
 );
 
+/** Playtest builds (dev, or VITE_PLAYTEST=1) get shortcuts to every zone and time of day. */
+const PLAYTEST = import.meta.env.DEV || import.meta.env.VITE_PLAYTEST === '1';
+const PLAYTEST_WAVES: [string, number][] = [
+  ['Alley day', 1], ['Alley dusk', 4], ['Alley night', 7], ['Rooftop day', 11], ['Rooftop dusk', 14], ['Rooftop night', 17], ['Subway', 21]
+];
+
 const SmallButton = ({ onPress, children }: { onPress: () => void; children: React.ReactNode }) => (
   <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }} className="glass px-5 py-2.5 rounded-full text-[10px] font-semibold text-white/85 uppercase tracking-[0.25em] active:scale-95 transition-transform">{children}</button>
 );
@@ -83,6 +89,12 @@ export const Title = () => {
           <SmallButton onPress={() => (snap.tutorialDone ? engine.startTutorial() : engine.startRun())}>{snap.tutorialDone ? 'Tutorial' : 'Skip tutorial'}</SmallButton>
           {platform.pwa.canInstall && <SmallButton onPress={() => void platform.pwa.promptInstall()}>Install</SmallButton>}
         </div>
+        {PLAYTEST && (
+          <div className="mt-2 flex flex-wrap justify-center gap-2 max-w-md">
+            <div className="w-full text-[9px] font-semibold tracking-[0.4em] uppercase text-white/35">Playtest · jump to</div>
+            {PLAYTEST_WAVES.map(([label, wave]) => <SmallButton key={wave} onPress={() => engine.startRun({ startWave: wave })}>{label}</SmallButton>)}
+          </div>
+        )}
       </div>
       <div className="mt-8 text-[10px] tracking-wider text-white/35 max-w-sm leading-relaxed">
         J / → = A (Hop) · F / ← = B (Skip) · Esc = pause · Gamepad supported
