@@ -329,10 +329,7 @@ elif zone == 'rooftop':
     bpy.ops.mesh.primitive_uv_sphere_add(radius=2.5, location=(98, 36, 8)); d = bpy.context.object; d.scale = (1, 0.3, 1); d.data.materials.append(metal)
     box(30, 60, 30, 0.6, 0.6, metal, z=16); box(30, 60, 0.6, 16, 0.6, metal); box(59.4, 60, 0.6, 16, 0.6, metal)
     box(30.5, 60.4, 29, 9, 0.3, hazed('board', (0.06, 0.04, 0.1)), z=17)
-    # The Hop & Skip poster on the board, lit from within at dusk and night.
-    bpy.ops.mesh.primitive_plane_add(size=1, location=(45, 60.3, 21.5)); bb = bpy.context.object
-    bb.rotation_euler = (math.pi / 2, 0, 0); bb.scale = (28, 8.4, 1)
-    bb.data.materials.append(image_mat('billboard', 'art/scenes/posters/billboard.png', emit=0.3 + 1.2 * TOD['neon_k']))
+    # The board's face is left blank for later art.
     for i, (x_, z_) in enumerate(((31, 17.2), (31, 25.6))): box(x_, 60.1, 28, 0.35, 0.3, neon(i), z=z_)   # billboard tubes
     speakers(96, 30, 3)
     rooftop_clutter()
