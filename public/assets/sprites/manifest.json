@@ -1,1 +1,37 @@
-{}
+{
+  "hop": {
+    "attack": {
+      "frames": 14
+    },
+    "hurt": {
+      "frames": 10
+    },
+    "idle": {
+      "frames": 32
+    },
+    "jump": {
+      "frames": 16
+    },
+    "ko": {
+      "frames": 20
+    },
+    "land": {
+      "frames": 6
+    },
+    "launch": {
+      "frames": 12
+    },
+    "tag": {
+      "frames": 12
+    },
+    "trip": {
+      "frames": 18
+    },
+    "victory": {
+      "frames": 24
+    },
+    "windup": {
+      "frames": 16
+    }
+  }
+}
