@@ -10,3 +10,4 @@ art/**/rig/*.glb
 art/**/rig/*.fbx
 art/**/anim/*.glb
 __pycache__/
+art/**/model-v2/*.glb

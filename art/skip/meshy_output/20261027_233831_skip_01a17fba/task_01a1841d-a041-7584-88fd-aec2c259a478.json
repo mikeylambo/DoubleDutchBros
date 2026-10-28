@@ -1,0 +1,28 @@
+{
+  "id": "01a1841d-a041-7584-88fd-aec2c259a478",
+  "type": "multi-image-to-3d",
+  "name": "",
+  "art_style": "",
+  "object_prompt": "",
+  "style_prompt": "",
+  "negative_prompt": "",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "text_style_prompt": "",
+  "image_style_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1793217898250,
+  "progress": 100,
+  "started_at": 1793218549416,
+  "finished_at": 1793218645152,
+  "expires_at": 1793477845152,
+  "task_error": null,
+  "model_url": "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/tasks/01a1841d-a041-7584-88fd-aec2c259a478/output/model.glb?Expires=1793477845&Signature=pzaxUV2kJucqHDGFovxcl-6Q7zVYeNMPa3YY0kL2BxYxa2bFNa4OkB9a3VNexzkRhddAh-eydf97bB8NOri-R9FcEMCSK6H8yD5Sui4eeX4Hi0zP6n1~kT1PdWijtKKfLpkb-BRpV80irgdX6qqjoX4NwIUxMe9bsOVwARG7iEOacBJkKnfFIuc8G20-FaaKKUbEEMiJ6Fx-1D-1MdeVC2Z5goH5YCKCU1NZlc05zIK9KHs3oMU5v5kz8gJQKgRExXUME35Jl-Kjgt87fmTK7Xzk~auxn1clvbht5yEZvxKcJwuGByxmLF4O5Q~ql0nB1coMrtzV5t5NoSpNYkhABg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/tasks/01a1841d-a041-7584-88fd-aec2c259a478/output/model.glb?Expires=1793477845&Signature=pzaxUV2kJucqHDGFovxcl-6Q7zVYeNMPa3YY0kL2BxYxa2bFNa4OkB9a3VNexzkRhddAh-eydf97bB8NOri-R9FcEMCSK6H8yD5Sui4eeX4Hi0zP6n1~kT1PdWijtKKfLpkb-BRpV80irgdX6qqjoX4NwIUxMe9bsOVwARG7iEOacBJkKnfFIuc8G20-FaaKKUbEEMiJ6Fx-1D-1MdeVC2Z5goH5YCKCU1NZlc05zIK9KHs3oMU5v5kz8gJQKgRExXUME35Jl-Kjgt87fmTK7Xzk~auxn1clvbht5yEZvxKcJwuGByxmLF4O5Q~ql0nB1coMrtzV5t5NoSpNYkhABg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/65dd9419-deab-41bd-a00a-4cd09b471e7c/tasks/01a1841d-a041-7584-88fd-aec2c259a478/output/preview.png?Expires=1793477845&Signature=pHU4QqYV~Z8A5icNIJ8pUqZIlEM0IlzBTkqOr~8CSfZlDhDF5MrJicGewTng2e2iy7BZLnEWwb3RITy8s5XelAmXufOG~jPahiYouhPpi50jURLmaJdpoM2zMamcsOYWZsb7B~Z5zduVSCVxBenynz2DEMqhwQDQUiq38AD0hysEcB8NOXvP0DYKD8U1F~2XsuMdEg4kvyFQbXfwxl6q55hRTXzlcxKMSEZn1GM0Yapb4dovah-3CE~VNNZxPxSeudWcbnbtVlYg10DtqptjdO~j3exd0zoZk7qZzIOViMB1fFFAsVU1nGm05N96lFBZgmC9BVqskxubI94l1-kgNg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "remove_lighting": true,
+  "consumed_credits": 20
+}

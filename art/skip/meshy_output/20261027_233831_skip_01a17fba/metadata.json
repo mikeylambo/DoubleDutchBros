@@ -4,7 +4,7 @@
   "folder": "20261027_233831_skip_01a17fba",
   "root_task_id": "01a17fba-c674-72a1-a093-8eca004ab14e",
   "created_at": "2026-10-27T23:38:31.166Z",
-  "updated_at": "2026-10-28T20:04:58.482Z",
+  "updated_at": "2026-10-28T20:17:50.737Z",
   "tasks": [
     {
       "task_id": "01a17fba-c674-72a1-a093-8eca004ab14e",
@@ -237,12 +237,12 @@
       "endpoint": "/openapi/v1/multi-image-to-3d",
       "stage": "draft-v2",
       "parent_task_id": null,
-      "status": null,
+      "status": "SUCCEEDED",
       "files": [],
-      "task_json": null,
+      "task_json": "task_01a1841d-a041-7584-88fd-aec2c259a478.json",
       "operation_id": "83bf0713-0977-46c0-be0b-16dd15c0f979",
       "created_at": "2026-10-28T20:04:58.482Z",
-      "updated_at": "2026-10-28T20:04:58.482Z"
+      "updated_at": "2026-10-28T20:17:50.737Z"
     }
   ]
 }
