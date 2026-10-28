@@ -1,0 +1,91 @@
+{
+  "schema_version": "meshy.cli/v1",
+  "command": "download",
+  "ok": true,
+  "result": {
+    "source": {
+      "kind": "task-json",
+      "path": "/home/user/DoubleDutchBros/art/slime/meshy_output/20261027_233945_slime_01a17fbb/task_01a17fd7-5d03-7195-ac3b-7fe33b6c2577.json",
+      "shape": "api",
+      "resource": "multi-image-to-3d",
+      "task_id": "01a17fd7-5d03-7195-ac3b-7fe33b6c2577"
+    },
+    "assets": [
+      {
+        "key": "model.glb",
+        "kind": "model",
+        "format": "glb",
+        "model_format": "glb",
+        "container_format": null,
+        "filename": "model.glb",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "model.fbx",
+        "kind": "model",
+        "format": "fbx",
+        "model_format": "fbx",
+        "container_format": null,
+        "filename": "model.fbx",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "thumbnail.primary",
+        "kind": "thumbnail",
+        "format": "png",
+        "model_format": null,
+        "container_format": null,
+        "filename": "thumbnail.png",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "texture.0.base_color",
+        "kind": "texture",
+        "format": "png",
+        "model_format": null,
+        "container_format": null,
+        "filename": "texture_0_base_color.png",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "texture.0.metallic",
+        "kind": "texture",
+        "format": "png",
+        "model_format": null,
+        "container_format": null,
+        "filename": "texture_0_metallic.png",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "texture.0.roughness",
+        "kind": "texture",
+        "format": "png",
+        "model_format": null,
+        "container_format": null,
+        "filename": "texture_0_roughness.png",
+        "dependencies": [],
+        "has_url": true
+      },
+      {
+        "key": "texture.0.normal",
+        "kind": "texture",
+        "format": "png",
+        "model_format": null,
+        "container_format": null,
+        "filename": "texture_0_normal.png",
+        "dependencies": [],
+        "has_url": true
+      }
+    ],
+    "unknown_urls": [],
+    "product": null,
+    "saved_json": null
+  },
+  "error": null,
+  "warnings": []
+}

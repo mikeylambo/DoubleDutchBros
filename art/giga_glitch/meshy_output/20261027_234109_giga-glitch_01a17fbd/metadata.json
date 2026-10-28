@@ -4,7 +4,7 @@
   "folder": "20261027_234109_giga-glitch_01a17fbd",
   "root_task_id": "01a17fbd-3527-7796-9d03-edeab7bb9065",
   "created_at": "2026-10-27T23:41:09.773Z",
-  "updated_at": "2026-10-27T23:41:56.425Z",
+  "updated_at": "2026-10-28T00:16:15.290Z",
   "tasks": [
     {
       "task_id": "01a17fbd-3527-7796-9d03-edeab7bb9065",
@@ -19,6 +19,20 @@
       "operation_id": null,
       "created_at": "2026-10-27T23:41:53.207Z",
       "updated_at": "2026-10-27T23:41:56.425Z"
+    },
+    {
+      "task_id": "01a17fdb-8e6f-77a0-975b-b1852ec0d45b",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "model",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fdb-8e6f-77a0-975b-b1852ec0d45b.json",
+      "operation_id": "d9f62998-75cd-4f5c-9ecd-cbc5b23351bd",
+      "created_at": "2026-10-28T00:14:19.096Z",
+      "updated_at": "2026-10-28T00:16:15.290Z"
     }
   ]
 }

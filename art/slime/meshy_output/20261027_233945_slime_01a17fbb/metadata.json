@@ -4,7 +4,7 @@
   "folder": "20261027_233945_slime_01a17fbb",
   "root_task_id": "01a17fbb-e9f1-76a9-a4d5-276eab62ce4b",
   "created_at": "2026-10-27T23:39:45.094Z",
-  "updated_at": "2026-10-27T23:40:32.651Z",
+  "updated_at": "2026-10-28T00:11:22.263Z",
   "tasks": [
     {
       "task_id": "01a17fbb-e9f1-76a9-a4d5-276eab62ce4b",
@@ -19,6 +19,20 @@
       "operation_id": null,
       "created_at": "2026-10-27T23:40:28.786Z",
       "updated_at": "2026-10-27T23:40:32.651Z"
+    },
+    {
+      "task_id": "01a17fd7-5d03-7195-ac3b-7fe33b6c2577",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "model",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fd7-5d03-7195-ac3b-7fe33b6c2577.json",
+      "operation_id": "5ee91ea4-b0bf-47ba-b166-a7143e0909db",
+      "created_at": "2026-10-28T00:09:46.087Z",
+      "updated_at": "2026-10-28T00:11:22.263Z"
     }
   ]
 }

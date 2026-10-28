@@ -4,7 +4,7 @@
   "folder": "20261027_233944_moth_01a17fbb",
   "root_task_id": "01a17fbb-e949-709b-881e-758b59110c14",
   "created_at": "2026-10-27T23:39:44.971Z",
-  "updated_at": "2026-10-27T23:40:32.642Z",
+  "updated_at": "2026-10-28T00:15:56.501Z",
   "tasks": [
     {
       "task_id": "01a17fbb-e949-709b-881e-758b59110c14",
@@ -19,6 +19,20 @@
       "operation_id": null,
       "created_at": "2026-10-27T23:40:28.807Z",
       "updated_at": "2026-10-27T23:40:32.642Z"
+    },
+    {
+      "task_id": "01a17fd7-5d06-7733-9989-195674b35550",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "model",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fd7-5d06-7733-9989-195674b35550.json",
+      "operation_id": "f0a1304b-5e07-4e3c-a691-c242582c0503",
+      "created_at": "2026-10-28T00:09:45.665Z",
+      "updated_at": "2026-10-28T00:15:56.501Z"
     }
   ]
 }

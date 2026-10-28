@@ -4,7 +4,7 @@
   "folder": "20261027_234107_giga-slime_01a17fbd",
   "root_task_id": "01a17fbd-2c5b-758a-8ffe-8ae98db577c1",
   "created_at": "2026-10-27T23:41:07.764Z",
-  "updated_at": "2026-10-27T23:41:38.346Z",
+  "updated_at": "2026-10-28T00:14:54.800Z",
   "tasks": [
     {
       "task_id": "01a17fbd-2c5b-758a-8ffe-8ae98db577c1",
@@ -19,6 +19,20 @@
       "operation_id": null,
       "created_at": "2026-10-27T23:41:35.174Z",
       "updated_at": "2026-10-27T23:41:38.346Z"
+    },
+    {
+      "task_id": "01a17fda-ad33-736a-b787-6af4ff7f055b",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "model",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fda-ad33-736a-b787-6af4ff7f055b.json",
+      "operation_id": "5985a2da-97bb-4a0f-ab6e-97881469eee2",
+      "created_at": "2026-10-28T00:13:21.318Z",
+      "updated_at": "2026-10-28T00:14:54.800Z"
     }
   ]
 }

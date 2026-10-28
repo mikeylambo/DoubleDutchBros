@@ -4,7 +4,7 @@
   "folder": "20261027_234035_crab_01a17fbc",
   "root_task_id": "01a17fbc-ae38-7550-869b-4add3c351ec6",
   "created_at": "2026-10-27T23:40:35.194Z",
-  "updated_at": "2026-10-27T23:41:06.577Z",
+  "updated_at": "2026-10-28T00:13:19.850Z",
   "tasks": [
     {
       "task_id": "01a17fbc-ae38-7550-869b-4add3c351ec6",
@@ -19,6 +19,20 @@
       "operation_id": null,
       "created_at": "2026-10-27T23:41:02.995Z",
       "updated_at": "2026-10-27T23:41:06.577Z"
+    },
+    {
+      "task_id": "01a17fd8-e6d5-762b-a390-0cb62824dfd1",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "model",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a17fd8-e6d5-762b-a390-0cb62824dfd1.json",
+      "operation_id": "9339cb1c-563d-4486-81ff-85c834238d94",
+      "created_at": "2026-10-28T00:11:25.127Z",
+      "updated_at": "2026-10-28T00:13:19.850Z"
     }
   ]
 }
