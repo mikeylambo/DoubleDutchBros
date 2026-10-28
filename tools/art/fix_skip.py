@@ -72,7 +72,7 @@ def _mat(name, color, metal, rough, emit=0.0):
 
 # Shades, tuned against the concept (art/skip/concept/image_1.png): small round lenses perched
 # low on the muzzle, eyes peeking over the top, thin dark frames, blue-violet mirror lenses.
-SHADES = dict(height=0.125, radius=0.108, spread=1.12, frame=0.055, standoff=0.03)
+SHADES = dict(height=0.355, radius=0.108, spread=1.2, frame=0.055, standoff=0.03)
 
 def _lens_material():
     m = bpy.data.materials.new('lens'); m.use_nodes = True
@@ -90,9 +90,11 @@ def _lens_material():
     return m
 
 def _shades(arm):
-    # Bone heads are reliable landmarks on this rig (tails are not): base of head, top of skull, face front.
-    M = arm.matrix_world; B = arm.data.bones
-    hp = M @ B['Head'].head_local; top = M @ B['head_end'].head_local; face = M @ B['headfront'].head_local
+    """Measured on the posed head (the face isn't skinned 1:1 to the head bone, so rest-pose
+    placement drifts), with one lens mirrored onto the other so both match exactly."""
+    bpy.context.view_layer.update()
+    M = arm.matrix_world; P = arm.pose.bones
+    hp = M @ P['Head'].head; top = M @ P['head_end'].head; face = M @ P['headfront'].head
     up = (top - hp); size = up.length; up.normalize()
     fwd = face - hp; fwd = (fwd - up * fwd.dot(up)).normalized()
     side = fwd.cross(up).normalized()
@@ -100,44 +102,39 @@ def _shades(arm):
     bridge = hp + up * size * k['height']
     frame = _mat('frame', (0.82, 0.83, 0.88, 1), 1.0, 0.2)  # thin silver wire
     lens = _lens_material()
-    bpy.context.view_layer.update()
     dg = bpy.context.evaluated_depsgraph_get()
-    def on_face(p):
-        """Project a point onto the face surface along -fwd, then stand off a touch."""
-        hit, loc, nrm, *_ = bpy.context.scene.ray_cast(dg, p + fwd * size * 3, -fwd)
-        return (loc if hit else p + fwd * size * 0.6) + fwd * size * k['standoff']
+    def depth_at(p):
+        hit, loc, *_ = bpy.context.scene.ray_cast(dg, p + fwd * size * 3, -fwd)
+        return (loc - hp).dot(fwd) if hit else size * 0.6
+    # One depth for both lenses (the further-out face point, so neither sinks in), then mirror.
+    off = side * rad * k['spread']
+    d = max(depth_at(bridge + off), depth_at(bridge - off)) + size * k['standoff']
+    centre_of = lambda sgn: bridge - fwd * (bridge - hp).dot(fwd) + fwd * d + side * sgn * rad * k['spread']
+    basis = Matrix((side, up, fwd)).transposed()
     parts = []; centres = []
     for sgn in (-1, 1):
-        c = on_face(bridge + side * sgn * rad * k['spread'])
-        centres.append(c)
-        # Each lens turns a little outward, following the curve of the face.
-        rot = Matrix((side, up, fwd)).transposed()  # flat to the camera-facing plane, like the concept
+        c = centre_of(sgn); centres.append(c)
         bpy.ops.mesh.primitive_torus_add(major_radius=rad, minor_radius=rad * k['frame'], major_segments=40, minor_segments=10, location=c)
         t = bpy.context.object; t.data.materials.append(frame)
         bpy.ops.mesh.primitive_uv_sphere_add(radius=rad * 0.97, segments=32, ring_count=16, location=c)
-        d = bpy.context.object; d.scale = (1, 1, 0.22); d.data.materials.append(lens)  # a shallow domed lens
-        for o in (t, d): o.rotation_euler = rot.to_euler()
-        parts += [t, d]
-    # Temple arms: from each lens's outer edge back along the side of the head.
-    for sgn, c in zip((-1, 1), centres):
-        start = c + side * sgn * rad
-        end = start + side * sgn * rad * 0.6 - fwd * size * 0.35  # back into the side of the head
-        mid_t = (start + end) / 2; length = (end - start).length
-        bpy.ops.mesh.primitive_cylinder_add(radius=rad * k['frame'] * 0.8, depth=length, vertices=8, location=mid_t)
-        tm = bpy.context.object; tm.data.materials.append(frame)
-        tm.rotation_euler = (end - start).to_track_quat('Z', 'Y').to_euler(); parts.append(tm)
-    # Thin bridge arching between the lenses over the nose.
-    mid = (centres[0] + centres[1]) / 2 + up * rad * 0.35 + fwd * size * 0.01
+        dl = bpy.context.object; dl.scale = (1, 1, 0.22); dl.data.materials.append(lens)  # a shallow domed lens
+        for o in (t, dl): o.rotation_euler = basis.to_euler()
+        # Temple arm: from the lens's outer edge straight back along the side of the head.
+        start = c + side * sgn * rad; end = start + side * sgn * rad * 0.5 - fwd * size * 0.35
+        bpy.ops.mesh.primitive_cylinder_add(radius=rad * k['frame'] * 0.8, depth=(end - start).length, vertices=8, location=(start + end) / 2)
+        tm = bpy.context.object; tm.data.materials.append(frame); tm.rotation_euler = (end - start).to_track_quat('Z', 'Y').to_euler()
+        parts += [t, dl, tm]
+    # Bridge between the lenses, centred on the face.
+    mid = (centres[0] + centres[1]) / 2 + up * rad * 0.35
     gap = (centres[1] - centres[0]).length - 2 * rad
     bpy.ops.mesh.primitive_cylinder_add(radius=rad * k['frame'] * 0.9, depth=max(gap, rad * 0.3) * 1.1, vertices=10, location=mid)
     br = bpy.context.object; br.data.materials.append(frame)
-    br.rotation_euler = (Matrix((side, up, fwd)).transposed() @ Matrix.Rotation(math.pi / 2, 3, 'Y')).to_euler()
-    parts.append(br)
+    br.rotation_euler = (basis @ Matrix.Rotation(math.pi / 2, 3, 'Y')).to_euler(); parts.append(br)
     for o in parts:
         mw = o.matrix_world.copy()
         o.parent = arm; o.parent_type = 'BONE'; o.parent_bone = 'Head'
         o.matrix_world = mw
-    print('FIX shades: added', len(parts), 'parts')
+    print('FIX shades: added', len(parts), 'parts (mirrored)')
 
 def _solid_headband(arm, meshes):
     """The band's leftover specks are separate texture islands, so fix them in 3D: every face in the
