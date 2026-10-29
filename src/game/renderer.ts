@@ -7,6 +7,8 @@ import { AFFIXES } from './encounters';
 import { applyView, type View } from './view';
 import { drawAmbience, trainOffset } from './ambience';
 import { drawImpacts, drawSpeedLines, hitStop } from './impact';
+import { beginFighters, endFighters } from './lighting';
+import { drawCinemaOverlay, updateCinema } from './cinema';
 
 /** Draws the current engine state. Read-only: never mutates the sim. */
 export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: number) => {
@@ -35,8 +37,10 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
   ctx.translate(-v.w / 2, -cy);
   const cam = followCamera(e, v, motion);
   parallax = followCam.x + Math.sin(performance.now() / 9000) * 18 * motion;
+  const cine = updateCinema(e, motion);
   ctx.translate(v.w / 2, cy);
-  ctx.scale(cam.zoom, cam.zoom);
+  ctx.rotate(cine.tilt);
+  ctx.scale(cam.zoom * cine.zoom, cam.zoom * cine.zoom);
   ctx.translate(-v.w / 2 - cam.pan, -cy);
   applyView(ctx, v);
 
@@ -49,11 +53,14 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
   drawPerfectZone(ctx, e);
   drawRopes(ctx, e, 'back');
   drawWindupPips(ctx, e);
-  drawEnemies(ctx, e);
   drawSpeedLines(ctx, e, 'blue', GROUND_Y);
   drawSpeedLines(ctx, e, 'red', GROUND_Y);
-  drawBro(ctx, e, 'blue');
-  drawBro(ctx, e, 'red');
+  // Fighters are lit as a group to match the set: colour cast plus a rim from its key light.
+  const fighters = beginFighters(ctx);
+  drawEnemies(fighters, e);
+  drawBro(fighters, e, 'blue');
+  drawBro(fighters, e, 'red');
+  endFighters(ctx, zoneForWave(e.wave), timeForWave(e.wave));
   drawRopes(ctx, e, 'front');
   drawHeat(ctx, e);
   drawParticles(ctx, e);
@@ -62,6 +69,7 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
   ctx.restore();
   drawFlash(ctx, e, v);
   drawPost(ctx, e, v);
+  drawCinemaOverlay(ctx, v);
 };
 
 /**
@@ -84,7 +92,7 @@ const followCamera = (e: Engine, v: View, motion: number) => {
 };
 
 /** Every other ground enemy stands a step back, so a full line-up reads as a crowd, not a queue. */
-const BACK_ROW = { lift: 24, scale: 0.86 };
+const BACK_ROW = { lift: 44, scale: 0.8 };
 const backRow = (en: Enemy, i: number) => i % 2 === 1 && en.float >= 0 && !en.isBoss;
 
 /** The wet court mirrors the fighters, faintly. */
@@ -528,6 +536,8 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine, reflection = fals
     const back = backRow(en, i);
     ctx.translate(en.x + 20 * en.scale, GROUND_Y + en.y + bob - (back ? BACK_ROW.lift : 0));
     ctx.globalAlpha *= en.hp > 0 ? 1 : 0.3;
+    // Distance haze on the back row: a little darker and flatter, so it sits behind the front line.
+    if (back && !reflection) ctx.filter = 'brightness(0.78) saturate(0.8)';
     ctx.scale(en.scale * (back ? BACK_ROW.scale : 1), en.scale * (back ? BACK_ROW.scale : 1));
     if (!drawSprite(ctx, enemySpriteId(en.type), clip, ENEMY_CLIPS[clip], anim, now, e.beat, 0)) {
       ctx.save();
@@ -535,6 +545,7 @@ const drawEnemies = (ctx: CanvasRenderingContext2D, e: Engine, reflection = fals
       drawEnemyShape(ctx, en.type, en.color, e.beat + i * 0.25, en.hurt > 0);
       ctx.restore();
     }
+    ctx.filter = 'none'; // health bars and markers stay crisp
     if (reflection) { ctx.restore(); return; }
     ctx.translate(-20, -70);
     ctx.globalAlpha = 1;
