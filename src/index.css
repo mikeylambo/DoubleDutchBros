@@ -56,3 +56,24 @@ html, body, #root { height: 100%; overscroll-behavior: none; -webkit-user-select
 @media (prefers-reduced-motion: reduce) {
   .toast-in, .rank-in, .neon-text, .animate-pulse, .shimmer::after { animation: none !important; }
 }
+
+/* ---------- beat-reactive HUD: --beat is 1 on each heard beat, easing to 0 (set by the playfield loop) ---------- */
+.beat-bump { transform: scale(calc(1 + var(--beat, 0) * 0.05)); }
+.beat-glow { filter: brightness(calc(1 + var(--beat, 0) * 0.4)); }
+
+/* Action menu slides in from the acting bro's side. */
+@keyframes menu-from-left { from { opacity: 0; transform: translateX(-40px) skewX(-6deg); } to { opacity: 1; transform: none; } }
+@keyframes menu-from-right { from { opacity: 0; transform: translateX(40px) skewX(6deg); } to { opacity: 1; transform: none; } }
+.menu-from-left { animation: menu-from-left 240ms cubic-bezier(.2,.9,.3,1.1); }
+.menu-from-right { animation: menu-from-right 240ms cubic-bezier(.2,.9,.3,1.1); }
+
+/* Style rank: a shine sweeps across on every rank-up. */
+@keyframes rank-shine { from { background-position: 160% 0; } to { background-position: -60% 0; } }
+.rank-shine { background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.9) 50%, transparent 65%) no-repeat; background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text; animation: rank-shine 700ms 150ms ease-out both; }
+
+/* Wave cold open: slanted band slams in, holds, streaks out. */
+@keyframes wave-band { 0% { transform: translateX(110%) skewX(-12deg); } 14%, 80% { transform: translateX(0) skewX(-12deg); } 100% { transform: translateX(-110%) skewX(-12deg); } }
+@keyframes wave-text { 0%, 10% { opacity: 0; letter-spacing: 0.6em; } 24%, 82% { opacity: 1; letter-spacing: 0.08em; } 100% { opacity: 0; } }
+.wave-band { animation: wave-band 2000ms cubic-bezier(.3,.8,.3,1) both; }
+.wave-text { animation: wave-text 2000ms ease-out both; }

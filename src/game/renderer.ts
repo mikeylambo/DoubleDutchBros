@@ -78,8 +78,10 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
  * needs to see everything coming. Wide screens get a gentler lean of the same move.
  */
 const ATTACK_PHASES = new Set(['TARGET', 'WINDUP', 'LAUNCH', 'IMPACT']);
-const followCam = { zoom: 1, x: 0 };
+const followCam = { zoom: 1, x: 0, wave: 0 };
 const followCamera = (e: Engine, v: View, motion: number) => {
+  // Each wave opens a little wide and eases in, under the wave title card.
+  if (e.wave !== followCam.wave) { followCam.wave = e.wave; if (motion > 0) followCam.zoom = 0.86; }
   const tall = v.h > v.w * 1.1;
   const target = e.enemies[e.targetIdx];
   const acting = ATTACK_PHASES.has(e.phase) && target && motion > 0;

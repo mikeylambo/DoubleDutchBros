@@ -6,6 +6,7 @@ import { draw } from '../game/renderer';
 import { computeView, screenToWorldX, type View } from '../game/view';
 import { calculateDerived } from '../game/stats';
 import { useEngine } from './useEngine';
+import { timeForWave, zoneForWave } from '../game/sprites';
 
 const SWAG_COLOR: Record<string, string> = { D: '#94a3b8', C: '#cbd5e1', B: '#60a5fa', A: '#4ade80', S: '#facc15', SS: '#f0abfc' };
 
@@ -22,7 +23,7 @@ const Meter = ({ value, tone, thin = false }: { value: number; tone: [string, st
   return (
     <div className={`relative w-full ${thin ? 'h-1' : 'h-1.5'} rounded-full bg-white/[0.07] overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)]`}>
       <div className="absolute inset-y-0 left-0 rounded-full bg-white/50 transition-[width] duration-700 delay-300 ease-out" style={{ width: pct }} />
-      <div className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-200 ease-out"
+      <div className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-200 ease-out beat-glow"
         style={{ width: pct, background: `linear-gradient(90deg, ${tone[0]}, ${tone[1]})`, boxShadow: `0 0 10px ${tone[0]}` }} />
     </div>
   );
@@ -38,7 +39,14 @@ const SwagMeter = ({ compact }: { compact: boolean }) => {
         <span className="text-[8px] font-semibold tracking-[0.35em] text-white/40 uppercase">Style</span>
         <div className={compact ? 'w-10' : 'w-16'}><Meter value={snap.swag / 100} tone={[color, '#ffffff']} thin /></div>
       </div>
-      <div className={`font-display font-black italic leading-none ${compact ? 'text-2xl' : 'text-4xl'}`} style={{ color, textShadow: `0 0 18px ${color}88` }}>{snap.swagTier}</div>
+      {/* Keyed by tier: every rank change slams the badge in again with a shine across it. */}
+      <div className="beat-bump origin-center">
+        <div key={snap.swagTier} className={`rank-in relative font-display font-black italic leading-none ${compact ? 'text-3xl' : 'text-5xl md:text-6xl'}`}
+          style={{ color, textShadow: `0 0 22px ${color}aa, 0 3px 0 rgba(0,0,0,0.5)` }}>
+          {snap.swagTier}
+          <span aria-hidden className="rank-shine absolute inset-0 text-transparent">{snap.swagTier}</span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -114,8 +122,12 @@ export const Playfield = ({ overlay = false }: { overlay?: boolean }) => {
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
     let raf = 0;
+    const root = document.documentElement;
     const loop = () => {
       engine.frame();
+      // The HUD breathes with the music: --beat is 1 on each heard beat and eases to 0 before the next.
+      const b = engine.beat;
+      root.style.setProperty('--beat', engine.settings.reducedMotion ? '0' : Math.pow(1 - (b - Math.floor(b)), 3).toFixed(3));
       draw(ctx, engine, viewRef.current, canvas.width / Math.max(1, viewRef.current.w));
       raf = requestAnimationFrame(loop);
     };
@@ -153,6 +165,7 @@ export const Playfield = ({ overlay = false }: { overlay?: boolean }) => {
           <div className="glass px-5 py-1.5 rounded-full font-display text-sm md:text-lg font-black italic uppercase tracking-wide animate-pulse">{hint}</div>
         </div>
       )}
+      <WaveIntro top={bands.top} />
       {/* Menu floats on the court, below the action. */}
       <div className="absolute inset-x-0 z-20 flex justify-center p-3 md:p-5 pointer-events-none [&>*]:pointer-events-auto" style={{ bottom: bands.bottom }}>
         <ActionBar />
@@ -160,6 +173,39 @@ export const Playfield = ({ overlay = false }: { overlay?: boolean }) => {
     </div>
   );
 };
+
+/** Cold open for each wave: a slanted band with the wave number, zone and time of day. */
+const WaveIntro = ({ top }: { top: number }) => {
+  const { snap } = useEngine();
+  const [shown, setShown] = useState<number | null>(null);
+  useEffect(() => {
+    if (snap.gameState !== 'BATTLE') return;
+    setShown(snap.wave);
+    const t = setTimeout(() => setShown(null), 2000);
+    return () => clearTimeout(t);
+  }, [snap.wave, snap.gameState === 'BATTLE']); // eslint-disable-line react-hooks/exhaustive-deps
+  if (shown === null) return null;
+  const zone = zoneForWave(shown), tod = timeForWave(shown);
+  const where = zone === 'subway' ? 'Subway' : `${zone[0].toUpperCase()}${zone.slice(1)} · ${tod[0].toUpperCase()}${tod.slice(1)}`;
+  return (
+    <div key={shown} className="absolute inset-x-0 z-30 pointer-events-none overflow-hidden" style={{ top: `max(${top + 150}px, 30%)` }}>
+      <div className="wave-band mx-auto w-[min(720px,92%)] py-3 md:py-4 bg-[#05030f]/85 border-y-2 border-cyan-300/70 shadow-[0_0_40px_rgba(34,211,238,0.35)] text-center">
+        <div className="wave-text font-display font-black italic uppercase text-3xl md:text-5xl leading-none skew-x-12">Wave {shown}</div>
+        <div className="wave-text text-[10px] md:text-xs font-semibold tracking-[0.5em] uppercase text-cyan-200/90 mt-2 skew-x-12">{where}</div>
+      </div>
+    </div>
+  );
+};
+
+// Menu icons: simple filled glyphs that read at 14px.
+const Svg = ({ children }: { children: React.ReactNode }) => <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 shrink-0" fill="currentColor" aria-hidden>{children}</svg>;
+const IconStrike = () => <Svg><path d="M3 14l9-11 1 7h8l-9 11-1-7z" /></Svg>;
+const IconBolt = () => <Svg><path d="M12 2l2.6 6.4L21 9l-5 4.6L17.5 21 12 17.3 6.5 21 8 13.6 3 9l6.4-.6z" opacity=".35" /><path d="M13 3L6 13h5l-1 8 7-10h-5z" /></Svg>;
+const IconBag = () => <Svg><path d="M8 7V6a4 4 0 018 0v1h3l1 14H4L5 7zm2 0h4V6a2 2 0 00-4 0z" /></Svg>;
+const IconStar = () => <Svg><path d="M12 2l3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.8 5.7 21.4l1.5-7.1L1.8 9.4 9 8.6z" /></Svg>;
+const Label = ({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) => (
+  <span className="relative flex items-center justify-center gap-1.5 md:gap-2">{icon}{children}</span>
+);
 
 const SyncCost = ({ cost }: { cost: number }) => <div className="text-[8px] font-semibold tracking-widest text-white/40 uppercase mt-1.5">{cost} Sync</div>;
 
@@ -181,15 +227,22 @@ export const ActionBar = () => {
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: TONE[k][1], boxShadow: `0 0 8px ${TONE[k][0]}` }} />
           {snap.bros[k].name}'s turn
         </div>
-        <div className={`${DOCK} flex gap-2 w-full`}>
+        {/* Keyed by turn: the dock slides in from the acting bro's side (Hop stands left of Skip). */}
+        <div key={turn} className={`${DOCK} flex gap-2 w-full ${turn === 'RED' ? 'menu-from-left' : 'menu-from-right'}`} style={{ borderColor: `${TONE[k][0]}55` }}>
           <button data-nav onPointerDown={(e) => engine.action('BASIC', audio.fromEventTime(e.timeStamp))}
-            className={`${btn} text-[#0b0720] bg-gradient-to-b from-white to-slate-200 shadow-[0_6px_24px_rgba(255,255,255,0.18),inset_0_-2px_0_rgba(0,0,0,0.12)]`}>Attack</button>
+            className={`${btn} text-[#0b0720] bg-gradient-to-b from-white to-slate-200 shadow-[0_6px_24px_rgba(255,255,255,0.18),inset_0_-2px_0_rgba(0,0,0,0.12)]`}><Label icon={<IconStrike />}>Attack</Label></button>
           <button data-nav onPointerDown={(e) => engine.action('TECH', audio.fromEventTime(e.timeStamp))}
-            className={`${btn} bg-gradient-to-b from-violet-500 to-fuchsia-700 shadow-[0_6px_24px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] ${sync < 20 ? 'opacity-35 saturate-50' : ''}`}>Skill</button>
+            className={`${btn} bg-gradient-to-b from-violet-500 to-fuchsia-700 shadow-[0_6px_24px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] ${sync < 20 ? 'opacity-35 saturate-50' : ''}`}>
+            <Label icon={<IconBolt />}>Skill</Label>
+            {/* One pip per 20 Sync: how many skill casts are banked. */}
+            <span className="absolute bottom-1.5 inset-x-0 flex justify-center gap-1">
+              {[0, 1, 2, 3, 4].map((i) => <span key={i} className={`w-1.5 h-1.5 rounded-full ${sync >= (i + 1) * 20 ? 'bg-white shadow-[0_0_6px_white]' : 'bg-white/20'}`} />)}
+            </span>
+          </button>
           <button data-nav onPointerDown={() => engine.action('ITEMS')}
-            className={`${btn} bg-white/[0.06] border border-white/10 text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]`}>Items</button>
+            className={`${btn} bg-white/[0.06] border border-white/10 text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]`}><Label icon={<IconBag />}>Items</Label></button>
           <button data-nav onPointerDown={(e) => engine.action('ULT', audio.fromEventTime(e.timeStamp))}
-            className={`${btn} ${ready ? 'text-[#2a1600] bg-gradient-to-b from-amber-200 via-yellow-400 to-amber-600 shadow-[0_0_32px_rgba(250,204,21,0.55),inset_0_1px_0_rgba(255,255,255,0.6)] shimmer' : 'bg-white/[0.03] border border-white/5 text-white/25'}`}>Ult</button>
+            className={`${btn} ${ready ? 'beat-bump text-[#2a1600] bg-gradient-to-b from-amber-200 via-yellow-400 to-amber-600 shadow-[0_0_32px_rgba(250,204,21,0.55),inset_0_1px_0_rgba(255,255,255,0.6)] shimmer' : 'bg-white/[0.03] border border-white/5 text-white/25'}`}><Label icon={<IconStar />}>Ult</Label></button>
         </div>
       </div>
     );
