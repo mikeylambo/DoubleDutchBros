@@ -628,23 +628,35 @@ const drawFlash = (ctx: CanvasRenderingContext2D, e: Engine, v: View) => {
   ctx.restore();
 };
 
+const isNumber = (text: string) => /^[-+]\d/.test(text);
 const drawTexts = (ctx: CanvasRenderingContext2D, e: Engine) => {
+  // Damage numbers landing close together stack upward instead of piling on one spot: each sits
+  // above the older numbers near it.
+  const lift = new Map<object, number>();
+  const nums = e.floatingTexts.filter((t) => isNumber(t.text)).sort((a, b) => b.life - a.life);
+  nums.forEach((t, i) => lift.set(t, nums.slice(0, i).filter((o) => Math.abs(o.x - t.x) < 60).length * 30));
   for (const t of e.floatingTexts) {
-    // Pop in: start 50% larger and settle within the first ~5 frames.
-    const pop = 1 + Math.max(0, t.life - 0.9) * 5;
+    // Pop with overshoot: lands big, dips under size, settles (a spring, about a tenth of its life).
+    const k = (1 - t.life) * 10;
+    const pop = 1 + 0.7 * Math.exp(-k * 0.9) * Math.cos(k * 1.6);
+    const num = isNumber(t.text);
+    const crit = num && t.color === '#facc15';
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, t.life * 1.5));
-    ctx.font = `italic 900 ${30 * t.scale * pop}px ${DISPLAY_FONT}`;
+    ctx.translate(t.x, t.y - (lift.get(t) ?? 0));
+    // Crits hit harder: bigger and knocked off-level.
+    if (crit) ctx.rotate(-0.12);
+    ctx.font = `italic 900 ${30 * t.scale * pop * (crit ? 1.3 : 1)}px ${DISPLAY_FONT}`;
     ctx.fontStretch = 'expanded';
     ctx.textAlign = 'center';
     ctx.lineJoin = 'round';
-    ctx.lineWidth = 5;
+    ctx.lineWidth = crit ? 7 : 5;
     ctx.strokeStyle = 'rgba(5, 3, 15, 0.85)';
-    ctx.strokeText(t.text, t.x, t.y);
+    ctx.strokeText(t.text, 0, 0);
     ctx.fillStyle = t.color;
     ctx.shadowColor = t.color;
-    ctx.shadowBlur = 18;
-    ctx.fillText(t.text, t.x, t.y);
+    ctx.shadowBlur = crit ? 28 : 18;
+    ctx.fillText(t.text, 0, 0);
     ctx.restore();
   }
 };

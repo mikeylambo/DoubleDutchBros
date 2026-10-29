@@ -10,6 +10,7 @@ import { usePlatform, useRunResult } from './usePlatform';
 import type { GameSettings } from '../game/save';
 import { waveMemo } from './runMemo';
 import { audio } from '../game/audio';
+import { Icon } from './Icon';
 
 /**
  * `scrim`: in-run screens frost over the live game. `city`: out-of-run screens sit over the skyline.
@@ -129,7 +130,7 @@ export const Legacy = ({ onClose }: { onClose: () => void }) => {
                   <button data-nav key={n.id}
                     onPointerDown={(e) => { e.preventDefault(); if (!have) engine.buyLegacy(n.id); else if (style) engine.setRopeStyle(equipped ? null : n.id); }}
                     className={`glass p-4 rounded-2xl text-left flex gap-3 items-start active:scale-95 transition-all ${have ? '!border-emerald-300/40' : locked || !afford ? 'opacity-45' : '!border-amber-300/35 hover:bg-white/[0.08]'}`}>
-                    <div className="text-3xl">{n.icon}</div>
+                    <Icon glyph={n.icon} />
                     <div className="flex-1">
                       <div className="font-display font-black italic uppercase text-sm tracking-wide">{n.name}</div>
                       <div className="text-[11px] text-white/60 mt-0.5">{n.desc}</div>
@@ -268,7 +269,7 @@ export const Pause = () => {
       {detail && (
         <div className="fixed inset-0 scrim flex items-center justify-center p-6 z-[110]" onPointerDown={() => setDetail(null)}>
           <div className="glass p-8 rounded-3xl max-w-md w-full text-center" onPointerDown={(e) => e.stopPropagation()}>
-            <div className="text-6xl mb-4">{detail.icon}</div>
+            <div className="mb-4"><Icon glyph={detail.icon} size="lg" /></div>
             <div className="font-display text-2xl font-black italic uppercase mb-2">{detail.name}</div>
             <div className="text-sm text-white/60 mb-8 leading-relaxed">{detail.desc}</div>
             <button data-nav onPointerDown={() => setDetail(null)} className="w-full py-3.5 bg-gradient-to-b from-white to-slate-200 text-[#0b0720] font-display font-black italic uppercase rounded-full active:scale-95">Close</button>
@@ -305,7 +306,7 @@ export const Shop = () => {
             const item = ITEM_DATA[id];
             return (
               <button data-nav key={id} onPointerDown={() => engine.buyItem(id)} className={`glass p-5 rounded-2xl flex gap-4 items-center active:scale-95 transition-all hover:bg-white/[0.08] ${snap.rp < item.cost ? 'opacity-50' : ''}`}>
-                <div className="w-12 h-12 shrink-0 rounded-xl bg-white/[0.06] flex items-center justify-center text-2xl">{item.icon}</div>
+                <Icon glyph={item.icon} />
                 <div className="flex-1 text-left">
                   <div className="font-display font-black italic uppercase tracking-wide">{item.name} <span className="text-white/35 text-xs not-italic font-semibold tabular-nums">×{snap.inventory[id]}</span></div>
                   <div className="text-[11px] text-white/50 mt-1 leading-snug">{item.desc}</div>
@@ -322,7 +323,7 @@ export const Shop = () => {
                 const equipped = snap.bros[tab].gear[slot] === item.id;
                 return (
                   <button data-nav key={item.id} onPointerDown={() => engine.buyOrEquip(tab, slot, item.id)} className={`glass w-full p-4 rounded-2xl flex gap-3 items-center active:scale-95 transition-all ${equipped ? '!border-cyan-300/50 !bg-cyan-300/[0.08]' : owned ? 'hover:bg-white/[0.08]' : 'hover:bg-white/[0.08] text-white/75'}`}>
-                    <div className="w-10 h-10 shrink-0 rounded-xl bg-white/[0.06] flex items-center justify-center text-xl">{item.icon}</div>
+                    <Icon glyph={item.icon} size="sm" />
                     <div className="flex-1 text-left">
                       <div className="text-xs font-display font-black italic uppercase tracking-wide">{item.name}</div>
                       <div className="text-[10px] text-white/50 mt-1 leading-snug">{item.desc}</div>
@@ -354,7 +355,7 @@ export const MutatorPick = () => {
           const m = MUTATORS[id];
           return (
             <ChoiceCard key={id} accent="#e879f9" onPress={() => engine.chooseMutator(id)}>
-              <div className="relative text-5xl mb-3">{m.icon}</div>
+              <div className="relative mb-3"><Icon glyph={m.icon} size="lg" /></div>
               <div className="relative font-display text-2xl font-black italic uppercase">{m.name}</div>
               <div className="relative mt-4 text-sm text-emerald-200">+ {m.blessing}</div>
               <div className="relative mt-1 text-sm text-rose-200">− {m.curse}</div>
@@ -492,7 +493,7 @@ export const LevelUp = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full max-w-5xl mt-8">
         {snap.levelUp.choices.map((c) => (
           <ChoiceCard key={c.key} accent={b.color} onPress={() => engine.chooseLevel(c)}>
-            <div className="relative text-5xl mb-3">{c.icon}</div>
+            <div className="relative mb-3"><Icon glyph={c.icon} size="lg" /></div>
             <div className={`relative font-display text-2xl md:text-3xl font-black italic uppercase mb-2 ${c.kind === 'stat' ? c.color : 'text-amber-200'}`}>{c.name}{c.kind === 'stat' ? ' +' : ''}</div>
             <div className="relative text-white/55 text-xs leading-relaxed">{c.desc}</div>
           </ChoiceCard>

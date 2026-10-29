@@ -7,6 +7,7 @@ import { computeView, screenToWorldX, type View } from '../game/view';
 import { calculateDerived } from '../game/stats';
 import { useEngine } from './useEngine';
 import { waveMemo } from './runMemo';
+import { Icon } from './Icon';
 import { timeForWave, zoneForWave } from '../game/sprites';
 
 const SWAG_COLOR: Record<string, string> = { D: '#94a3b8', C: '#cbd5e1', B: '#60a5fa', A: '#4ade80', S: '#facc15', SS: '#f0abfc' };
@@ -56,8 +57,31 @@ const PauseIcon = () => (
   <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" aria-hidden><rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor" /><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor" /></svg>
 );
 
+/** A bro's face, cropped from the first frame of their idle sprite strip, in a ring of their colour. */
+const Portrait = ({ who, active, small }: { who: 'red' | 'blue'; active: boolean; small: boolean }) => {
+  const px = small ? 26 : 38, zoom = 2.3, frame = px * zoom, frames = 32;
+  return (
+    <div aria-hidden className={`shrink-0 rounded-full border-2 overflow-hidden transition-shadow duration-300 ${active ? '' : 'saturate-50'}`}
+      style={{
+        width: px, height: px, borderColor: TONE[who][1],
+        boxShadow: active ? `0 0 16px ${TONE[who][0]}, 0 0 0 3px ${TONE[who][0]}33` : 'none',
+        background: `radial-gradient(circle at 50% 30%, ${TONE[who][0]}55, #05030f 75%)`,
+      }}>
+      <div style={{
+        width: px, height: px,
+        backgroundImage: `url(/assets/sprites/${who === 'red' ? 'hop' : 'skip'}/idle.png)`,
+        backgroundSize: `${frame * frames}px ${frame}px`,
+        backgroundPosition: `${-(frame - px) / 2}px ${-frame * 0.12}px`,
+      }} />
+    </div>
+  );
+};
+
 export const Hud = ({ compact = false }: { compact?: boolean }) => {
   const { engine, snap } = useEngine();
+  // The acting bro's card lifts and glows; outside the player's turn both sit level.
+  const playerTurn = ['MENU', 'TECH_SELECT', 'ITEMS', 'ITEMS_TARGETING', 'TARGET', 'WINDUP', 'LAUNCH', 'IMPACT', 'RETURN'].includes(snap.phase);
+  const active = (k: 'red' | 'blue') => !playerTurn || snap.turn === (k === 'red' ? 'RED' : 'BLUE');
   return (
     <div className={`shrink-0 flex justify-between items-center gap-4 z-10 bg-gradient-to-b from-[#05030f]/90 via-[#05030f]/50 to-transparent ${compact ? 'h-11 px-4 pl-[max(env(safe-area-inset-left),16px)] pr-[max(env(safe-area-inset-right),16px)]' : 'h-[clamp(60px,10vh,96px)] px-4 md:px-8'}`}>
       <div className="flex gap-4 md:gap-8 w-full max-w-2xl">
@@ -65,7 +89,9 @@ export const Hud = ({ compact = false }: { compact?: boolean }) => {
           const b = snap.bros[k];
           const max = calculateDerived(b).maxHp;
           return (
-            <div key={k} className={`flex flex-col w-1/2 transition-opacity ${b.hp <= 0 ? 'opacity-30 grayscale' : ''}`}>
+            <div key={k} className={`flex items-center gap-2.5 w-1/2 transition-all duration-300 ${b.hp <= 0 ? 'opacity-30 grayscale' : ''} ${active(k) ? '-translate-y-0.5' : 'opacity-70'}`}>
+              <Portrait who={k} active={active(k)} small={compact} />
+              <div className="flex flex-col flex-1 min-w-0">
               <div className="flex justify-between items-baseline mb-1.5 gap-2">
                 <span className="flex items-baseline gap-2 min-w-0">
                   <span className="font-display font-black italic uppercase text-sm md:text-base leading-none tracking-wide" style={{ color: TONE[k][1] }}>{b.name}</span>
@@ -74,6 +100,7 @@ export const Hud = ({ compact = false }: { compact?: boolean }) => {
                 <span className="text-[10px] font-semibold tabular-nums text-white/70 whitespace-nowrap">{b.hp}<span className="hidden md:inline text-white/30"> / {max}</span></span>
               </div>
               <Meter value={b.hp / max} tone={TONE[k]} />
+              </div>
             </div>
           );
         })}
@@ -257,7 +284,7 @@ export const ActionBar = () => {
           const m = MOVE_REGISTRY[id];
           return (
             <button data-nav key={id} onPointerDown={(e) => engine.action(id as 'TECH1', audio.fromEventTime(e.timeStamp))} className={`${CARD} ${sync < m.cost ? 'opacity-35' : ''}`}>
-              <span className="text-xl mb-1.5">{m.icon}</span>
+              <span className="mb-1.5"><Icon glyph={m.icon} size="sm" /></span>
               <div className="font-display text-[11px] font-black italic uppercase tracking-wide text-amber-200">{m.name}</div>
               <SyncCost cost={m.cost} />
             </button>
@@ -272,7 +299,7 @@ export const ActionBar = () => {
       <div className={`${DOCK} flex gap-2 w-full max-w-2xl`}>
         {(Object.keys(ITEM_DATA) as ItemId[]).map((id) => (
           <button data-nav key={id} onPointerDown={() => engine.selectItem(id)} className={`${CARD} ${snap.inventory[id] <= 0 ? 'opacity-35' : ''}`}>
-            <span className="text-xl">{ITEM_DATA[id].icon}</span>
+            <Icon glyph={ITEM_DATA[id].icon} size="sm" />
             <span className="text-[9px] font-semibold tracking-wider mt-1.5 uppercase">{ITEM_DATA[id].name} <span className="text-white/40 tabular-nums">×{snap.inventory[id]}</span></span>
           </button>
         ))}
