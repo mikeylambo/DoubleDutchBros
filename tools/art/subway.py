@@ -146,6 +146,7 @@ cyl(80, 26, 1.6, 1.1, 3.2, mat_simple('can', (0.15, 0.3, 0.2), 0.5, metal=0.4))
 for k in range(4): box(-75 + k * 4, 20, 0.8, 4, 4, rail); box(-74 + k * 4, 21.5, 2.5, 0.2, 0.2, rail, z=3.2)
 
 # ---------- the train ----------
+before_train = set(bpy.data.objects)
 body = mat_simple('train', (0.62, 0.64, 0.66), 0.3, metal=0.85, z_dirt=3)
 interior = mat_emit('interior', (1.0, 0.82, 0.55), 1.3)  # warm, not blown out
 for cx in (-70, -16, 38, 92, 146):
@@ -155,6 +156,7 @@ for cx in (-70, -16, 38, 92, 146):
     box(cx + 1, 45.7, 50, 0.5, 0.1, mat_emit('stripe', (1.0, 0.45, 0.1), 2.5), z=2.6)
     box(cx + 22, 45.8, 7, 9.5, 0.1, mat_simple('door', (0.5, 0.52, 0.55), 0.35, metal=0.8, dirty=False), z=-1)
 box(-14, 45.6, 6, 1.4, 0.1, mat_emit('route', (1.0, 0.55, 0.1), 6), z=9.6)        # route LED sign
+train = set(bpy.data.objects) - before_train
 
 # The station ends in tunnel mouths at both sides: dark arches the tracks vanish into.
 for (x0, sgn) in ((-62, -1), (142, 1)):
@@ -210,4 +212,15 @@ sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = sampl
 sc.cycles.use_denoising = True
 sc.cycles.max_bounces = 6
 sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Punchy'
+# Parallax and the moving train: LAYER=far (wall, tracks, tunnels) | train (the cars alone) | near
+# (platform, columns, ceiling), split on bounding-box centre depth (posters have their transforms applied),
+# each rendered with the others hidden; train and near on transparent film.
+LAYER = os.environ.get('LAYER')
+if LAYER:
+    for ob in sc.objects:
+        if ob.type != 'MESH': continue
+        if ob is vol: ob.hide_render = LAYER != 'far'; continue
+        band = 'train' if ob in train else ('far' if ob.location.y + sum(c[1] for c in ob.bound_box) / 8 * ob.scale.y >= 36 else 'near')
+        ob.hide_render = ob.hide_render or band != LAYER
+    sc.render.film_transparent = LAYER != 'far'
 sc.render.filepath = out; bpy.ops.render.render(write_still=True); print('DONE subway')

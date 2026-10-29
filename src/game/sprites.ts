@@ -466,16 +466,19 @@ const loadScene = (key: string) => {
   scenes.set(key, img);
 };
 
-/** Parallax layers for open-air sets: far (sky), mid (skyline), near (the set). Null until all three load. */
+/**
+ * Parallax layers: far (sky / back wall), mid (skyline; in the Subway, the train, which moves), near (the set).
+ * Null until all three load.
+ */
 type Layers = { far: HTMLImageElement; mid: HTMLImageElement; near: HTMLImageElement };
 const layerSets = new Map<string, Layers | null>();
 export const getSceneLayers = (zone: Zone, tod: TimeOfDay): Layers | null => {
-  if (zone === 'subway' || typeof Image === 'undefined') return null;
+  if (typeof Image === 'undefined') return null;
   const key = `${zone}-${tod}`;
   if (!layerSets.has(key)) {
     const load = (l: string, ext: string) => Object.assign(new Image(), { src: `/assets/scenes/${key}-${l}.${ext}` });
     layerSets.set(key, null);
-    const set = { far: load('far', 'jpg'), mid: load('mid', 'webp'), near: load('near', 'webp') };
+    const set = { far: load('far', 'jpg'), mid: load(zone === 'subway' ? 'train' : 'mid', 'webp'), near: load('near', 'webp') };
     void Promise.all(Object.values(set).map((i) => i.decode())).then(() => layerSets.set(key, set), () => {});
   }
   return layerSets.get(key) ?? null;

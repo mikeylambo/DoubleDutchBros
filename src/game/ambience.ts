@@ -52,6 +52,20 @@ const drawWindows = (ctx: CanvasRenderingContext2D, img: HTMLImageElement, top: 
   }
 };
 
+// ---------- the subway train ----------
+
+/**
+ * Where the train is (world units from its rendered spot) on a 32-beat cycle: it pulls in over a
+ * bar, waits two bars, pulls out over a bar, then the track is empty for four bars.
+ */
+export const trainOffset = (beat: number) => {
+  const t = ((beat % 32) + 32) % 32;
+  if (t < 4) return -2200 * Math.pow(1 - t / 4, 3);   // braking in from the left
+  if (t < 12) return 0;
+  if (t < 16) return 2200 * Math.pow((t - 12) / 4, 3); // accelerating out to the right
+  return null;
+};
+
 // ---------- drifting clouds ----------
 
 const puffs = new Map<TimeOfDay, HTMLCanvasElement>();
@@ -112,6 +126,7 @@ export const drawAmbience = (ctx: CanvasRenderingContext2D, zone: Zone, tod: Tim
   top: number, w: number, beat: number, motion: number) => {
   const now = performance.now() / 1000;
   const lit = tod !== 'day';
+  if (zone === 'subway') return; // underground: the train is its animation
   if (layer === 'far') {
     drawClouds(ctx, tod, now * motion);
     if (zone === 'rooftop') {

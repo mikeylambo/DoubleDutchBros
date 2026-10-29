@@ -8,9 +8,9 @@ Alpha is preserved; bloom runs separately (glow.py)."""
 import sys, random
 from PIL import Image, ImageChops, ImageFilter
 src, dst, tod = sys.argv[1], sys.argv[2], sys.argv[3]; layer = sys.argv[4] if len(sys.argv) > 4 else 'far'
-RIM = {'day': (255, 244, 220), 'dusk': (255, 150, 100), 'night': (220, 130, 255)}[tod]
-HAZE = {'day': (150, 170, 205), 'dusk': (150, 75, 100), 'night': (70, 30, 95)}[tod]
-RIM_K = {'day': 0.5, 'dusk': 0.8, 'night': 0.7}[tod]
+RIM = {'subway': (215, 255, 230), 'day': (255, 244, 220), 'dusk': (255, 150, 100), 'night': (220, 130, 255)}[tod]
+HAZE = {'subway': (60, 80, 72), 'day': (150, 170, 205), 'dusk': (150, 75, 100), 'night': (70, 30, 95)}[tod]
+RIM_K = {'subway': 0.3, 'day': 0.5, 'dusk': 0.8, 'night': 0.7}[tod]
 
 im = Image.open(src).convert('RGBA'); s = im.width / 3200
 rgb, a = im.convert('RGB'), im.getchannel('A')

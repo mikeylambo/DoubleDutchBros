@@ -161,6 +161,8 @@ export class Engine {
   particles: Particle[] = [];
   /** Screen flash intensity 0..1, decays each step. */
   flash = 0;
+  /** The latest landed hit, for the renderer's impact effects (hit-stop, starburst). `seq` counts up per hit. */
+  impact = { seq: 0, x: 0, y: 0, crit: false, ko: false, ult: false, color: '#ffffff' };
   flashColor = '#ffffff';
 
   // --- clock ---
@@ -1038,6 +1040,7 @@ export class Engine {
     this.text(target.x + 20, ty - 40, `-${hit.dmg}`, hit.crit ? '#facc15' : '#fff', 1.6);
     const cx = target.x + 20 * target.scale, cy = ty - 35 * target.scale;
     this.burst(cx, cy, hit.crit ? '#facc15' : '#ffffff', hit.crit ? 26 : 14, hit.crit ? 9 : 6);
+    this.impact = { seq: this.impact.seq + 1, x: cx, y: cy, crit: hit.crit, ko: target.hp === 0, ult: move === 'ULT', color: hit.crit ? '#facc15' : '#ffffff' };
     if (hit.crit) { this.flash = 0.35; this.flashColor = '#facc15'; }
     if (move === 'ULT') { this.flash = 0.8; this.flashColor = '#ffffff'; }
     if (move === 'TECH6') {
