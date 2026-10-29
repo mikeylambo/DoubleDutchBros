@@ -297,13 +297,15 @@ export const PadButton = ({ id, size = 'w-28 h-28 md:w-32 md:h-32 text-5xl md:te
   const lit = phase === 'ITEMS_TARGETING' || (turn === id && ['MENU', 'TECH_SELECT', 'ITEMS', 'TARGET', 'WINDUP'].includes(phase));
   const cue = expectedTap === id;
   const style = cue ? PAD_CUE : lit ? PAD_LIT[id] : PAD_IDLE;
+  const [presses, setPresses] = useState(0);
   return (
     <button
-      onPointerDown={(e) => { e.preventDefault(); engine.input(id, audio.fromEventTime(e.timeStamp)); }}
+      onPointerDown={(e) => { e.preventDefault(); setPresses((n) => n + 1); engine.input(id, audio.fromEventTime(e.timeStamp)); }}
       style={style}
-      className={`${size} shrink-0 rounded-full flex items-center justify-center transition-all duration-75 active:scale-90 border-2 backdrop-blur-md touch-none font-display font-black italic ${cue ? 'scale-110 text-[#2a1600]' : lit ? 'text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]' : 'text-white/40'}`}
+      className={`${size} relative shrink-0 rounded-full flex items-center justify-center transition-all duration-75 active:scale-90 border-2 backdrop-blur-md touch-none font-display font-black italic ${cue ? 'scale-110 text-[#2a1600]' : lit ? 'text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]' : 'text-white/40'}`}
     >
       {cue ? '!' : id === 'RED' ? 'A' : 'B'}
+      {presses > 0 && <span key={presses} aria-hidden className="pad-ripple absolute inset-0 rounded-full border-2 pointer-events-none" style={{ borderColor: id === 'RED' ? '#fda4af' : '#bae6fd' }} />}
     </button>
   );
 };

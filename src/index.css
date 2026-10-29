@@ -77,3 +77,15 @@ html, body, #root { height: 100%; overscroll-behavior: none; -webkit-user-select
 @keyframes wave-text { 0%, 10% { opacity: 0; letter-spacing: 0.6em; } 24%, 82% { opacity: 1; letter-spacing: 0.08em; } 100% { opacity: 0; } }
 .wave-band { animation: wave-band 2000ms cubic-bezier(.3,.8,.3,1) both; }
 .wave-text { animation: wave-text 2000ms ease-out both; }
+
+/* Screen wipe: a slanted red | white | blue band crosses the screen in one sweep. */
+@keyframes screen-wipe { from { transform: translateX(-110%) skewX(-18deg); } to { transform: translateX(110%) skewX(-18deg); } }
+.screen-wipe { animation: screen-wipe 560ms cubic-bezier(.65,0,.35,1) both; }
+
+/* Press feel for every button: a quick squash and a lift in brightness (Tailwind active: classes still win). */
+:where(button) { transition: transform 80ms ease-out, filter 80ms ease-out; }
+:where(button:active:not(:disabled)) { filter: brightness(1.15); }
+
+/* Pad ripple: a ring that spreads out from a pressed face button. */
+@keyframes pad-ripple { from { transform: scale(0.8); opacity: 0.8; } to { transform: scale(1.7); opacity: 0; } }
+.pad-ripple { animation: pad-ripple 420ms ease-out forwards; }

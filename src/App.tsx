@@ -7,6 +7,7 @@ import { GameOver, LevelUp, MutatorPick, Pause, Shop, Title, TutorialDone, WaveC
 import { EngineContext, useEngine } from './ui/useEngine';
 import { PlatformContext } from './ui/usePlatform';
 import { Toasts } from './ui/Toasts';
+import { ScreenWipe, TouchFeedback } from './ui/Transitions';
 
 /** Phones held sideways: short screen, thumbs on the sides. */
 const useHandheldLandscape = () => {
@@ -76,7 +77,7 @@ const App = () => {
   return (
     <PlatformContext.Provider value={platform}>
       <EngineContext.Provider value={platform.engine}>
-        <div className="text-white font-sans"><Game /><Toasts /></div>
+        <div className="text-white font-sans"><Game /><Toasts /><ScreenWipe /><TouchFeedback /></div>
       </EngineContext.Provider>
     </PlatformContext.Provider>
   );
