@@ -60,7 +60,13 @@ export const draw = (ctx: CanvasRenderingContext2D, e: Engine, v: View, dpr: num
   drawEnemies(fighters, e);
   drawBro(fighters, e, 'blue');
   drawBro(fighters, e, 'red');
-  endFighters(ctx, zoneForWave(e.wave), timeForWave(e.wave));
+  const zone = zoneForWave(e.wave);
+  const train = zone === 'subway' ? trainOffset(e.beat) : null;
+  endFighters(ctx, zone, timeForWave(e.wave), {
+    beat: pulse(e.beat),
+    flash: e.flash * e.settings.flashes, flashColor: e.flashColor,
+    train: train === null ? 0 : Math.max(0, 1 - Math.abs(train) / 1600),
+  });
   drawRopes(ctx, e, 'front');
   drawHeat(ctx, e);
   drawParticles(ctx, e);

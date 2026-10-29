@@ -35,8 +35,18 @@ export const beginFighters = (ctx: CanvasRenderingContext2D) => {
   return f;
 };
 
+/** What's happening this frame that should light the fighters. */
+export interface LiveLight {
+  /** 1 on each heard beat, easing to 0: neon rims breathe with the music. */
+  beat: number;
+  /** A screen flash (crit, ult, tandem) washes over the fighters in its colour. */
+  flash: number; flashColor: string;
+  /** 0..1 while the Subway train's lit windows slide past behind them. */
+  train: number;
+}
+
 /** Light the fighters for this set and put them on the frame. */
-export const endFighters = (ctx: CanvasRenderingContext2D, zone: Zone, tod: TimeOfDay) => {
+export const endFighters = (ctx: CanvasRenderingContext2D, zone: Zone, tod: TimeOfDay, live: LiveLight) => {
   if (!fighters) return;
   const L = LIGHTS[`${zone}-${tod}`] ?? LIGHTS['alley-night'];
   const f = fighters.getContext('2d')!;
@@ -55,8 +65,13 @@ export const endFighters = (ctx: CanvasRenderingContext2D, zone: Zone, tod: Time
   // Colour cast over the bodies only.
   f.globalCompositeOperation = 'source-atop';
   f.fillStyle = L.tint; f.fillRect(0, 0, W, H);
+  // Passing train: warm window light sweeps the bodies.
+  if (live.train > 0.01) { f.fillStyle = `rgba(255,200,130,${0.18 * live.train})`; f.fillRect(0, 0, W, H); }
+  // Big flashes light the fighters too, not just the screen.
+  if (live.flash > 0.02) { f.globalAlpha = Math.min(0.6, live.flash * 0.7); f.fillStyle = live.flashColor; f.fillRect(0, 0, W, H); f.globalAlpha = 1; }
   f.globalCompositeOperation = 'lighter';
-  f.globalAlpha = L.rimAlpha;
+  // Neon rims (the night sets) breathe on the beat; daylight and sun rims hold steady.
+  f.globalAlpha = Math.min(1, L.rimAlpha * (tod === 'night' && zone !== 'subway' ? 0.75 + 0.5 * live.beat : 1));
   f.drawImage(rim, 0, 0);
   f.globalAlpha = 1; f.globalCompositeOperation = 'source-over';
   ctx.save();
