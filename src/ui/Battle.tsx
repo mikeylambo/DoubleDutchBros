@@ -6,6 +6,7 @@ import { draw } from '../game/renderer';
 import { computeView, screenToWorldX, type View } from '../game/view';
 import { calculateDerived } from '../game/stats';
 import { useEngine } from './useEngine';
+import { waveMemo } from './runMemo';
 import { timeForWave, zoneForWave } from '../game/sprites';
 
 const SWAG_COLOR: Record<string, string> = { D: '#94a3b8', C: '#cbd5e1', B: '#60a5fa', A: '#4ade80', S: '#facc15', SS: '#f0abfc' };
@@ -180,6 +181,7 @@ const WaveIntro = ({ top }: { top: number }) => {
   const [shown, setShown] = useState<number | null>(null);
   useEffect(() => {
     if (snap.gameState !== 'BATTLE') return;
+    if (waveMemo.wave !== snap.wave) { waveMemo.wave = snap.wave; waveMemo.rp = snap.rp; }
     setShown(snap.wave);
     const t = setTimeout(() => setShown(null), 2000);
     return () => clearTimeout(t);

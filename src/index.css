@@ -89,3 +89,27 @@ html, body, #root { height: 100%; overscroll-behavior: none; -webkit-user-select
 /* Pad ripple: a ring that spreads out from a pressed face button. */
 @keyframes pad-ripple { from { transform: scale(0.8); opacity: 0.8; } to { transform: scale(1.7); opacity: 0; } }
 .pad-ripple { animation: pad-ripple 420ms ease-out forwards; }
+
+/* ---------- title ---------- */
+@keyframes logo-from-left { from { opacity: 0; transform: translateX(-60vw) skewX(20deg); } to { opacity: 1; transform: none; } }
+@keyframes logo-from-right { from { opacity: 0; transform: translateX(60vw) skewX(-20deg); } to { opacity: 1; transform: none; } }
+@keyframes logo-slam { 0% { opacity: 0; transform: scale(2.4); } 60% { opacity: 1; transform: scale(0.94); } 100% { transform: scale(1); } }
+@keyframes logo-float { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-6px) rotate(-1deg); } }
+.logo-from-left { animation: logo-from-left 600ms cubic-bezier(.2,.9,.3,1.1) both; }
+.logo-from-right { animation: logo-from-right 600ms 120ms cubic-bezier(.2,.9,.3,1.1) both; }
+.logo-slam { animation: logo-slam 560ms 420ms cubic-bezier(.2,.9,.3,1.3) both; }
+.logo-float { animation: logo-float 4s 1s ease-in-out infinite; }
+
+/* ---------- victory ---------- */
+/* Sprite strips are 24 frames of 256 px: play the pose once and hold the last frame. */
+@keyframes victory-play { from { background-position: 0 0; } to { background-position: 100% 0; } }
+@keyframes victory-pop { from { opacity: 0; transform: translateY(30px) scale(0.8); } to { opacity: 1; transform: none; } }
+.victory-pose { background-size: 2400% 100%; background-repeat: no-repeat; animation: victory-pop 420ms ease-out both, victory-play 1000ms steps(23) both; }
+@keyframes victory-push { from { transform: scale(0.85); } to { transform: scale(1); } }
+.victory-push { animation: victory-push 1400ms cubic-bezier(.2,.8,.3,1) both; }
+@keyframes reward-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.reward-in { animation: reward-in 360ms ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-from-left, .logo-from-right, .logo-slam, .logo-float, .victory-push, .wave-band { animation: none !important; }
+}

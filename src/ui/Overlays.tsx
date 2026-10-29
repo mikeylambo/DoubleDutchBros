@@ -8,6 +8,8 @@ import { TitleBackdrop, TitleRabbits } from './TitleRabbits';
 import { useEngine } from './useEngine';
 import { usePlatform, useRunResult } from './usePlatform';
 import type { GameSettings } from '../game/save';
+import { waveMemo } from './runMemo';
+import { audio } from '../game/audio';
 
 /**
  * `scrim`: in-run screens frost over the live game. `city`: out-of-run screens sit over the skyline.
@@ -42,7 +44,7 @@ const ChoiceCard = ({ onPress, accent, children }: { onPress: () => void; accent
   </button>
 );
 const BigButton = ({ onPress, children, className = 'bg-gradient-to-b from-white to-slate-200 text-[#0b0720] shadow-[0_10px_40px_rgba(255,255,255,0.18),inset_0_-3px_0_rgba(0,0,0,0.12)]' }: { onPress: () => void; children: React.ReactNode; className?: string }) => (
-  <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }} className={`font-display font-black italic py-4 md:py-5 px-16 md:px-24 rounded-full text-xl md:text-2xl active:scale-95 transition-transform uppercase tracking-wide ${className}`}>{children}</button>
+  <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }} className={`-skew-x-12 font-display font-black italic py-4 md:py-5 px-16 md:px-24 rounded-2xl text-xl md:text-2xl active:scale-95 transition-transform uppercase tracking-wide ${className}`}><span className="inline-block skew-x-12">{children}</span></button>
 );
 
 /** Playtest builds (dev, or VITE_PLAYTEST=1) get shortcuts to every zone and time of day. */
@@ -52,7 +54,7 @@ const PLAYTEST_WAVES: [string, number][] = [
 ];
 
 const SmallButton = ({ onPress, children }: { onPress: () => void; children: React.ReactNode }) => (
-  <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }} className="glass px-5 py-2.5 rounded-full text-[10px] font-semibold text-white/85 uppercase tracking-[0.25em] active:scale-95 transition-transform">{children}</button>
+  <button data-nav onPointerDown={(e) => { e.preventDefault(); onPress(); }} className="glass -skew-x-12 px-5 py-3 rounded-xl font-display font-black italic text-[11px] md:text-xs text-white/90 uppercase tracking-[0.12em] active:scale-95 transition-transform hover:bg-white/[0.08] border-l-2 !border-l-white/30"><span className="inline-block skew-x-12">{children}</span></button>
 );
 
 export const Title = () => {
@@ -64,12 +66,13 @@ export const Title = () => {
   const has = (id: string) => snap.unlocks.includes(id);
   return (
     <Screen tone="city" className="justify-center text-center">
-      <div className="font-display font-black italic uppercase leading-[0.85] text-5xl sm:text-7xl md:text-8xl">
+      {/* Logo: Double swings in from the left, Dutch from the right, Bros slams down; then it floats. */}
+      <div className="logo-float font-display font-black italic uppercase leading-[0.85] text-5xl sm:text-7xl md:text-8xl">
         <div>
-          <span className="bg-gradient-to-b from-rose-300 to-red-500 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(239,68,68,0.45)]">Double</span>{' '}
-          <span className="bg-gradient-to-b from-sky-300 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(59,130,246,0.45)]">Dutch</span>
+          <span className="logo-from-left inline-block bg-gradient-to-b from-rose-300 to-red-500 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(239,68,68,0.45)]">Double</span>{' '}
+          <span className="logo-from-right inline-block bg-gradient-to-b from-sky-300 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(59,130,246,0.45)]">Dutch</span>
         </div>
-        <div className="mt-1 bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent text-[1.35em] drop-shadow-[0_4px_30px_rgba(255,255,255,0.15)]">Bros</div>
+        <div className="logo-slam mt-1 bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent text-[1.35em] drop-shadow-[0_4px_30px_rgba(255,255,255,0.15)]">Bros</div>
       </div>
       <div className="mt-4 flex items-center justify-center gap-3 text-[10px] font-semibold uppercase tracking-[0.5em] text-pink-200/80">
         <span className="h-px w-8 bg-gradient-to-r from-transparent to-pink-300/60" />Starring Hop &amp; Skip<span className="h-px w-8 bg-gradient-to-l from-transparent to-pink-300/60" />
@@ -364,11 +367,51 @@ export const MutatorPick = () => {
   );
 };
 
+/** Counts up to `to` over `ms`, ticking as it goes. Starts after `delay`. */
+const useCountUp = (to: number, ms = 900, delay = 0) => {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let raf = 0, last = 0;
+    const t0 = performance.now() + delay;
+    const step = (now: number) => {
+      const t = Math.min(1, Math.max(0, (now - t0) / ms));
+      const next = Math.round(to * (1 - Math.pow(1 - t, 3)));
+      if (next !== last && now - t0 > 0 && Math.floor(t * 14) !== Math.floor(((last / Math.max(1, to)) * 14))) audio.play('tick');
+      last = next; setV(next);
+      if (t < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [to, ms, delay]);
+  return v;
+};
+
+/** A bro's victory clip, played straight from its sprite strip. */
+const VictoryPose = ({ who, delay }: { who: 'hop' | 'skip'; delay: number }) => (
+  <div className="victory-pose w-36 h-36 md:w-52 md:h-52" style={{ backgroundImage: `url(/assets/sprites/${who}/victory.png)`, animationDelay: `0ms, ${delay}ms` }} />
+);
+
 export const WaveClear = () => {
-  const { engine } = useEngine();
+  const { engine, snap } = useEngine();
+  const earned = useCountUp(Math.max(0, snap.rp - waveMemo.rp), 900, 700);
+  const color = RANK_COLOR[snap.swagTier] ?? '#fff';
   return (
     <Screen className="justify-center">
-      <div className="rank-in font-display font-black italic uppercase text-center leading-[0.9] text-6xl md:text-8xl mb-10 bg-gradient-to-b from-amber-100 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(250,204,21,0.35)]">Wave<br />Clear</div>
+      <div className="victory-push flex items-end justify-center -mb-4">
+        <VictoryPose who="hop" delay={0} />
+        <VictoryPose who="skip" delay={120} />
+      </div>
+      <div className="rank-in font-display font-black italic uppercase text-center leading-[0.9] text-6xl md:text-8xl mb-6 bg-gradient-to-b from-amber-100 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(250,204,21,0.35)]">Wave<br />Clear</div>
+      <div className="flex gap-3 mb-10">
+        <div className="reward-in glass px-6 py-3 rounded-2xl text-center" style={{ animationDelay: '600ms' }}>
+          <div className="text-[9px] font-semibold tracking-[0.4em] uppercase text-white/50">Earned</div>
+          <div className="font-display font-black italic text-3xl tabular-nums text-amber-200">+{earned}<span className="text-sm text-white/40 not-italic ml-1">RP</span></div>
+        </div>
+        <div className="reward-in glass px-6 py-3 rounded-2xl text-center" style={{ animationDelay: '900ms' }}>
+          <div className="text-[9px] font-semibold tracking-[0.4em] uppercase text-white/50">Style</div>
+          <div className="font-display font-black italic text-3xl" style={{ color, textShadow: `0 0 18px ${color}88` }}>{snap.swagTier}</div>
+        </div>
+      </div>
       <BigButton onPress={() => engine.enterShop()}>Enter Shop</BigButton>
     </Screen>
   );
